@@ -9,7 +9,9 @@ from frame import (
     Toolbar,
     Sidebar,
     Main,
-    Statusbar
+    Statusbar,
+    ImageList,
+    Landing,
 )
 
 from page import (
@@ -21,7 +23,11 @@ from db import Database
 from source import Source
 
 DB_FILE = 'ct.db'
-ALL_FRAMES = (SourceListPage, ImageListPage, ImageViewer)
+
+MAIN_FRAMES = {
+    'landing': Landing,
+    'image-list': ImageList,
+}
 
 class Application(tk.Tk):
 
@@ -35,11 +41,11 @@ class Application(tk.Tk):
         self.db = Database(DB_FILE)
         self.db.init()
 
+        # helpers
         self.source = Source(self.db)
 
-        self.state = {}
+        #self.state = {}
 
-        self.layout()
         '''
         container = tk.Frame(self)
         #container.pack(side='top', fill='both', expand=True)
@@ -61,14 +67,13 @@ class Application(tk.Tk):
             frame.grid(row=0, column=0, sticky='nsew')
         self.show_frame('SourceListPage')'''
 
-    def layout(self):
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
         #self.title_font = font.Font(family='Helvetica', size=18, weight="bold", slant="italic")
         self.toolbar = Toolbar(self)
         self.sidebar = Sidebar(self, background='bisque', width=150, height=200)
-        self.main = Main(self, background='white', width=300, height=200, bd=1, relief='sunken')
+        self.main = Main(self, frames=MAIN_FRAMES, background='white', width=300, height=200, bd=1, relief='sunken')
         self.statusbar = Statusbar(self, background='gray')
 
         #self.message = tk.Label(self, text="Hello, world!")
@@ -84,25 +89,6 @@ class Application(tk.Tk):
             self.sidebar.grid_remove()
         else:
             self.sidebar.grid()
-
-    def show_frame(self, page_name, **kwargs):
-        frame = self.frames[page_name]
-
-        if page_name == 'ImageListPage':
-            self.get_source(kwargs['source_id'])
-            frame.refresh();
-
-        frame.tkraise()
-
-    def get_source(self, source_id):
-        source = self.db.fetch_sql('SELECT * FROM source WHERE source_id={}'.format(source_id))
-        images = self.db.fetch_sql_all('SELECT * FROM image WHERE source_id={}'.format(source_id))
-        #print (images, 'xxx')
-        self.state = {
-            'image_list': images,
-            'source': source,
-            'current_row_index': 0,
-        }
 
 
 if __name__ == '__main__':

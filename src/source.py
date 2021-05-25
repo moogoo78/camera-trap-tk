@@ -86,3 +86,13 @@ class Source(object):
         if p.suffix.upper() in IMAGE_EXTENSIONS:
             return True
         return False
+
+    def get_source(self, source_id):
+        db = self.db
+        source = db.fetch_sql('SELECT * FROM source WHERE source_id={}'.format(source_id))
+        images = db.fetch_sql_all('SELECT * FROM image WHERE source_id={}'.format(source_id))
+
+        return {
+            'image_list': images,
+            'source': source,
+        }

@@ -38,7 +38,7 @@ class Sidebar(tk.Frame):
             source_button = ttk.Button(
                 self,
                 text=i[3],
-                command=lambda x=i[0]: self.controller.show_frame('ImageListPage', source_id=x))
+                command=lambda x=i[0]: self.parent.main.show_frame('image-list', source_id=x))
             source_button.grid(pady=2)
             self.source_list.append(source_button)
 
