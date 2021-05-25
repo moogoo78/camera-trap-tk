@@ -75,19 +75,41 @@ class ImageListPage(tk.Frame):
             self.sheet.enable_bindings()
             self.frame.grid(row = 2, column = 0, sticky = "nswe")
             self.sheet.grid(row = 2, column = 0, sticky = "nswe")
-            self.sheet.enable_bindings(('row_select'))
-            self.sheet.extra_bindings([('row_select', self.row_select),])
+            self.sheet.enable_bindings(('row_select', 'cell_select'))
+            self.sheet.extra_bindings([
+                ('row_select', self.row_select),
+                ('cell_select', self.cell_select)
+            ])
             for i in range(0, len(data)):
                 self.sheet.create_dropdown(i, 2, values='測試,空拍,山羌,山羊,水鹿'.split(','), set_value='', destroy_on_select = False, destroy_on_leave = False, see = False)
                 self.sheet.create_dropdown(i, 3, values='成體,亞成體,幼體,無法判定'.split(','), set_value='', destroy_on_select = False, destroy_on_leave = False, see = False)
                 #self.sheet.create_dropdown(i, 3, values='雄性,雌性,無法判定'.split(','), set_value='', destroy_on_select = False, destroy_on_leave = False, see = False)
                 #初茸,茸角一尖,茸角一岔二尖,茸角二岔三尖,茸角三岔四尖,硬角一尖,硬角一岔二尖,硬角二岔三尖,硬角三岔四尖,解角
-            self.image_thumb = Label(self, border = 25)
+
+            # thumb
+            self.image_thumb = ttk.Label(self, border = 25)
+            self.image_thumb.grid(row=2, column=1)
+            self.image_thumb_button = ttk.Button(self, text='看大圖',
+                                                 command=lambda: self.controller.show_frame('ImageViewer'))
+            self.image_thumb_button.grid(row=2, column=2)
         else:
             print ('no state')
 
     #def column_select(self, response):
     #    print (response)
+    def cell_select(self, response):
+        #print (response)
+        state = self.controller.state
+        pp = state['image_list'][response[1]][1]
+
+        image = Image.open(pp)
+        image = image.resize((300,300), Image.ANTIALIAS)
+        photo = ImageTk.PhotoImage(image)
+
+        self.image_thumb.configure(image=photo, width=300 )
+        self.image_thumb.image = photo
+        #self.image_thumb.grid(row=2, column=1)
+
     def row_select(self, response):
         #print (response)
 
