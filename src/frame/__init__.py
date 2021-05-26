@@ -4,5 +4,5 @@ from .statusbar import Statusbar
 from .main import Main
 
 # main frames
-from .image_list import ImageList
+from .datatable import Datatable
 from .landing import Landing

@@ -3,6 +3,8 @@ from tkinter import (
     ttk,
 )
 
+from tkinter import filedialog as fd
+
 
 class Sidebar(tk.Frame):
 
@@ -38,13 +40,13 @@ class Sidebar(tk.Frame):
             source_button = ttk.Button(
                 self,
                 text=i[3],
-                command=lambda x=i[0]: self.parent.main.show_frame('image-list', source_id=x))
+                command=lambda x=i[0]: self.parent.main.show_frame('datatable', source_id=x))
             source_button.grid(pady=2)
             self.source_list.append(source_button)
 
 
     def add_folder(self):
-        directory = tk.filedialog.askdirectory()
+        directory = fd.askdirectory()
 
         src = self.parent.source
         progress_bar = self.parent.statusbar.progress_bar
@@ -52,6 +54,7 @@ class Sidebar(tk.Frame):
         folder_path = src.get_folder_path(directory)
         if not folder_path:
             tk.messagebox.showinfo('info', '已經加過此目錄')
+            return False
 
         image_list = src.get_image_list(folder_path)
 
