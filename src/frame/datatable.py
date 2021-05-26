@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+import time
 
 import tkinter as tk
 from tkinter import (
@@ -30,7 +31,7 @@ class Datatable(tk.Frame):
         self.ctrl_data = []
 
         self.ctrl_frame = tk.Frame(self)
-        self.table_frame = tk.Frame(self, bg='green')
+        self.table_frame = tk.Frame(self)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         #self.table_frame.grid_columnconfigure(0, weight=1)
@@ -41,7 +42,7 @@ class Datatable(tk.Frame):
             'pady': 8,
         }
         self.ctrl_frame.grid(row=0, column=0, sticky='w', **ctrl_pad)
-        self.table_frame.grid(row=1, column=0)
+        self.table_frame.grid(row=1, column=0, sticky='w')
 
         # project menu
         self.label_project = ttk.Label(self.ctrl_frame,  text='計畫')
@@ -80,21 +81,27 @@ class Datatable(tk.Frame):
             '')
         self.deployment_menu.grid(row=0, column=5, sticky=tk.W)
 
-
         # upload button
         self.upload_button = ttk.Button(
             self.ctrl_frame,
             text='上傳',
             command=self.on_upload)
-        self.upload_button.grid(row=0, column=6, padx=20)
+        self.upload_button.grid(row=0, column=6, padx=20, sticky='w')
+
+        # save button
+        self.save_button = ttk.Button(
+            self.ctrl_frame,
+            text='儲存',
+            command=self.on_save)
+        self.save_button.grid(row=0, column=7, padx=5, sticky='e')
 
         # sheet
         self.sheet = Sheet(
             self.table_frame,
             data=[],
-            headers=['status', 'filename', 'time', '物種', '年齡'],
-            width=800,
-            height=640
+            headers=['status', 'filename', 'time', '物種', '年齡', '性別', '角況', '備註', '個體 ID'],
+            width=650,
+            height=620
         )
         self.sheet.enable_bindings()
         self.sheet.grid(row=0, column=0, sticky='nswe')
@@ -104,9 +111,9 @@ class Datatable(tk.Frame):
         ])
 
         # thumb
-        self.image_thumb = ttk.Label(self, border=25)
-        self.image_thumb.grid(row=0, column=1)
-
+        self.image_thumb = ttk.Label(self.table_frame, border=20)
+        self.image_thumb.grid(row=0, column=1, sticky='n')
+        self._show_thumb()
 
     def refresh(self):
         self.source_id = self.parent.state.get('source_id', '')
@@ -137,18 +144,29 @@ class Datatable(tk.Frame):
             alist = json.loads(i[7])
             path = i[1]
             status = i[5]
+            image_id = i[0]
             if len(alist) >= 1:
                 for j in alist:
                     species = j.get('species', '')
                     lifestage = j.get('lifestage', '')
+                    sex = j.get('sex', '')
+                    antler = j.get('antler', '')
+                    animal_id = j.get('animal_id', '')
+                    remarks = j.get('remarks', '')
                     self.sheet_data.append([
                         status,
                         filename,
                         dtime,
                         species,
-                        lifestage])
+                        lifestage,
+                        sex,
+                        antler,
+                        remarks,
+                        animal_id
+                    ])
                     ctrl_data.append([
                         path,
+                        image_id,
                     ])
             else:
                 self.sheet_data.append([
@@ -156,9 +174,14 @@ class Datatable(tk.Frame):
                     filename,
                     dtime,
                     '',
+                    '',
+                    '',
+                    '',
+                    '',
                     ''])
                 ctrl_data.append([
                     path,
+                    image_id,
                 ])
 
         self.ctrl_data = ctrl_data
@@ -168,23 +191,41 @@ class Datatable(tk.Frame):
             redraw=True,
         )
         self.sheet.delete_dropdown('all')
-        for i in range(0, len(self.sheet_data)):
-            self.sheet.create_dropdown(i, 3, values='測試,空拍,山羌,山羊,水鹿'.split(','), set_value='', destroy_on_select=False, destroy_on_leave =False, see=False)
-            self.sheet.create_dropdown(i, 4, values='成體,亞成體,幼體,無法判定'.split(','), set_value='', destroy_on_select = False, destroy_on_leave = False, see = False)
-                #self.sheet.create_dropdown(i, 3, values='雄性,雌性,無法判定'.split(','), set_value='', destroy_on_select = False, destroy_on_leave = False, see = False)
-                #初茸,茸角一尖,茸角一岔二尖,茸角二岔三尖,茸角三岔四尖,硬角一尖,硬角一岔二尖,硬角二岔三尖,硬角三岔四尖,解角
+        for row in range(0, len(self.sheet_data)):
+            default_sp = self.sheet_data[row][3] or ''
+            self.sheet.create_dropdown(row, 3, values='測試,空拍,山羌,山羊,水鹿'.split(','), set_value=default_sp, destroy_on_select=False, destroy_on_leave =False, see=False)
+            default_ls = self.sheet_data[row][4] or ''
+            self.sheet.create_dropdown(row, 4, values='成體,亞成體,幼體,無法判定'.split(','), set_value=default_ls, destroy_on_select = False, destroy_on_leave = False, see = False)
+            default_sx = self.sheet_data[row][5] or ''
+            self.sheet.create_dropdown(row, 5, values='雄性,雌性,無法判定'.split(','), set_value=default_sx, destroy_on_select = False, destroy_on_leave = False, see = False)
+            default_an = self.sheet_data[row][6] or ''
+            self.sheet.create_dropdown(row, 6, values='初茸,茸角一尖,茸角一岔二尖,茸角二岔三尖,茸角三岔四尖,硬角一尖,硬角一岔二尖,硬角二岔三尖,硬角三岔四尖,解角'.split(','), set_value=default_an, destroy_on_select = False, destroy_on_leave = False, see = False)
 
         #self.image_thumb_button = ttk.Button(self, text='看大圖',
         #                                     command=lambda: self.controller.show_frame('ImageViewer'))
         #self.image_thumb_button.grid(row=2, column=2)
         self.sheet.refresh()
-    def cell_select(self, response):
-        image_path = self.ctrl_data[response[1]][0]
+
+    def _show_thumb(self, row=0):
+        if len(self.ctrl_data) <= 0:
+            return False
+
+        image_path = self.ctrl_data[row][0]
         image = Image.open(image_path)
-        img = image.resize((300,300), Image.ANTIALIAS)
+        # aspect ratio
+        basewidth = 350
+        wpercent = (basewidth/float(image.size[0]))
+        hsize = int((float(image.size[1])*float(wpercent)))
+        img = image.resize((basewidth,hsize))
+        #img = image.resize((300,300))
+        #img = image.resize((300,300), Image.ANTIALIAS)
         photo = ImageTk.PhotoImage(img)
         self.image_thumb.configure(image=photo, width=300 )
         self.image_thumb.image = photo
+        self.update_idletasks()
+
+    def cell_select(self, response):
+        self._show_thumb(response[1])
 
     def project_option_changed(self, *args):
         name = self.project_var.get()
@@ -249,8 +290,13 @@ class Datatable(tk.Frame):
 
             # TODO
             #tk.messagebox.showinfo('info', '已設定相機位置')
+
     def on_upload(self):
         #self.app.source.do_upload(self.source_data)
+        ans = tk.messagebox.askquestion('上傳確認', '確定要上傳?')
+        if ans == 'no':
+            return False
+
         image_list = self.source_data['image_list']
         source_id = self.source_data['source'][0]
 
@@ -266,3 +312,28 @@ class Datatable(tk.Frame):
         pb['value'] = 0
         self.update_idletasks()
         tk.messagebox.showinfo('info', '上傳成功')
+
+    def on_save(self):
+        d = self.sheet.get_sheet_data()
+        #sql = "UPDATE image SET annotation='{}', status='{}', changed={} WHERE image_id='{}'".format(json.dumps(d), status, int(time.time()), image_id)
+        for i, v in enumerate(d):
+            row = {}
+            if len(v) >= 4:
+                row['species'] = v[3]
+            if len(v) >= 5:
+                row['lifestage'] = v[4]
+            if len(v) >= 6:
+                row['sex'] = v[5]
+            if len(v) >= 7:
+                row['antler'] = v[6]
+            if len(v) >= 8:
+                row['remarks'] = v[7]
+            if len(v) >= 9:
+                row['animal_id'] = v[8]
+
+            image_id = self.ctrl_data[i][1]
+            if image_id:
+                sql = "UPDATE image SET annotation='[{}]', changed={} WHERE image_id='{}'".format(json.dumps(row), int(time.time()), image_id)
+                self.app.db.exec_sql(sql)
+        self.app.db.commit()
+        tk.messagebox.showinfo('info', '儲存成功')
