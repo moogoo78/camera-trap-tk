@@ -12,6 +12,7 @@ from frame import (
     Statusbar,
     Datatable,
     Landing,
+    ImageViewer,
 )
 
 from db import Database
@@ -23,6 +24,7 @@ DB_FILE = 'ct.db'
 MAIN_FRAMES = {
     'landing': Landing,
     'datatable': Datatable,
+    'image-viewer': ImageViewer,
 }
 
 class Application(tk.Tk):

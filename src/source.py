@@ -107,12 +107,27 @@ class Source(object):
         self.db.exec_sql(sql, True)
         print ('- update all image status -')
 
-        for i in image_list:
-            time.sleep(2)
-            sql = 'UPDATE image SET status="200", server_image_id={} WHERE image_id={}'.format(99, i[0])
-            self.db.exec_sql(sql, True)
-            yield i
+        # post to server
+        deployment_id = ''
+        payload = {
+            'image_list': 'image_list',
+            'key': f'tk1-{source_id}',
+            'deployment_id': deployment_id,
+        }
+        print(payload)
+        #p = requests.post(url, json=payload)
 
+        #for i in image_list:
+        #    object_name = '{}.jpg'.format(server_image_id)
+            #time.sleep(2)
+            #sql = 'UPDATE image SET status="200", server_image_id={} WHERE image_id={}'.format(99, i[0])
+            #self.db.exec_sql(sql, True)
+            #upload_to_s3
+            #    yield i
+
+        # update source status
+        #sql = 'UPDATE source SET status="200" WHERE source_id={}'.format(source_id)
+        #self.db.exec_sql(sql, True)
 
     def do_upload(self, source_data):
         count = 0

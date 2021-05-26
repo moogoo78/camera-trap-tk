@@ -25,6 +25,8 @@ class Main(tk.Frame):
             self.state = kwargs
 
         frame = self.frames[frame_name]
+        if frame_name == 'datatable':
+            self.state['current_row'] = 0
         if hasattr(frame, 'refresh'):
             frame.refresh()
         frame.tkraise()

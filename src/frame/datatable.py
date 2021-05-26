@@ -34,6 +34,10 @@ class Datatable(tk.Frame):
         self.table_frame = tk.Frame(self)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
+
+        self.table_frame.rowconfigure(0, weight=1)
+        self.table_frame.rowconfigure(1, weight=5)
+
         #self.table_frame.grid_columnconfigure(0, weight=1)
         #self.table_frame.grid_rowconfigure(0, weight=1)
 
@@ -104,16 +108,25 @@ class Datatable(tk.Frame):
             height=620
         )
         self.sheet.enable_bindings()
-        self.sheet.grid(row=0, column=0, sticky='nswe')
+        self.sheet.grid(row=0, column=0, rowspan=2, sticky='nswe')
         self.sheet.enable_bindings(('cell_select'))
         self.sheet.extra_bindings([
             ('cell_select', self.cell_select)
         ])
 
         # thumb
-        self.image_thumb = ttk.Label(self.table_frame, border=20)
+        self.image_thumb = ttk.Label(self.table_frame, border=8, relief='raised')
         self.image_thumb.grid(row=0, column=1, sticky='n')
         self._show_thumb()
+
+        self.image_viewer_button = ttk.Button(
+            self.table_frame,
+            text='看大圖',
+            command=lambda: self.app.main.show_frame('image-viewer')
+        )
+
+        #self.image_viewer_button.grid(row=1, column=1, sticky='nw', padx=20)
+        self.image_viewer_button.grid(row=1, column=1, sticky='n')
 
     def refresh(self):
         self.source_id = self.parent.state.get('source_id', '')
@@ -186,6 +199,9 @@ class Datatable(tk.Frame):
 
         self.ctrl_data = ctrl_data
 
+        # save to main.state
+        self.parent.state['alist'] = self.ctrl_data
+
         self.sheet.set_sheet_data(
             data=self.sheet_data,
             redraw=True,
@@ -201,9 +217,6 @@ class Datatable(tk.Frame):
             default_an = self.sheet_data[row][6] or ''
             self.sheet.create_dropdown(row, 6, values='初茸,茸角一尖,茸角一岔二尖,茸角二岔三尖,茸角三岔四尖,硬角一尖,硬角一岔二尖,硬角二岔三尖,硬角三岔四尖,解角'.split(','), set_value=default_an, destroy_on_select = False, destroy_on_leave = False, see = False)
 
-        #self.image_thumb_button = ttk.Button(self, text='看大圖',
-        #                                     command=lambda: self.controller.show_frame('ImageViewer'))
-        #self.image_thumb_button.grid(row=2, column=2)
         self.sheet.refresh()
 
     def _show_thumb(self, row=0):
@@ -220,11 +233,12 @@ class Datatable(tk.Frame):
         #img = image.resize((300,300))
         #img = image.resize((300,300), Image.ANTIALIAS)
         photo = ImageTk.PhotoImage(img)
-        self.image_thumb.configure(image=photo, width=300 )
+        self.image_thumb.configure(image=photo)
         self.image_thumb.image = photo
         self.update_idletasks()
 
     def cell_select(self, response):
+        self.parent.state['current_row'] = response[1]
         self._show_thumb(response[1])
 
     def project_option_changed(self, *args):
