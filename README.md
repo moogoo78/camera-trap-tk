@@ -2,21 +2,20 @@
 
 tkinter GUI
 
-# Development
+## Development
 
-## Requirements
+### Requirements
 
 - Python 3.6+
 
-### Dependency
-
+**Dependency**
 - Pillow
 - tksheet
 - requests
 - boto3
 - pyinstaller (for build win exe)
 
-## Usage
+### Usage
 
 1. Install packages
 
@@ -33,7 +32,7 @@ $ poetry shell
 $ python ./src/app.py
 ```
 
-### Build
+## Build
 
 ```sh
 $ pyinstaller.ex.e --onefile -F .\src\app.py --clean
