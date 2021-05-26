@@ -16,6 +16,6 @@ class Toolbar(tk.Frame):
     def layout(self):
         self.toggle_button = ttk.Button(
             self,
-            text='目錄',
+            text='顯示目錄',
             command=self.parent.toggle_sidebar)
         self.toggle_button.grid()
