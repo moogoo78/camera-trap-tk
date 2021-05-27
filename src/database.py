@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS image (
   exif TEXT,
   source_id INTEGER,
   server_image_id TEXT,
+  upload_status TEXT,
   FOREIGN KEY (source_id) REFERENCES source(source_id)
 );'''
 

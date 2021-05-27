@@ -17,7 +17,7 @@ from frame import (
     ImageViewer,
 )
 
-from db import Database
+from database import Database
 from source import Source
 from server import Server
 from config import Config

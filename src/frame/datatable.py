@@ -290,7 +290,7 @@ class Datatable(tk.Frame):
     def deployment_option_changed(self, *args):
         d_name = self.deployment_var.get()
         if deployment_id := self.id_map['deployment'].get(d_name, ''):
-            print ('deployment_id', deployment_id, d_name, )
+            #print ('set deployment_id: ', deployment_id, d_name, )
             sa_name = self.studyarea_var.get()
             p_name = self.project_var.get()
             descr = {
@@ -307,6 +307,9 @@ class Datatable(tk.Frame):
             sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(descr), self.source_id)
             self.app.db.exec_sql(sql, True)
 
+            self.source_id = self.parent.state.get('source_id', '')
+            # update source_data (for upload: first time import folder, get no deployment_id even if selected)
+            self.source_data = self.app.source.get_source(self.source_id)
             # TODO
             #tk.messagebox.showinfo('info', '已設定相機位置')
 
@@ -318,16 +321,49 @@ class Datatable(tk.Frame):
 
         image_list = self.source_data['image_list']
         source_id = self.source_data['source'][0]
+        deployment_id = ''
+
+        if descr := self.source_data['source'][7]:
+            d = json.loads(descr)
+            deployment_id = d.get('deployment_id', '')
+
+        if deployment_id == '':
+            tk.messagebox.showinfo('info', '末設定相機位置，無法上傳')
+            return False
 
         pb = self.app.statusbar.progress_bar
-        pb['maximum'] = len(image_list)
+        start_val = len(image_list) * 0.05 # 5% for display pre s3 upload
+        pb['maximum'] = len(image_list) + start_val
+        pb['value'] = start_val
         self.update_idletasks()
-        #print (image_list)
-        for i, v in enumerate(self.app.source.gen_upload(image_list, source_id)):
-            print (i, 'foo')
-            pb['value'] = i+1
-            self.update_idletasks()
 
+        res = self.app.source.upload_annotation(image_list, source_id, deployment_id)
+
+        if res['error']:
+            tk.messagebox.showerror('上傳失敗', f"{res['error']}")
+            return False
+
+        saved_image_ids = res['data']
+        for i, v in enumerate(self.app.source.gen_upload_file(image_list, source_id, deployment_id, saved_image_ids)):
+            print ('uploaded', i, v)
+            if v:
+                # update progress bar
+                pb['value'] = i+1
+                self.update_idletasks()
+
+                local_image_id = v[0]
+                server_image_id = v[1]
+                s3_key = v[2]
+                sql = 'UPDATE image SET upload_status="20", server_image_id={} WHERE image_id={}'.format(server_image_id, local_image_id)
+                self.app.db.exec_sql(sql, True)
+
+                # update server image status
+                self.app.server.post_image_status({
+                    'file_url': s3_key,
+                    'pk': server_image_id,
+                })
+
+        # finish upload
         pb['value'] = 0
         self.update_idletasks()
         tk.messagebox.showinfo('info', '上傳成功')

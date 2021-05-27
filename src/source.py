@@ -5,6 +5,8 @@ import json
 
 import boto3
 from botocore.exceptions import ClientError
+from boto3.exceptions import S3UploadFailedError
+#S3UploadFailedError
 
 from image import ImageManager
 from upload import UploadThread
@@ -102,32 +104,65 @@ class Source(object):
             'source': source,
         }
 
-    def gen_upload(self, image_list, source_id):
-        sql = "UPDATE image SET status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
+    def upload_annotation(self, image_list, source_id, deployment_id):
+        '''set upload_status in local database and post data to server'''
+        sql = "UPDATE image SET upload_status='10' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
         self.db.exec_sql(sql, True)
-        print ('- update all image status -')
-
+        #print ('- update all image status -')
+        account_id = self.app.config.get('Installation', 'account_id')
         # post to server
-        deployment_id = ''
         payload = {
-            'image_list': 'image_list',
-            'key': f'tk1-{source_id}',
+            'image_list': image_list,
+            'key': f'{account_id}-{source_id}',
             'deployment_id': deployment_id,
         }
-        print(payload)
-        #p = requests.post(url, json=payload)
+        return self.app.server.post_annotation(payload)
 
-        #for i in image_list:
-        #    object_name = '{}.jpg'.format(server_image_id)
-            #time.sleep(2)
-            #sql = 'UPDATE image SET status="200", server_image_id={} WHERE image_id={}'.format(99, i[0])
-            #self.db.exec_sql(sql, True)
-            #upload_to_s3
-            #    yield i
+    def upload_to_s3(self, file_path, object_name):
+        key = self.app.config.get('AWSConfig', 'access_key_id')
+        secret = self.app.config.get('AWSConfig', 'secret_access_key')
+        bucket_name = self.app.config.get('AWSConfig', 'bucket_name')
+        ret = {
+            'data': {},
+            'error': ''
+        }
 
-        # update source status
-        #sql = 'UPDATE source SET status="200" WHERE source_id={}'.format(source_id)
-        #self.db.exec_sql(sql, True)
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=key,
+            aws_secret_access_key=secret,
+        )
+
+        try:
+            response = s3_client.upload_file(
+                file_path,
+                bucket_name,
+                object_name,
+                ExtraArgs={'ACL': 'public-read'}
+            )
+            ret['data'] = response
+        except ClientError as e:
+            #logging.error(e)
+            print ('s3 upload error', e)
+            ret['error'] = 's3 upload client error'
+        except S3UploadFailedError as e:
+            print (e)
+            ret['error'] = 's3 upload failed'
+
+        return ret
+
+    def gen_upload_file(self, image_list, source_id, deployment_id, server_image_map):
+        for i in image_list:
+            file_path = i[1]
+            server_image_id = server_image_map.get(str(i[0]), '')
+            object_name = f'{server_image_id}.jpg'
+
+            res = self.upload_to_s3(file_path, object_name)
+            #print ('upload file:', file_path, object_name, res)
+            if res['error']:
+                yield None
+            else:
+                yield i[0], server_image_id, object_name, res
 
     def do_upload(self, source_data):
         count = 0
