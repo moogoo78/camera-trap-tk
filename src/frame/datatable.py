@@ -206,16 +206,21 @@ class Datatable(tk.Frame):
             data=self.sheet_data,
             redraw=True,
         )
+        sp_options = self.app.config.get('AnnotationFieldSpecies', 'choices').split(',')
+        ls_options = self.app.config.get('AnnotationFieldLifeStage', 'choices').split(',')
+        sx_options = self.app.config.get('AnnotationFieldSex', 'choices').split(',')
+        an_options = self.app.config.get('AnnotationFieldAntler', 'choices').split(',')
+
         self.sheet.delete_dropdown('all')
         for row in range(0, len(self.sheet_data)):
             default_sp = self.sheet_data[row][3] or ''
-            self.sheet.create_dropdown(row, 3, values='測試,空拍,山羌,山羊,水鹿'.split(','), set_value=default_sp, destroy_on_select=False, destroy_on_leave =False, see=False)
+            self.sheet.create_dropdown(row, 3, values=sp_options, set_value=default_sp, destroy_on_select=False, destroy_on_leave =False, see=False)
             default_ls = self.sheet_data[row][4] or ''
-            self.sheet.create_dropdown(row, 4, values='成體,亞成體,幼體,無法判定'.split(','), set_value=default_ls, destroy_on_select = False, destroy_on_leave = False, see = False)
+            self.sheet.create_dropdown(row, 4, values=ls_options, set_value=default_ls, destroy_on_select = False, destroy_on_leave = False, see = False)
             default_sx = self.sheet_data[row][5] or ''
-            self.sheet.create_dropdown(row, 5, values='雄性,雌性,無法判定'.split(','), set_value=default_sx, destroy_on_select = False, destroy_on_leave = False, see = False)
+            self.sheet.create_dropdown(row, 5, values=sx_options, set_value=default_sx, destroy_on_select = False, destroy_on_leave = False, see = False)
             default_an = self.sheet_data[row][6] or ''
-            self.sheet.create_dropdown(row, 6, values='初茸,茸角一尖,茸角一岔二尖,茸角二岔三尖,茸角三岔四尖,硬角一尖,硬角一岔二尖,硬角二岔三尖,硬角三岔四尖,解角'.split(','), set_value=default_an, destroy_on_select = False, destroy_on_leave = False, see = False)
+            self.sheet.create_dropdown(row, 6, values=an_options, set_value=default_an, destroy_on_select = False, destroy_on_leave = False, see = False)
 
         self.sheet.refresh()
 

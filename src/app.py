@@ -1,3 +1,5 @@
+import os
+import argparse
 import tkinter as tk
 from tkinter import (
     Label,
@@ -18,6 +20,7 @@ from frame import (
 from db import Database
 from source import Source
 from server import Server
+from config import Config
 
 DB_FILE = 'ct.db'
 
@@ -29,18 +32,21 @@ MAIN_FRAMES = {
 
 class Application(tk.Tk):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-
+        #print (config)
         self.geometry("1200x760+40+20")
         self.title('Camera Trap Desktop')
         #self.maxsize(1000, 400)
-        self.db = Database(DB_FILE)
+
+        self.config = config
+
+        self.db = Database(config.get('SQLite', 'dbfile'))
         self.db.init()
 
         # helpers
         self.source = Source(self)
-        self.server = Server()
+        self.server = Server(dict(config['Server']))
 
 
         #self.state = {}
@@ -80,7 +86,15 @@ class Application(tk.Tk):
             self.sidebar.grid()
 
 
-if __name__ == '__main__':
-    app = Application()
-    app.mainloop()
+parser = argparse.ArgumentParser(description='camera-trap-desktop')
+parser.add_argument(
+    '-i', '--ini',
+    dest='ini_file',
+    help='ini file path')
+args = parser.parse_args()
 
+if __name__ == '__main__':
+    conf = Config(args.ini_file) if args.ini_file else Config()
+    app = Application(conf)
+
+    app.mainloop()

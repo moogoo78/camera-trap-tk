@@ -1,0 +1,59 @@
+[Installation]
+account_id = EXSAMPLE
+
+[Server]
+#host = http://127.0.0.1:8000
+host = http://dev.camera-trap.tw
+image_annotation_api = /api/v1/image/annotation/
+image_update_api = /api/v1/image/update/
+project_api = /api/v1/projects/
+
+[SQLite]
+dbfile = camera-trap-desktop.db
+
+[Thumbnail]
+destination = camera-trap-desktop
+prefix = thumb-
+
+[AWSConfig]
+access_key_id = my-access-key-id
+secret_access_key = my-secret-access-key
+bucket_name = my-bucket-name
+
+[Column]
+label_list = filename:原始檔案,datetime:日期時間,species:物種,lifestage:年齡,sex:性別,antler:角況,animal_id:個體ID,remarks:備註
+default_list = filename,datetime,species,lifestage
+annotation_list = species:Species,lifestage:LifeStage,sex:Sex,antler:Antler,animal_id:AnimalID,remarks:Remarks
+
+[AnnotationFieldSpecies]
+type = select
+mutiple = 1
+choices = 測試,空拍,山羌,山羊,水鹿,
+label = 物種
+
+[AnnotationFieldLifeStage]
+type = select
+choices = 成體,亞成體,幼體,無法判定
+label = 年齡
+
+[AnnotationFieldSex]
+key = sex
+type = select
+choices = 雄性,雌性,無法判定
+label = 性別
+
+[AnnotationFieldAntler]
+key = antler
+type = select
+label = 角況
+choices = 初茸,茸角一尖,茸角一岔二尖,茸角二岔三尖,茸角三岔四尖,硬角一尖,硬角一岔二尖,硬角二岔三尖,硬角三岔四尖,解角
+
+[AnnotationFieldAnimalID]
+key = animal_id
+type = text
+label = 個體 ID
+
+[AnnotationFieldRemarks]
+key = remarks
+type = text
+label = 備註

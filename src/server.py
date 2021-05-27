@@ -1,16 +1,23 @@
 import requests
 
-API_URL = 'http://dev.camera-trap.tw/api/client/v1/'
-
 class Server(object):
     projects = []
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
+
         self.projects = self.get_projects()
 
     def get_projects(self, source_id=0):
-        if source_id:
-            r = requests.get(f'{API_URL}projects/{source_id}')
-            return r.json()
-        else:
-            r = requests.get(f'{API_URL}projects/')
-            return r.json()['results']
+        config = self.config
+        project_api_prefix = f"{config['host']}{config['project_api']}"
+        try:
+            if source_id:
+                r = requests.get(f'{project_api_prefix}{source_id}')
+                return r.json()
+            else:
+                r = requests.get(project_api_prefix)
+                return r.json()['results']
+
+        except BaseException as error:
+            print('server error: ', error)
+            return []
