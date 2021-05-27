@@ -101,9 +101,11 @@ class Datatable(tk.Frame):
         self.sheet = Sheet(
             self.table_frame,
             data=[],
-            headers=['status', 'filename', 'time', '物種', '年齡', '性別', '角況', '備註', '個體 ID'],
+            headers=['標注/上傳狀態', 'filename', 'time', '物種', '年齡', '性別', '角況', '備註', '個體 ID'],
             width=650,
-            height=620
+            height=620,
+            displayed_columns=[0,1,2,3,4,5,6,7,8],
+            all_columns_displayed=False,
         )
         self.sheet.enable_bindings()
         self.sheet.grid(row=0, column=0, rowspan=2, sticky='nswe')
@@ -155,7 +157,10 @@ class Datatable(tk.Frame):
             dtime = str(datetime.fromtimestamp(i[3]))
             alist = json.loads(i[7])
             path = i[1]
-            status = i[5]
+            status_display = '{} / {}'.format(
+                self.get_status_display(i[5]),
+                self.get_status_display(i[12]),
+            )
             image_id = i[0]
             if len(alist) >= 1:
                 for j in alist:
@@ -166,7 +171,7 @@ class Datatable(tk.Frame):
                     animal_id = j.get('animal_id', '')
                     remarks = j.get('remarks', '')
                     self.sheet_data.append([
-                        status,
+                        status_display,
                         filename,
                         dtime,
                         species,
@@ -177,12 +182,14 @@ class Datatable(tk.Frame):
                         animal_id,
                         {
                             'image_id': image_id,
-                            'path': path
+                            'path': path,
+                            'status': i[5],
+                            'upload_status': i[12],
                         }
                     ])
             else:
                 self.sheet_data.append([
-                    status,
+                    status_display,
                     filename,
                     dtime,
                     '',
@@ -193,8 +200,10 @@ class Datatable(tk.Frame):
                     '',
                     {
                         'image_id': image_id,
-                        'path': path
-                    }
+                        'path': path,
+                        'status': i[5],
+                        'upload_status': i[12],
+                    },
                 ])
 
         # save to main.state
@@ -204,6 +213,7 @@ class Datatable(tk.Frame):
             data=self.sheet_data,
             redraw=True,
         )
+
         sp_options = self.app.config.get('AnnotationFieldSpecies', 'choices').split(',')
         ls_options = self.app.config.get('AnnotationFieldLifeStage', 'choices').split(',')
         sx_options = self.app.config.get('AnnotationFieldSex', 'choices').split(',')
@@ -251,6 +261,21 @@ class Datatable(tk.Frame):
     def cell_select(self, response):
         self.parent.state['current_row'] = response[1]
         self._show_thumb(response[1])
+        status = self.sheet_data[response[1]][9]['status']
+        upload_status = self.sheet_data[response[1]][9]['upload_status']
+        image_id = self.sheet_data[response[1]][9]['image_id']
+        #print (status, image_id)
+        if status == '10':
+            next_status = '20'
+            sql = 'UPDATE image SET status="{}" WHERE image_id={}'.format(next_status, image_id)
+            self.app.db.exec_sql(sql, True)
+
+            status_display = '{} / {}'.format(
+                self.get_status_display(next_status),
+                self.get_status_display(upload_status),
+            )
+            self.sheet.set_cell_data(response[1], 0, status_display)
+
 
     def project_option_changed(self, *args):
         name = self.project_var.get()
@@ -360,7 +385,7 @@ class Datatable(tk.Frame):
                 local_image_id = v[0]
                 server_image_id = v[1]
                 s3_key = v[2]
-                sql = 'UPDATE image SET upload_status="20", server_image_id={} WHERE image_id={}'.format(server_image_id, local_image_id)
+                sql = 'UPDATE image SET upload_status="200", server_image_id={} WHERE image_id={}'.format(server_image_id, local_image_id)
                 self.app.db.exec_sql(sql, True)
 
                 # update server image status
@@ -398,3 +423,14 @@ class Datatable(tk.Frame):
                 self.app.db.exec_sql(sql)
         self.app.db.commit()
         tk.messagebox.showinfo('info', '儲存成功')
+
+    def get_status_display(self, code):
+        status_map = {
+            '10': '🗀',
+            '20': '👀',
+            '30': '☑️',
+            '100': '🔥',
+            '110': '-',
+            '200': '✅',
+        }
+        return status_map.get(code, '-')
