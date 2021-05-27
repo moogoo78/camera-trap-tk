@@ -1,12 +1,29 @@
+import tkinter as tk
 import requests
+
+# ping, via: https://stackoverflow.com/a/32684938/644070
+import platform    # For getting the operating system name
+import subprocess  # For executing a shell command
 
 class Server(object):
     projects = []
     def __init__(self, config):
         'config already transform to dict'
         self.config = config
+        self.projects = []
 
-        self.projects = self.get_projects()
+        if config.get('no_network', '') == 'yes':
+            return None
+
+        has_network = self.ping()
+        if has_network:
+            self.has_server = self.ping(config['host'])
+            if self.has_server:
+                self.projects = self.get_projects()
+            else:
+                tk.messagebox.showwarning('注意', '伺服器連線失敗')
+        else:
+            tk.messagebox.showwarning('注意', '無網路連線')
 
     def get_projects(self, source_id=0):
         config = self.config
@@ -58,3 +75,17 @@ class Server(object):
                 ret['error'] = 'server.post_annotation: load json error'
 
         return ret
+
+    def ping(self, host='google.com'):
+        """
+        Returns True if host (str) responds to a ping request.
+        Remember that a host may not respond to a ping (ICMP) request even if the host name is valid.
+        """
+
+        # Option for the number of packets as a function of
+        param = '-n' if platform.system().lower()=='windows' else '-c'
+
+        # Building the command. Ex: "ping -c 1 google.com"
+        command = ['ping', param, '1', host]
+
+        return subprocess.call(command) == 0
