@@ -48,6 +48,9 @@ class Sidebar(tk.Frame):
     def add_folder(self):
         directory = fd.askdirectory()
 
+        if not directory:
+            return False
+
         src = self.parent.source
         progress_bar = self.parent.statusbar.progress_bar
 

@@ -2,11 +2,10 @@
 account_id = EXSAMPLE
 
 [Server]
-#host = http://127.0.0.1:8000
 host = http://dev.camera-trap.tw
-image_annotation_api = /api/v1/image/annotation/
-image_update_api = /api/v1/image/update/
-project_api = /api/v1/projects/
+image_annotation_api = /api/client/v1/image/annotation/
+image_update_api = /api/client/v1/image/update/
+project_api = /api/client/v1/projects/
 
 [SQLite]
 dbfile = camera-trap-desktop.db
