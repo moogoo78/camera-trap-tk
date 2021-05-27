@@ -28,8 +28,6 @@ class Datatable(tk.Frame):
         }
         self.id_map['project'] = {x['name']: x['project_id'] for x in projects}
 
-        self.ctrl_data = []
-
         self.ctrl_frame = tk.Frame(self)
         self.table_frame = tk.Frame(self)
         self.grid_columnconfigure(0, weight=1)
@@ -152,7 +150,6 @@ class Datatable(tk.Frame):
             self.deployment_var.set('')
 
         self.sheet_data = []
-        ctrl_data = []
         for i in ret['image_list']:
             filename = i[2]
             dtime = str(datetime.fromtimestamp(i[3]))
@@ -177,11 +174,11 @@ class Datatable(tk.Frame):
                         sex,
                         antler,
                         remarks,
-                        animal_id
-                    ])
-                    ctrl_data.append([
-                        path,
-                        image_id,
+                        animal_id,
+                        {
+                            'image_id': image_id,
+                            'path': path
+                        }
                     ])
             else:
                 self.sheet_data.append([
@@ -193,16 +190,15 @@ class Datatable(tk.Frame):
                     '',
                     '',
                     '',
-                    ''])
-                ctrl_data.append([
-                    path,
-                    image_id,
+                    '',
+                    {
+                        'image_id': image_id,
+                        'path': path
+                    }
                 ])
 
-        self.ctrl_data = ctrl_data
-
         # save to main.state
-        self.parent.state['alist'] = self.ctrl_data
+        self.parent.state['alist'] = self.sheet_data
 
         self.sheet.set_sheet_data(
             data=self.sheet_data,
@@ -235,10 +231,10 @@ class Datatable(tk.Frame):
         self.sheet.refresh()
 
     def _show_thumb(self, row=0):
-        if len(self.ctrl_data) <= 0:
+        if not hasattr(self, 'sheet_data') or len(self.sheet_data) <= 0:
             return False
 
-        image_path = self.ctrl_data[row][0]
+        image_path = self.sheet_data[row][9]['path']
         image = Image.open(image_path)
         # aspect ratio
         basewidth = 350
@@ -380,7 +376,7 @@ class Datatable(tk.Frame):
 
     def on_save(self):
         d = self.sheet.get_sheet_data()
-        #sql = "UPDATE image SET annotation='{}', status='{}', changed={} WHERE image_id='{}'".format(json.dumps(d), status, int(time.time()), image_id)
+
         for i, v in enumerate(d):
             row = {}
             if len(v) >= 4:
@@ -396,7 +392,7 @@ class Datatable(tk.Frame):
             if len(v) >= 9:
                 row['animal_id'] = v[8]
 
-            image_id = self.ctrl_data[i][1]
+            image_id = self.sheet_data[i][9]['image_id']
             if image_id:
                 sql = "UPDATE image SET annotation='[{}]', changed={} WHERE image_id='{}'".format(json.dumps(row), int(time.time()), image_id)
                 self.app.db.exec_sql(sql)

@@ -79,7 +79,7 @@ class ImageViewer(tk.Frame):
         row = state['current_row']
         self.label['text'] = f'{row+1}/{total}'
 
-        image_path = state['alist'][state['current_row']][0]
+        image_path = state['alist'][state['current_row']][9]['path']
         image = Image.open(image_path)
         # aspect ratio
         basewidth = 800

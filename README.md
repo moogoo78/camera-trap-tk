@@ -37,3 +37,5 @@ $ python ./src/app.py
 ```sh
 $ pyinstaller.ex.e --onefile -F .\src\app.py --clean
 ```
+
+提供 config.ini file, 注意: `account_id`,
