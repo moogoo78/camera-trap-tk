@@ -110,6 +110,8 @@ class Datatable(tk.Frame):
         self.sheet.enable_bindings()
         self.sheet.grid(row=0, column=0, rowspan=2, sticky='nswe')
         self.sheet.enable_bindings(('cell_select'))
+        self.sheet.highlight_rows(rows=[1], bg='#def') #TODO-EN
+        self.sheet.highlight_rows(rows=[2], bg='#eeeeee') #TODO-EN
         self.sheet.extra_bindings([
             ('cell_select', self.cell_select)
         ])
@@ -211,16 +213,24 @@ class Datatable(tk.Frame):
         sx_options = self.app.config.get('AnnotationFieldSex', 'choices').split(',')
         an_options = self.app.config.get('AnnotationFieldAntler', 'choices').split(',')
 
+        #refresh_dropdowns
         self.sheet.delete_dropdown('all')
         for row in range(0, len(self.sheet_data)):
             default_sp = self.sheet_data[row][3] or ''
-            self.sheet.create_dropdown(row, 3, values=sp_options, set_value=default_sp, destroy_on_select=False, destroy_on_leave =False, see=False)
+            self.sheet.create_dropdown(row, 3, values=sp_options, set_value=default_sp, destroy_on_select=False, destroy_on_leave =False, see=False, set_cell_on_select=False)
             default_ls = self.sheet_data[row][4] or ''
             self.sheet.create_dropdown(row, 4, values=ls_options, set_value=default_ls, destroy_on_select = False, destroy_on_leave = False, see = False)
             default_sx = self.sheet_data[row][5] or ''
             self.sheet.create_dropdown(row, 5, values=sx_options, set_value=default_sx, destroy_on_select = False, destroy_on_leave = False, see = False)
             default_an = self.sheet_data[row][6] or ''
             self.sheet.create_dropdown(row, 6, values=an_options, set_value=default_an, destroy_on_select = False, destroy_on_leave = False, see = False)
+
+        # disable mousewheel scroll change value in dropdown
+        # this method error!!
+        #print (self.sheet.get_dropdowns())
+        for k, v in self.sheet.MT.cell_options:
+            if 'dropdown' in self.sheet.MT.cell_options[(k,v)]:
+                self.sheet.MT.cell_options[(k,v)]['dropdown'][0].unbind_class("TCombobox", "<MouseWheel>")
 
         self.sheet.refresh()
 
