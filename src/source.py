@@ -97,7 +97,7 @@ class Source(object):
     def get_source(self, source_id):
         db = self.db
         source = db.fetch_sql('SELECT * FROM source WHERE source_id={}'.format(source_id))
-        images = db.fetch_sql_all('SELECT * FROM image WHERE source_id={}'.format(source_id))
+        images = db.fetch_sql_all('SELECT * FROM image WHERE source_id={} order by timestamp'.format(source_id))
 
         return {
             'image_list': images,
@@ -106,7 +106,7 @@ class Source(object):
 
     def upload_annotation(self, image_list, source_id, deployment_id):
         '''set upload_status in local database and post data to server'''
-        sql = "UPDATE image SET upload_status='10' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
+        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
         self.db.exec_sql(sql, True)
         #print ('- update all image status -')
         account_id = self.app.config.get('Installation', 'account_id')

@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
 import time
+import random
+import colorsys
 
 import tkinter as tk
 from tkinter import (
@@ -97,7 +99,37 @@ class Datatable(tk.Frame):
             command=self.on_save)
         self.save_button.grid(row=0, column=7, padx=5, sticky='e')
 
-        # sheet
+        # image sequence
+        #self.seq_label = ttk.Label(self.ctrl_frame,  text='連拍自動補齊')
+        #self.seq_label.grid(row=1, column=0)
+        self.seq_checkbox_val = tk.StringVar(self)
+        self.seq_checkbox = ttk.Checkbutton(
+            self.ctrl_frame,
+            text='連拍自動補齊',
+	    command=self.on_seq_check,
+            variable=self.seq_checkbox_val,
+	    onvalue='Y',
+            offvalue='N')
+        self.seq_checkbox.grid(row=1, column=0)
+
+        self.seq_interval_val = tk.StringVar(self)
+        #self.seq_interval_val.trace('w', self.on_seq_interval_changed)
+        self.seq_interval_entry = ttk.Entry(
+            self.ctrl_frame,
+            textvariable=self.seq_interval_val,
+            width=4,
+            #validate='focusout',
+            #validatecommand=self.on_seq_interval_changed
+        )
+        self.seq_interval_entry.bind("<KeyRelease>", self.on_seq_interval_changed)
+        self.seq_interval_entry.grid(row=1, column=1)
+
+        self.seq_unit = ttk.Label(self.ctrl_frame,  text='分鐘 (相鄰照片間隔__分鐘，自動補齊所編輯的欄位資料)')
+        self.seq_unit.grid(row=1, column=2)
+
+        #########
+        # sheet #
+        #########
         self.sheet = Sheet(
             self.table_frame,
             data=[],
@@ -110,8 +142,7 @@ class Datatable(tk.Frame):
         self.sheet.enable_bindings()
         self.sheet.grid(row=0, column=0, rowspan=2, sticky='nswe')
         self.sheet.enable_bindings(('cell_select'))
-        self.sheet.highlight_rows(rows=[1], bg='#def') #TODO-EN
-        self.sheet.highlight_rows(rows=[2], bg='#eeeeee') #TODO-EN
+
         self.sheet.extra_bindings([
             ('cell_select', self.cell_select)
         ])
@@ -135,6 +166,8 @@ class Datatable(tk.Frame):
         ret = self.app.source.get_source(self.source_id)
         self.source_data = ret
 
+        #print (self.seq_interval_val.get())
+        #print (self.seq_checkbox_val.get())
         if ret['source'][7]:
             self.menu_select = json.loads(ret['source'][7])
             self.project_var.set(self.menu_select['project_name'])
@@ -151,10 +184,11 @@ class Datatable(tk.Frame):
             self.studyarea_var.set('')
             self.deployment_var.set('')
 
+        # prepare sheet data
         self.sheet_data = []
         for i in ret['image_list']:
             filename = i[2]
-            dtime = str(datetime.fromtimestamp(i[3]))
+            dtime_display = str(datetime.fromtimestamp(i[3]))
             alist = json.loads(i[7])
             path = i[1]
             status_display = '{} / {}'.format(
@@ -173,7 +207,7 @@ class Datatable(tk.Frame):
                     self.sheet_data.append([
                         status_display,
                         filename,
-                        dtime,
+                        dtime_display,
                         species,
                         lifestage,
                         sex,
@@ -185,13 +219,15 @@ class Datatable(tk.Frame):
                             'path': path,
                             'status': i[5],
                             'upload_status': i[12],
+                            'time': i[3],
+                            'seq': 0,
                         }
                     ])
             else:
                 self.sheet_data.append([
                     status_display,
                     filename,
-                    dtime,
+                    dtime_display,
                     '',
                     '',
                     '',
@@ -203,8 +239,69 @@ class Datatable(tk.Frame):
                         'path': path,
                         'status': i[5],
                         'upload_status': i[12],
+                        'time': i[3],
+                        'seq': 0
                     },
                 ])
+
+        # group by image_sequence
+        seq_info = {
+            'group_prev': False,
+            'group_next': False,
+            'map': {},
+            'idx': 0,
+            'salt': random.random(),
+            'int': 0
+        }
+
+        if int_v := self.seq_interval_val.get():
+            if v := int(int_v):
+                seq_info['int'] = v * 60
+
+        # via: https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
+        golden_ratio_conjugate = 0.618033988749895
+
+        for i, v in enumerate(self.sheet_data):
+            seq_num = 0
+            next_idx = min(i+1, len(self.sheet_data)-1)
+            this_time = self.sheet_data[i][9]['time']
+            next_time = self.sheet_data[next_idx][9]['time']
+
+            seq_info['group_prev'] = seq_info['group_next']
+            if next_time and (next_time - this_time) <= seq_info['int']:
+                seq_info['group_next'] = True
+            else:
+                seq_info['group_next'] = False
+
+            if seq_info['group_next'] == True and not seq_info['group_prev']:
+                seq_info['idx'] += 1
+                seq_info['salt'] += golden_ratio_conjugate
+                seq_info['salt'] %= 1
+
+            is_enable = False
+            if self.seq_checkbox_val.get() == 'Y' and seq_info['int'] > 0:
+                is_enable = True
+
+            if is_enable and \
+               (seq_info['group_next'] or seq_info['group_prev']):
+                seq_num = seq_info['idx']
+            else:
+                seq_num = 0
+
+            rgb_hex = ''
+            if seq_num:
+                rgb = colorsys.hls_to_rgb(seq_info['salt']*265, 0.8, 0.5)
+                rgb_hex = f'#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}'
+                if seq_info['idx'] not in seq_info['map']:
+                    seq_info['map'][seq_info['idx']] = {
+                        'color': rgb_hex,
+                        'rows': []
+                    }
+                seq_info['map'][seq_info['idx']]['rows'].append(i)
+            #print (i, this_time, next_time, next_time-this_time, seq_info['idx'], seq_info['salt'], rgb_hex)
+
+            # save to sheet_data
+            v[9]['highlight'] = rgb_hex
 
         # save to main.state
         self.parent.state['alist'] = self.sheet_data
@@ -213,6 +310,10 @@ class Datatable(tk.Frame):
             data=self.sheet_data,
             redraw=True,
         )
+        print (seq_info['map'])
+        print (self.seq_checkbox_val.get(), self.seq_interval_val.get())
+        for i, v in seq_info['map'].items():
+            self.sheet.highlight_rows(rows=v['rows'], bg=v['color'])
 
         sp_options = self.app.config.get('AnnotationFieldSpecies', 'choices').split(',')
         ls_options = self.app.config.get('AnnotationFieldLifeStage', 'choices').split(',')
@@ -434,3 +535,9 @@ class Datatable(tk.Frame):
             '200': '✅',
         }
         return status_map.get(code, '-')
+
+    def on_seq_check(self):
+        self.refresh()
+
+    def on_seq_interval_changed(self, *args):
+        self.refresh()
