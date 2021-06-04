@@ -38,7 +38,7 @@ class ImageViewer(tk.Frame):
 
     def on_key(self, action):
         row = self.parent.state.get('current_row', '')
-        print ('key', action, row)
+        #print ('key', action, row)
         if row == '':
             return False
 

@@ -17,11 +17,13 @@ class Server(object):
 
         has_network = self.ping()
         if has_network:
-            self.has_server = self.ping(config['host'])
-            if self.has_server:
-                self.projects = self.get_projects()
-            else:
-                tk.messagebox.showwarning('注意', '伺服器連線失敗')
+            # ICMP not allowed in default AWS EC2
+            #self.has_server = self.ping(config['host'][7:])
+            #if self.has_server:
+            #    self.projects = self.get_projects()
+            #else:
+            #    tk.messagebox.showwarning('注意', '伺服器連線失敗')
+            self.projects = self.get_projects()
         else:
             tk.messagebox.showwarning('注意', '無網路連線')
 

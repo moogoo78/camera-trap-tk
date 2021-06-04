@@ -10,7 +10,10 @@ from tkinter import (
 )
 
 from PIL import ImageTk, Image
+#from .tksheet2 import Sheet
 from tksheet import Sheet
+
+from autocomplete_widget import FreeSolo
 
 
 class Datatable(tk.Frame):
@@ -37,6 +40,7 @@ class Datatable(tk.Frame):
 
         self.table_frame.rowconfigure(0, weight=1)
         self.table_frame.rowconfigure(1, weight=5)
+
 
         #self.table_frame.grid_columnconfigure(0, weight=1)
         #self.table_frame.grid_rowconfigure(0, weight=1)
@@ -139,13 +143,24 @@ class Datatable(tk.Frame):
             displayed_columns=[0,1,2,3,4,5,6,7,8],
             all_columns_displayed=False,
         )
-        self.sheet.enable_bindings()
-        self.sheet.grid(row=0, column=0, rowspan=2, sticky='nswe')
-        self.sheet.enable_bindings(('cell_select'))
+        # choose proper bindings
+        self.sheet.enable_bindings((
+            'single_select',
+            'arrowkeys',
+            'right_click_popup_menu',
+            'column_width_resize',
+            'cell_select',
+            #'edit_bindings'
+            #'edit_cell',
+        ))
 
+        self.sheet.grid(row=0, column=0, rowspan=2, sticky='nswe')
         self.sheet.extra_bindings([
-            ('cell_select', self.cell_select)
+            ('cell_select', self.cell_select),
+            #('begin_edit_cell', self.begin_edit_cellx),
+            #('end_edit_cell', self.end_edit_cellx),
         ])
+        self.sheet.popup_menu_add_command("Edit", self.edit_cell, index_menu = False, header_menu = False)
 
         # thumb
         self.image_thumb = ttk.Label(self.table_frame, border=8, relief='raised')
@@ -160,6 +175,9 @@ class Datatable(tk.Frame):
 
         #self.image_viewer_button.grid(row=1, column=1, sticky='nw', padx=20)
         self.image_viewer_button.grid(row=1, column=1, sticky='n')
+
+        # foo-tail
+
 
     def refresh(self):
         self.source_id = self.parent.state.get('source_id', '')
@@ -310,17 +328,13 @@ class Datatable(tk.Frame):
             data=self.sheet_data,
             redraw=True,
         )
-        print (seq_info['map'])
-        print (self.seq_checkbox_val.get(), self.seq_interval_val.get())
+        #print (seq_info['map'])
+        #print (self.seq_checkbox_val.get(), self.seq_interval_val.get())
         for i, v in seq_info['map'].items():
             self.sheet.highlight_rows(rows=v['rows'], bg=v['color'])
 
-        sp_options = self.app.config.get('AnnotationFieldSpecies', 'choices').split(',')
-        ls_options = self.app.config.get('AnnotationFieldLifeStage', 'choices').split(',')
-        sx_options = self.app.config.get('AnnotationFieldSex', 'choices').split(',')
-        an_options = self.app.config.get('AnnotationFieldAntler', 'choices').split(',')
-
         #refresh_dropdowns
+        '''
         self.sheet.delete_dropdown('all')
         for row in range(0, len(self.sheet_data)):
             default_sp = self.sheet_data[row][3] or ''
@@ -331,13 +345,13 @@ class Datatable(tk.Frame):
             self.sheet.create_dropdown(row, 5, values=sx_options, set_value=default_sx, destroy_on_select = False, destroy_on_leave = False, see = False)
             default_an = self.sheet_data[row][6] or ''
             self.sheet.create_dropdown(row, 6, values=an_options, set_value=default_an, destroy_on_select = False, destroy_on_leave = False, see = False)
-
-        # disable mousewheel scroll change value in dropdown
+        '''
         # this method error!!
         #print (self.sheet.get_dropdowns())
-        for k, v in self.sheet.MT.cell_options:
-            if 'dropdown' in self.sheet.MT.cell_options[(k,v)]:
-                self.sheet.MT.cell_options[(k,v)]['dropdown'][0].unbind_class("TCombobox", "<MouseWheel>")
+        # disable mousewheel scroll change value in dropdown
+        #for k, v in self.sheet.MT.cell_options:
+        #    if 'dropdown' in self.sheet.MT.cell_options[(k,v)]:
+        #        self.sheet.MT.cell_options[(k,v)]['dropdown'][0].unbind_class("TCombobox", "<MouseWheel>")#
 
         self.sheet.refresh()
 
@@ -376,6 +390,8 @@ class Datatable(tk.Frame):
                 self.get_status_display(upload_status),
             )
             self.sheet.set_cell_data(response[1], 0, status_display)
+
+        self.create_freesolo_widget(response[1], response[2])
 
 
     def project_option_changed(self, *args):
@@ -502,7 +518,6 @@ class Datatable(tk.Frame):
 
     def on_save(self):
         d = self.sheet.get_sheet_data()
-
         for i, v in enumerate(d):
             row = {}
             if len(v) >= 4:
@@ -527,12 +542,12 @@ class Datatable(tk.Frame):
 
     def get_status_display(self, code):
         status_map = {
-            '10': '🗀',
-            '20': '👀',
-            '30': '☑️',
-            '100': '🔥',
+            '10': 'new',
+            '20': 'viewed',
+            '30': 'annotated',
+            '100': 'start',
             '110': '-',
-            '200': '✅',
+            '200': 'uploaded',
         }
         return status_map.get(code, '-')
 
@@ -541,3 +556,124 @@ class Datatable(tk.Frame):
 
     def on_seq_interval_changed(self, *args):
         self.refresh()
+
+    def edit_cell(self, event = None):
+        r, c = self.sheet.get_currently_selected()
+        self.sheet.row_height(
+            row=r,
+            height="text",
+            only_set_if_too_small=True,
+            redraw = False)
+        self.sheet.column_width(
+            column=c,
+            width="text",
+            only_set_if_too_small=True,
+            redraw=True)
+
+        if c == 3:
+            self.sheet.create_dropdown(r, c, values=('a', 'b', 'c'), set_value='a', destroy_on_select=False, destroy_on_leave =False, see=True, set_cell_on_select=False)
+            #self.sheet.set_dropdown_values
+            #print (self.sheet.MT.cell_options[(r, c)]['dropdown'][0].get_my_value())
+        else:
+            self.sheet.create_text_editor(
+                row=r,
+                column=c,
+                text=self.sheet.get_cell_data(r, c),
+                set_data_ref_on_destroy=False,
+                binding=self.end_edit_cell)
+
+    def end_edit_cell(self, event = None):
+        newtext = self.sheet.get_text_editor_value(
+            event,
+            r=event[0],
+            c=event[1],
+            set_data_ref_on_destroy=True,
+            move_down=True,
+            redraw=True,
+            recreate=True)
+        print (newtext)
+
+
+
+    def begin_edit_cellx(self, event = None):
+        r, c = self.sheet.get_currently_selected()
+        print ('begin edit', r, c)
+
+        #self.create_freesolo_widget(r, c)
+
+    def end_edit_cellx(self, event = None):
+        print ('end', event)
+        #if self.freesolo:
+        #    print (self.freesolo.autocomplete.get_value(), 'fooo')
+        #r, c = self.sheet.get_currently_selected()
+        #print (r, c)
+
+        #newtext = self.sheet.get_text_editor_value(
+        #    event,
+        #    r=event[0],
+        #    c=event[1],
+        #    set_data_ref_on_destroy=True,
+        #    move_down=True,
+        #    redraw=True,
+        #    recreate=True)
+        #print (newtext)
+
+    def create_freesolo_widget(self, r, c):
+        x = self.sheet.MT.col_positions[c]
+        y = self.sheet.MT.row_positions[r]
+        w = self.sheet.MT.col_positions[c + 1] - x + 1
+        h = self.sheet.MT.row_positions[r + 1] - y + 6
+
+        self.destroy_freesolo()
+
+
+        sp_options = self.app.config.get('AnnotationFieldSpecies', 'choices').split(',')
+        ls_options = self.app.config.get('AnnotationFieldLifeStage', 'choices').split(',')
+        sx_options = self.app.config.get('AnnotationFieldSex', 'choices').split(',')
+        an_options = self.app.config.get('AnnotationFieldAntler', 'choices').split(',')
+        print (sp_options)
+        self.freesolo = FreeSolo(self.sheet.MT, sp_options, self.my_edit_cell)
+        self.freesolo_id = self.sheet.MT.create_window(
+            (x,y),
+            width=w,
+            height=h,
+            window=self.freesolo.autocomplete,
+            anchor='nw')
+        self.freesolo.autocomplete.focus_set()
+        self.freesolo.autocomplete.bind("<FocusOut>", lambda x: self.freesolo_focusout(x, r, c))
+        print ('create freesolo id', self.freesolo_id)
+
+    def freesolo_focusout(self, e, r, c):
+        #print (e, 'bright', r,c)
+        text = self.freesolo.autocomplete.get_value()
+        print ('get text', text)
+        self.sheet.set_cell_data(r, c, text, redraw=True)
+        self.sheet.refresh()
+        self.destroy_freesolo()
+
+    def destroy_freesolo(self):
+        try:
+            self.sheet.MT.delete(self.freesolo_id)
+        except:
+            pass
+        try:
+            self.freesolo.destroy()
+        except:
+            pass
+        try:
+            self.freesolo = None
+        except:
+            pass
+        try:
+            self.freesolo_id = None
+        except:
+            pass
+        #self.show_current()
+        #if event is not None and len(event) >= 3 and "Escape" in event:
+        #    self.focus_set()
+
+
+    def my_edit_cell(self, x):
+        r, c = self.sheet.get_currently_selected()
+        print ('my-edit-cell', x)
+        self.sheet.set_cell_data(r, c, x, redraw=True)

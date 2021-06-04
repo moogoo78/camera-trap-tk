@@ -23,19 +23,24 @@ use poetry to manage python environment
 
 ```sh
 $ poetry install
+$ poetry shell
 ```
 
 2. run
 
 ```sh
-$ poetry shell
 $ python ./src/app.py
+```
+use custom ini file
+
+```sh
+$ python ./src/app.py -i my-dev.ini
 ```
 
 ## Build
 
 ```sh
-$ pyinstaller.ex.e --onefile -F .\src\app.py --clean
+$ pyinstaller.exe --onefile -F .\src\app.py --clean
 ```
 
 提供 config.ini file, 注意: `account_id`,
