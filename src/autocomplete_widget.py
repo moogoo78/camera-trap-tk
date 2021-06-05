@@ -258,8 +258,8 @@ class Combobox_Autocomplete(tk.Entry, object):
 
 
 class FreeSolo(tk.Frame):
-    def __init__(self, parent, options, value_callback):
-        tk.Frame.__init__(self, parent)
+    def __init__(self, parent, options, value_callback, height, width):
+        tk.Frame.__init__(self, parent, height=height, width=width)
         self.parent = parent
         self.autocomplete = Combobox_Autocomplete(
             parent,
