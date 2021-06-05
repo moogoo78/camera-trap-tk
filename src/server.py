@@ -90,4 +90,6 @@ class Server(object):
         # Building the command. Ex: "ping -c 1 google.com"
         command = ['ping', param, '1', host]
 
-        return subprocess.call(command) == 0
+        result = subprocess.run(command, capture_output=True)
+        return result.returncode == 0
+
