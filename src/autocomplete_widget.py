@@ -14,7 +14,7 @@ def autoscroll(sbar, first, last):
     sbar.set(first, last)
 
 class Combobox_Autocomplete(tk.Entry, object):
-    def __init__(self, master, list_of_items=None, autocomplete_function=None, listbox_width=None, listbox_height=9, ignorecase_match=False, startswith_match=True, vscrollbar=True, hscrollbar=True, edit_func=None, **kwargs):
+    def __init__(self, master, list_of_items=None, autocomplete_function=None, listbox_width=None, listbox_height=9, ignorecase_match=False, startswith_match=True, vscrollbar=True, hscrollbar=True, value_callback=None, **kwargs):
 
         if hasattr(self, "autocomplete_function"):
             if autocomplete_function is not None:
@@ -86,7 +86,7 @@ class Combobox_Autocomplete(tk.Entry, object):
         self.bind("<Escape>", lambda event: self.unpost_listbox())
 
         # moogoo
-        self.edit_func = edit_func
+        self.value_callback = value_callback
 
     def _on_tab(self, event):
         self.post_listbox()
@@ -96,7 +96,7 @@ class Combobox_Autocomplete(tk.Entry, object):
 
         entry_data = self._entry_var.get()
 
-        if entry_data == '':
+        if not entry_data == '':
             self.unpost_listbox()
             self.focus()
         else:
@@ -117,8 +117,8 @@ class Combobox_Autocomplete(tk.Entry, object):
                 self.unpost_listbox()
                 self.focus()
 
-        if self.edit_func:
-            self.edit_func(entry_data)
+        # shlee edited
+        self.value_callback(entry_data)
 
     def _build_listbox(self, values):
         listbox_frame = tk.Frame()
@@ -210,7 +210,7 @@ class Combobox_Autocomplete(tk.Entry, object):
             self.focus()
             self.icursor(tk.END)
             self.xview_moveto(1.0)
-        
+
         return "break"
 
     def _previous(self, event):
@@ -258,13 +258,13 @@ class Combobox_Autocomplete(tk.Entry, object):
 
 
 class FreeSolo(tk.Frame):
-    def __init__(self, parent, options, edit_func):
+    def __init__(self, parent, options, value_callback):
         tk.Frame.__init__(self, parent)
         self.parent = parent
         self.autocomplete = Combobox_Autocomplete(
             parent,
             options,
-            edit_func=edit_func,
+            value_callback=value_callback,
             highlightthickness=1)
 
         self.autocomplete.grid(row=0, column=0, sticky='nswe')

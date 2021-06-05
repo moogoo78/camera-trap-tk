@@ -10,25 +10,33 @@ from tkinter import (
 from frame import (
     Toolbar,
     Sidebar,
-    Main,
+    #Main,
     Statusbar,
     Datatable,
     Landing,
     ImageViewer,
 )
+from main import Main
 
 from database import Database
 from source import Source
 from server import Server
 from config import Config
 
+# colors
+# 2d3142
+# 4f5d75
+# bfc0c0
+# ffffff
+# ef8354
+
 DB_FILE = 'ct.db'
 
-MAIN_FRAMES = {
+'''MAIN_FRAMES = {
     'landing': Landing,
     'datatable': Datatable,
-    'image-viewer': ImageViewer,
-}
+    #'image-viewer': ImageViewer,
+}'''
 
 class Application(tk.Tk):
 
@@ -55,21 +63,27 @@ class Application(tk.Tk):
         self.grid_columnconfigure(1, weight=1)
 
         #self.title_font = font.Font(family='Helvetica', size=18, weight="bold", slant="italic")
-        self.toolbar = Toolbar(self)
-        self.sidebar = Sidebar(
+        self.toolbar = Toolbar(
             self,
-            background='bisque',
-            width=300)
+            background='#2d3142'
+        )
         self.main = Main(
             self,
-            frames=MAIN_FRAMES,
-            background='white',
-            width=980,
-            bd=1,
-            relief='sunken')
+            background='#ffffff',
+        )
+        self.sidebar = Sidebar(
+            self,
+            background='#4f5d75',
+            width=300)
+        #self.main = Main(
+        #    self,
+        #    frames=MAIN_FRAMES,
+        #    background='#def',
+        #    bd=1,
+        #    relief='sunken')
         self.statusbar = Statusbar(
             self,
-            background='gray')
+            background='#bfc0c0')
 
         #self.message = tk.Label(self, text="Hello, world!")
         #self.message.grid(row=1, column=0, columnspan=2)

@@ -391,7 +391,7 @@ class Datatable(tk.Frame):
             )
             self.sheet.set_cell_data(response[1], 0, status_display)
 
-        self.create_freesolo_widget(response[1], response[2])
+        #self.create_freesolo_widget(response[1], response[2])
 
 
     def project_option_changed(self, *args):
@@ -631,8 +631,8 @@ class Datatable(tk.Frame):
         ls_options = self.app.config.get('AnnotationFieldLifeStage', 'choices').split(',')
         sx_options = self.app.config.get('AnnotationFieldSex', 'choices').split(',')
         an_options = self.app.config.get('AnnotationFieldAntler', 'choices').split(',')
-        print (sp_options)
-        self.freesolo = FreeSolo(self.sheet.MT, sp_options, self.my_edit_cell)
+        #print (sp_options)
+        self.freesolo = FreeSolo(self.sheet.MT, sp_options, self.get_freesolo_value)
         self.freesolo_id = self.sheet.MT.create_window(
             (x,y),
             width=w,
@@ -645,11 +645,12 @@ class Datatable(tk.Frame):
 
     def freesolo_focusout(self, e, r, c):
         #print (e, 'bright', r,c)
-        text = self.freesolo.autocomplete.get_value()
-        print ('get text', text)
-        self.sheet.set_cell_data(r, c, text, redraw=True)
-        self.sheet.refresh()
-        self.destroy_freesolo()
+        if self.freesolo:
+            text = self.freesolo.autocomplete.get_value()
+            print ('get text', text)
+            self.sheet.set_cell_data(r, c, text, redraw=True)
+            self.sheet.refresh()
+            self.destroy_freesolo()
 
     def destroy_freesolo(self):
         try:
@@ -673,7 +674,7 @@ class Datatable(tk.Frame):
         #    self.focus_set()
 
 
-    def my_edit_cell(self, x):
+    def get_freesolo_value(self, text):
         r, c = self.sheet.get_currently_selected()
-        print ('my-edit-cell', x)
-        self.sheet.set_cell_data(r, c, x, redraw=True)
+        #print ('my-edit-cell', x)
+        self.sheet.set_cell_data(r, c, text, redraw=True)

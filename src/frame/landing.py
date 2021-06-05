@@ -5,7 +5,7 @@ from tkinter import (
 class Landing(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, *args, **kwargs)
+        tk.Frame.__init__(self, parent, background='pink', *args, **kwargs)
         self.parent = parent
 
         self.message = ttk.Label(self, text="Hello")

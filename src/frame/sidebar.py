@@ -40,7 +40,7 @@ class Sidebar(tk.Frame):
             source_button = ttk.Button(
                 self,
                 text=i[3],
-                command=lambda x=i[0]: self.parent.main.show_frame('datatable', source_id=x))
+                command=lambda x=i[0]: self.parent.main.refresh(x))
             source_button.grid(pady=2)
             self.source_list.append(source_button)
 
