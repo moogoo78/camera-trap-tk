@@ -5,10 +5,11 @@ from helpers import (
     HEADING,
     image_list_to_table,
     get_tree_rc,
-    get_tree_rc_point,
+    get_tree_rc_place,
+    FreeSolo,
 )
 
-from autocomplete_widget import FreeSolo
+#from autocomplete_widget import FreeSolo
 
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -26,6 +27,9 @@ class Main(tk.Frame):
             'sa_to_d': {}
         }
         self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
+
+        self.current_rc = ('', '')
+        self.freesolo = None
 
         # layout
         #self.grid_propagate(False)
@@ -155,11 +159,11 @@ class Main(tk.Frame):
         #self.message.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
 
         # treeview
-
         self.tree = ttk.Treeview(
             self.table_frame,
             columns=[x[0] for x in HEADING],
             show='headings')
+        self.tree.row_height = 23 # TODO guess
         self.tree.bind('<<TreeviewSelect>>', self.select_cell)
         #self.tree.bind('<<TreeviewOpen>>', self.select_open)
         #self.tree.bind('<<TreeviewClose>>', self.select_close)
@@ -196,8 +200,8 @@ class Main(tk.Frame):
         self.source_data = self.app.source.get_source(source_id)
         self.tree.delete(*self.tree.get_children())
         data = image_list_to_table(self.source_data['image_list'])
-        for i in data:
-            self.tree.insert('', tk.END, values=i)
+        for i, v in enumerate(data):
+            self.tree.insert('', tk.END, i, values=v)
 
     def project_option_changed(self, *args):
         name = self.project_var.get()
@@ -368,31 +372,92 @@ class Main(tk.Frame):
             # list
             record = item['values']
             #
-            print ('|'.join(record))
+            #print ('|'.join(record))
 
     def on_click(self, event):
-        username = tk.StringVar()
-        self.name = ttk.Entry(self.tree, textvariable=username)
-
-        #self.freesolo = FreeSolo(self.table_frame, ['abba', 'ace of base', 'ac/dc', 'alice in chain'], self.get_freesolo_value, height=20, width=40)
-        #self.freesolo.place(x=300, y=300, height=20, width=40)
-        r, c = get_tree_rc(self.tree)
-        if not r or not c:
-            return False
-        x, y = get_tree_rc_point(self.tree, r, c)
-        #print (x, y)
-        self.name.place(x=x, y=y, width=100, height=30)
-        self.name.focus_set()
-        self.name.bind("<FocusOut>", lambda e: self.focus_out(e))
         #for item in self.tree.selection():
         #    item_text = self.tree.item(item,"values")
-            #print(item_text[0])
 
-    def get_freesolo_value(self, text):
-        print ('vv', text)
+        # !! update current_rc
+        self.current_rc = get_tree_rc(self.tree)
+        print ('on_click: ', self.current_rc)
+        if not self.current_rc:
+            return False
 
-    def focus_out(self, event):
-        print (event)
-        if self.name:
-            self.name.destroy()
+        if self.current_rc[1][1] < 3:
+            # readonly column
+            return False
 
+        x, y = get_tree_rc_place(
+            self.tree,
+            self.current_rc[1][0],
+            self.current_rc[1][1])
+
+        # get default value
+        item = self.tree.item(self.current_rc[0][0])
+        val = None
+        if v:= item['values'][self.current_rc[1][1]]:
+            val = v
+
+        if self.freesolo:
+            self.freesolo.terminate()
+        self.create_freesolo(x, y, val)
+
+
+    def create_freesolo(self, x, y, value):
+        self.freesolo = FreeSolo(
+            self.tree,
+            ['ace of base', 'ac/dc', 'abba', 'alice in chain'],
+            value=value,
+            entry_on_trace=self.handle_freesolo_trace,
+            entry_on_update=self.handle_freesolo_update)
+        #listbox_width=100 #TODO
+
+        self.freesolo.place(x=x, y=y)
+        self.freesolo.bind("<FocusOut>", lambda e: self.handle_freesolo_focusout(e))
+        self.freesolo.focus()
+
+    def handle_freesolo_update(self, event):
+        '''update freesolo value to treeview'''
+        print ('update', event)
+        self.set_freesolo_value()
+        self.freesolo.terminate()
+
+    def handle_freesolo_trace(self, *args):
+        print ('trace:', args, self.freesolo.value.get())
+
+
+    def handle_freesolo_focusout(self, event):
+        print ('focusout:', event)
+        if not self.freesolo:
+            return False
+
+        self.set_freesolo_value()
+        # tkinder call focusout first then listbox's binding
+        self.freesolo.destroy()
+
+    def set_freesolo_value(self):
+        if not self.freesolo:
+            return False
+
+        #val = None
+        # check from listbox
+        if listbox := self.freesolo.listbox:
+            current_selection = listbox.curselection()
+            if current_selection:
+                text = listbox.get(current_selection)
+                if text:
+                    # save to entry
+                    self.freesolo.value.set(text)
+
+        val = self.freesolo.value.get()
+        #curItem = self.tree.focus()
+        # row
+        item = self.tree.item(self.current_rc[0][0])
+        # column
+        #values[self.current_rc[1][1]] = val
+        print ('set entry', val)
+        self.tree.set(
+            self.current_rc[0][0],
+            self.current_rc[0][1],
+            val)
