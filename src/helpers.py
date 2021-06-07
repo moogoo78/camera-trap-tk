@@ -4,16 +4,20 @@ from tkinter import ttk
 import json
 from datetime import datetime
 
+'''
+key, label, type, choices in ini
+'''
 HEADING = (
-    ('status', '標注/上傳狀態'),
-    ('filename', '檔名'),
-    ('datetime','日期時間'),
-    ('species', '物種'),
-    ('lifestage', '年齡'),
-    ('sex', '性別'),
-    ('antler', '角況'),
-    ('remark', '備註'),
-    ('animal_id', '個體 ID')
+    ('index', '#', 'readonly'),
+    ('status', '標注/上傳狀態', 'readonly'),
+    ('filename', '檔名', 'readonly'),
+    ('datetime','日期時間', 'readonly'),
+    ('species', '物種', 'freesolo', 'AnnotationFieldSpecies'),
+    ('lifestage', '年齡', 'freesolo', 'AnnotationFieldLifeStage'),
+    ('sex', '性別', 'freesolo', 'AnnotationFieldSex'),
+    ('antler', '角況', 'freesolo', 'AnnotationFieldAntler'),
+    ('remark', '備註', 'freesolo'),
+    ('animal_id', '個體 ID', 'freesolo')
 )
 
 def _get_status_display(code):
@@ -29,6 +33,8 @@ def _get_status_display(code):
 
 def image_list_to_table(image_list):
     rows = []
+
+    counter = 0
     for i in image_list:
         filename = i[2]
         dtime_display = str(datetime.fromtimestamp(i[3]))
@@ -41,6 +47,7 @@ def image_list_to_table(image_list):
         image_id = i[0]
         if len(alist) >= 1:
             for j in alist:
+                counter += 1
                 species = j.get('species', '')
                 lifestage = j.get('lifestage', '')
                 sex = j.get('sex', '')
@@ -48,6 +55,7 @@ def image_list_to_table(image_list):
                 animal_id = j.get('animal_id', '')
                 remarks = j.get('remarks', '')
                 rows.append([
+                    counter,
                     status_display,
                     filename,
                     dtime_display,
@@ -67,7 +75,9 @@ def image_list_to_table(image_list):
                     }
                 ])
         else:
+            counter += 1
             rows.append([
+                counter,
                 status_display,
                 filename,
                 dtime_display,
@@ -122,7 +132,7 @@ def get_tree_rc_place(tree, r, c):
     return (to_w, (r+1)*tree.row_height)
 
 
-class FreeSolo(tk.Entry, object):
+class FreeSolo_(ttk.Entry, object):
     def __init__(
             self,
             parent,
@@ -135,6 +145,7 @@ class FreeSolo(tk.Entry, object):
     ):
         #autocomplete_function=None, , ignorecase_match=False, startswith_match=True, vscrollbar=True, hscrollbar=True, value_callback=None, **kwargs):
         self.choices = choices
+        self.filtered_choices = []
 
         entry_args['textvariable'] = tk.StringVar()
         self.value = entry_args['textvariable']
@@ -168,6 +179,19 @@ class FreeSolo(tk.Entry, object):
         #self.build_listbox()
 
 
+    def filter_listbox_choices(self, val):
+        if val and self.choices:
+            filtered = [i for i in self.choices if i.startswith(val)]
+            print ('filtered:', filtered, self.listbox)
+            if len(filtered) > 0:
+                if self.listbox is None:
+                    self.create_listbox(filtered)
+                else:
+                    self.listbox.delete(0, tk.END)
+                    for i in filtered:
+                        self.listbox.insert(tk.END, i)
+        return []
+
     def on_change(self, name, index, mode):
         val = self.value.get()
         if val == '':
@@ -194,7 +218,7 @@ class FreeSolo(tk.Entry, object):
                 #self.focus()
                 self.remove_listbox()
 
-    def create_listbox(self):
+    def create_listbox(self, filtered_choices=[]):
         listbox_frame = tk.Frame()
         self.listbox = tk.Listbox(listbox_frame, **self.listbox_args)
         self.listbox.grid(row=0, column=0, sticky = 'news')
@@ -220,15 +244,14 @@ class FreeSolo(tk.Entry, object):
         width = 120
         listbox_frame.place(in_=self, x=x, y=y, width=width)
 
-        self.update_listbox_choices()
+        #self.update_listbox_choices(filtered_choices)
 
-    def update_listbox_choices(self):
-        if not self.listbox:
-            self.create_listbox()
-        else:
-            self.listbox.delete(0, tk.END)
-            for i in self.choices:
-                self.listbox.insert(tk.END, i)
+        #def update_listbox_choices(self, filtered_choices=[]):
+        #print ('update list', filtered_choices)
+
+        choices = filtered_choices if len(filtered_choices) else self.choices
+        for i in choices:
+            self.listbox.insert(tk.END, i)
 
             #height = min(self._listbox_height, len(values))
             #        self._listbox.configure(height=height)
@@ -260,6 +283,126 @@ class FreeSolo(tk.Entry, object):
 
         #self.icursor(tk.END)
         #self.xview_moveto(1.0)
+
+    def remove_listbox(self):
+        if self.listbox is not None:
+            self.listbox.master.destroy()
+            self.listbox = None
+
+    def terminate(self):
+        self.remove_listbox()
+        self.value.set('')
+        self.destroy()
+
+
+class FreeSolo(ttk.Entry, object):
+    def __init__(
+            self,
+            parent,
+            choices=None,
+            value=None,
+            entry_args={},
+            listbox_args={},
+    ):
+        #autocomplete_function=None, , ignorecase_match=False, startswith_match=True, vscrollbar=True, hscrollbar=True, value_callback=None, **kwargs):
+        self.choices = choices
+        self.filtered_choices = []
+
+        if not value:
+            entry_args['textvariable'] = tk.StringVar()
+        else:
+            self.value = entry_args['textvariable'] = value
+
+        default_listbox_args = {
+            'width': None,
+            'height': 9,
+            'background': 'white',
+            'selectmode': tk.SINGLE,
+            'activestyle': 'none',
+            'exportselection': False,
+        }
+        self.listbox_args = {**default_listbox_args, **listbox_args}
+
+        ttk.Entry.__init__(
+            self,
+            parent,
+            **entry_args)
+
+        self.value_trace_id = self.value.trace('w', self.handle_trace)
+        #self.bind('<Return>', self.handle_update) # next?
+        #self.bind('<Escape>', self.handle_update)
+        self.bind('<Down>', lambda event: self.create_listbox())
+
+        self.listbox = None
+        #self.build_listbox()
+
+    def handle_trace(self, name, index, mode):
+        val = self.value.get()
+
+        if val and self.choices:
+            filtered = [i for i in self.choices if i.startswith(val)]
+            #print ('filtered:', filtered, self.listbox)
+            if len(filtered) > 0:
+                if self.listbox is None:
+                    self.create_listbox(filtered)
+                else:
+                    self.listbox.delete(0, tk.END)
+                    for i in filtered:
+                        self.listbox.insert(tk.END, i)
+
+    def handle_update(self, event):
+        if listbox := self.listbox:
+            current_selection = listbox.curselection()
+            if current_selection:
+                text = listbox.get(current_selection)
+                self.value.set(text)
+                print ('update', event)
+
+
+        # destroy listbox
+        self.remove_listbox()
+
+        self.focus()
+        self.icursor(tk.END)
+        self.xview_moveto(1.0)
+
+    def create_listbox(self, filtered_choices=[]):
+        listbox_frame = tk.Frame()
+        self.listbox = tk.Listbox(listbox_frame, **self.listbox_args)
+        self.listbox.grid(row=0, column=0, sticky = 'news')
+
+        self.listbox.bind("<ButtonRelease-1>", self.handle_update)
+#        self.listbox.bind("<Return>", self._update_entry)
+        self.listbox.bind("<Escape>", lambda event: self.unpost_listbox())
+
+        listbox_frame.grid_columnconfigure(0, weight= 1)
+        listbox_frame.grid_rowconfigure(0, weight= 1)
+
+        #x = -self.cget("borderwidth") - self.cget("highlightthickness")
+        x = 0
+        #y = self.winfo_height()-self.cget("borderwidth") - self.cget("highlightthickness")
+        y = self.winfo_height()
+
+        if self.listbox_args.get('width', ''):
+            width = self.listbox_width
+        else:
+            width = self.winfo_width()
+        #print (x, y, width, self.winfo_height(),self.cget("borderwidth"),self.cget("highlightthickness"))
+        y = 22
+        width = 120
+        listbox_frame.place(in_=self, x=x, y=y, width=width)
+
+        #self.update_listbox_choices(filtered_choices)
+
+        #def update_listbox_choices(self, filtered_choices=[]):
+        #print ('update list', filtered_choices)
+
+        choices = filtered_choices if len(filtered_choices) else self.choices
+        for i in choices:
+            self.listbox.insert(tk.END, i)
+
+            #height = min(self._listbox_height, len(values))
+            #        self._listbox.configure(height=height)
 
     def remove_listbox(self):
         if self.listbox is not None:
