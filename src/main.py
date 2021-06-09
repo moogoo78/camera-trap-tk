@@ -8,9 +8,11 @@ from PIL import ImageTk, Image
 from helpers import (
     HEADING,
     image_list_to_table,
+    data_to_tree_values,
     get_tree_rc,
     get_tree_rc_place,
     FreeSolo,
+    TreeHelper,
 )
 
 #from autocomplete_widget import FreeSolo
@@ -32,7 +34,10 @@ class Main(tk.Frame):
         }
         self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
 
-        self.current_rc = ('', '') # DEPRICATED
+        self.source_id = None
+
+        self.tree_helper = TreeHelper()
+        self.annotation_list = []
 
         # layout
         #self.grid_propagate(False)
@@ -119,16 +124,18 @@ class Main(tk.Frame):
             value=self.species_value,
         )
         self.species_free.grid(row=1, column=0, padx=4)
+        self.annotation_list.append((self.species_free, self.species_value))
+        self.species_free.bind('<Up>', self.move_key)
+        self.species_free.bind('<Down>', self.move_key)
+        self.species_free.bind('<Left>', self.move_key)
+        self.species_free.bind('<Right>', self.move_key)
+
 
         lifestage_label = ttk.Label(
             self.annotation_label_frame,
             text='年齡')
         lifestage_label.grid(row=0, column=1, sticky='we', pady=(6, 0))
         self.lifestage_value = tk.StringVar()
-        #self.lifestage_entry = ttk.Entry(
-        #    self.annotation_label_frame,
-        #    textvariable=self.lifestage_value
-        #)
         ls_choices = self.app.config.get('AnnotationFieldLifeStage', 'choices').split(',')
         self.lifestage_free = FreeSolo(
             self.annotation_label_frame,
@@ -136,6 +143,7 @@ class Main(tk.Frame):
             value=self.lifestage_value,
         )
         self.lifestage_free.grid(row=1, column=1, padx=4)
+        self.annotation_list.append((self.lifestage_free, self.lifestage_value))
 
         sex_label = ttk.Label(
             self.annotation_label_frame,
@@ -149,6 +157,7 @@ class Main(tk.Frame):
             value=self.sex_value,
         )
         self.sex_free.grid(row=1, column=2, padx=4)
+        self.annotation_list.append((self.sex_free, self.sex_value))
 
         antler_label = ttk.Label(
             self.annotation_label_frame,
@@ -162,6 +171,7 @@ class Main(tk.Frame):
             value=self.antler_value,
         )
         self.antler_free.grid(row=3, column=0, padx=4)
+        self.annotation_list.append((self.antler_free, self.antler_value))
 
         remark_label = ttk.Label(
             self.annotation_label_frame,
@@ -173,6 +183,7 @@ class Main(tk.Frame):
             textvariable=self.remark_value
         )
         self.remark_entry.grid(row=3, column=1, padx=4)
+        self.annotation_list.append((self.remark_entry, self.remark_value))
 
         animal_id_label = ttk.Label(
             self.annotation_label_frame,
@@ -184,10 +195,11 @@ class Main(tk.Frame):
             textvariable=self.animal_id_value
         )
         self.animal_id_entry.grid(row=3, column=2, padx=4)
+        self.annotation_list.append((self.animal_id_entry, self.animal_id_value))
 
         annotation_update_button = ttk.Button(
             self.annotation_label_frame,
-            text='update',
+            text='update to table',
             command=self.update_annotation,
         )
         annotation_update_button.grid(row=4, column=0, padx=16, pady=16)
@@ -265,7 +277,7 @@ class Main(tk.Frame):
         self.seq_checkbox = ttk.Checkbutton(
             self.ctrl_frame,
             text='連拍自動補齊',
-	    command=self.on_seq_check,
+	    command=self.refresh,
             variable=self.seq_checkbox_val,
 	    onvalue='Y',
             offvalue='N')
@@ -280,7 +292,8 @@ class Main(tk.Frame):
             #validate='focusout',
             #validatecommand=self.on_seq_interval_changed
         )
-        self.seq_interval_entry.bind("<KeyRelease>", self.on_seq_interval_changed)
+        self.seq_interval_entry.bind(
+            "<KeyRelease>", lambda _: self.refresh())
         self.seq_interval_entry.grid(row=1, column=1)
 
         self.seq_unit = ttk.Label(self.ctrl_frame,  text='分鐘 (相鄰照片間隔__分鐘，自動補齊所編輯的欄位資料)')
@@ -303,24 +316,14 @@ class Main(tk.Frame):
             columns=[x[0] for x in HEADING],
             show='headings')
         self.tree.row_height = 20 # TODO guess
-        self.tree.bind('<<TreeviewSelect>>', self.select_cell)
+        self.tree.bind('<<TreeviewSelect>>', self.handle_select)
         #self.tree.bind('<<TreeviewOpen>>', self.select_open)
         #self.tree.bind('<<TreeviewClose>>', self.select_close)
-        self.tree.bind('<ButtonRelease-1>', self.on_click)
+        #self.tree.bind('<ButtonRelease-1>', self.on_click)
 
         for i in HEADING:
             self.tree.heading(i[0], text=i[1])
-
-        self.tree.column('index', width=25, stretch=False)
-        self.tree.column('status', width=40, stretch=False)
-        self.tree.column('filename', width=150, stretch=False)
-        self.tree.column('datetime', width=150, stretch=False)
-        self.tree.column('species', width=150, stretch=False)
-        self.tree.column('antler', width=50, stretch=False)
-        self.tree.column('sex', width=50, stretch=False)
-        self.tree.column('lifestage', width=50, stretch=False)
-        self.tree.column('remark', width=50, stretch=False)
-        self.tree.column('animal_id', width=50, stretch=False)
+            self.tree.column(i[0], **i[2])
 
         self.tree.grid(row=0, column=0, sticky='nsew')
 
@@ -332,8 +335,6 @@ class Main(tk.Frame):
         )
         scrollbar_x.grid(row=1, column=0, sticky='ew')
         scrollbar_y.grid(row=0, column=1, sticky='ns')
-
-        self.data = []
 
         # via: https://stackoverflow.com/questions/56331001/python-tkinter-treeview-colors-are-not-updating
         def fixed_map(option):
@@ -350,21 +351,39 @@ class Main(tk.Frame):
                   foreground=fixed_map("foreground"),
                   background=fixed_map("background"))
 
-    def refresh(self, source_id):
+    def from_source(self, source_id=None):
         # get source_data
-        self.source_id = source_id
-        #self.source_id = self.parent.state.get('source_id', '')
+        print ('from source', source_id)
         self.source_data = self.app.source.get_source(source_id)
-        self.tree.delete(*self.tree.get_children())
-        self.data = image_list_to_table(self.source_data['image_list'])
+        self.refresh()
 
-        for i, v in enumerate(self.data):
-            if i%2 == 0:
-                  self.tree.insert('', tk.END, i, values=v, tags=('even','mytag1'))
-            else:
-                  self.tree.insert('', tk.END, i, values=v, tags=('odd','mytag2'))
-        self.tree.tag_configure('odd', background='#E8E8E8')
-        self.tree.tag_configure('even', background='#DFDFDF')
+    def refresh(self, *args):
+        print ('refresh', self, *args)
+        self.tree.delete(*self.tree.get_children())
+
+        self.tree_helper.set_data_from_list(self.source_data['image_list'])
+
+        seq_info = None
+        if self.seq_checkbox_val.get() == 'Y':
+            if seq_int := self.seq_interval_val.get():
+                seq_info = self.tree_helper.group_image_sequence(seq_int, seq_tag='tag_name')
+
+        tree_data = self.tree_helper.to_tree()
+
+        if seq_info:
+            for i, v in enumerate(tree_data):
+                tag = self.tree_helper.data[i]['tag_name']
+                self.tree.insert('', tk.END, i, values=v, tags=(tag),)
+            for tag_name, item in seq_info['map'].items():
+                self.tree.tag_configure(tag_name, background=item['color'])
+        else:
+            for i, v in enumerate(tree_data):
+                if i%2 == 0:
+                    self.tree.insert('', tk.END, i, values=v, tags=('even',))
+                else:
+                    self.tree.insert('', tk.END, i, values=v, tags=('odd',))
+            self.tree.tag_configure('odd', background='#E8E8E8')
+            self.tree.tag_configure('even', background='#DFDFDF')
 
     def project_option_changed(self, *args):
         name = self.project_var.get()
@@ -489,17 +508,11 @@ class Main(tk.Frame):
 
     def save_annotation(self):
         for row in self.tree.get_children():
-            values = self.tree.item(row, 'values')
-            d = {
-                'species': values[4],
-                'lifestage': values[5],
-                'sex': values[6],
-                'antler': values[7],
-                'remarks': values[8],
-                'animal_id': values[9]
-            }
-            # TODO self.data
-            image_id = self.data[int(row)][10]['image_id']
+            record = self.tree.item(row, 'values')
+            a_conf = self.tree_helper.get_conf('annotation')
+            d = {x[1][0]: record[x[0]] for x in a_conf}
+
+            image_id = self.tree_helper.data[int(row)]['image_id']
             if image_id:
                 sql = "UPDATE image SET annotation='[{}]', changed={} WHERE image_id={}".format(json.dumps(d), int(time.time()), image_id)
                 self.app.db.exec_sql(sql)
@@ -518,22 +531,34 @@ class Main(tk.Frame):
         }
         return status_map.get(code, '-')
 
-    def on_seq_check(self):
-        self.refresh()
-
-    def on_seq_interval_changed(self, *args):
-        self.refresh()
-
-    def select_cell(self, event):
+    def handle_select(self, event):
+        row_id = None
         for selected_item in self.tree.selection():
-            # dictionary
-            values = self.tree.item(selected_item, values)
-            #self.species_value.set(values[2])
-            if row_id := self.tree.focus():
-                # TODO self.data not good
-                path = self.data[int(row_id)][10]['path']
-                self.show_thumb(path)
-            #print ('|'.join(record))
+            print ('select first: ', selected_item)
+            #values = self.tree.item(selected_item, 'values')
+            row_id = selected_item
+            break
+
+        if row_id:
+            path = self.tree_helper.data[int(row_id)]['path']
+            self.show_thumb(path)
+
+            self.edit_annotation(row_id)
+
+    def edit_annotation(self, row_id):
+        record = self.tree.item(row_id, 'values')
+        a_conf = self.tree_helper.get_conf('annotation')
+        for i, v in enumerate(self.annotation_list):
+            a_index = a_conf[i][0]
+            v[1].set(record[a_index])
+            if a_conf[i][1][3]['widget'] == 'freesolo':
+                if v[0].listbox:
+                    v[0].remove_listbox()
+
+        # set first entry focus
+        #self.annotation_list([0][0].focus()) # not work ?
+        # !!
+        #print (self.annotation_list[0][0].set_focus())
 
     def on_click(self, event):
         #for item in self.tree.selection():
@@ -585,7 +610,7 @@ class Main(tk.Frame):
 
     def handle_freesolo_update(self, event):
         '''update freesolo value to treeview'''
-        print ('update', event)
+        print ('free update', event)
         self.set_freesolo_value()
         self.freesolo.terminate()
 

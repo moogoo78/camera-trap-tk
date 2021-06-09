@@ -3,22 +3,172 @@ from tkinter import ttk
 
 import json
 from datetime import datetime
+import random
+import colorsys
 
 '''
 key, label, type, choices in ini
 '''
+
 HEADING = (
-    ('index', '#', 'readonly'),
-    ('status', '標注/上傳狀態', 'readonly'),
-    ('filename', '檔名', 'readonly'),
-    ('datetime','日期時間', 'readonly'),
-    ('species', '物種', 'freesolo', 'AnnotationFieldSpecies'),
-    ('lifestage', '年齡', 'freesolo', 'AnnotationFieldLifeStage'),
-    ('sex', '性別', 'freesolo', 'AnnotationFieldSex'),
-    ('antler', '角況', 'freesolo', 'AnnotationFieldAntler'),
-    ('remark', '備註', 'freesolo'),
-    ('animal_id', '個體 ID', 'freesolo')
+    ('index', '#',
+     {'width': 25, 'stretch': False}),
+    ('status_display', '標注/上傳狀態',
+     {'width': 40, 'stretch': False}),
+    ('filename', '檔名',
+     {'width': 150, 'stretch': False}),
+    ('datetime_display','日期時間',
+     {'width': 150, 'stretch': False}),
+    ('species', '物種',
+     {'width': 80, 'stretch': False},
+     {'widget': 'freesolo',
+      'config_section': 'AnnotationFieldSpecies'}),
+    ('lifestage', '年齡',
+     {'width': 50, 'stretch': False},
+     {'widget': 'freesolo',
+      'config_section': 'AnnotationFieldLifeStage'}),
+    ('sex', '性別',
+     {'width': 50, 'stretch': False},
+     {'widget': 'freesolo',
+      'config_section': 'AnnotationFieldSex'}),
+    ('antler', '角況',
+     {'width': 50, 'stretch': False},
+     {'widget': 'freesolo',
+      'config_section': 'AnnotationFieldAntler'}),
+    ('remark', '備註',
+     {'width': 50, 'stretch': False},
+     {'widget': 'entry',
+          'config_section': 'AnnotationFieldRemarks'}),
+    ('animal_id', '個體 ID',
+     {'width': 50, 'stretch': False},
+     {'widget': 'entry',
+      'config_section': 'AnnotationFieldAnimalID'}),
 )
+
+class TreeHelper(object):
+    def __init__(self):
+        self.conf = HEADING
+        self.annotation_item = [4, 5, 6, 7, 8, 9]
+        self.data = []
+
+    def get_conf(self, cat='annotation'):
+        '''
+        return [(index, conf)...]
+        '''
+        #return list(filter(lambda x: x[0] == key, self.conf))[0] or None
+        if cat == 'annotation':
+            return [(x, self.conf[x]) for x in self.annotation_item]
+
+    def set_data_from_list(self, image_list):
+        rows = []
+        counter = 0
+        for i in image_list:
+            alist = json.loads(i[7])
+            path = i[1]
+            status_display = '{} / {}'.format(
+                _get_status_display(i[5]),
+                _get_status_display(i[12]),
+            )
+            basic_item = {
+                'status_display': status_display,
+                'filename': i[2],
+                'datetime_display': str(datetime.fromtimestamp(i[3])),
+            }
+            ctrl_item = {
+                'image_id': i[0],
+                'path': i[1],
+                'status': i[5],
+                'upload_status': i[12],
+                'time': i[3],
+                'seq': 0,
+            }
+            if len(alist) >= 1:
+                for j in alist:
+                    counter += 1
+                    basic_item['index'] = counter
+                    annotation_item = {}
+                    for head_index in self.annotation_item:
+                        key = self.conf[head_index][0]
+                        annotation_item[key] = j.get(key, '')
+                    rows.append({
+                        **basic_item,
+                        **annotation_item,
+                        **ctrl_item,
+                    })
+            else:
+                counter += 1
+                annotation_item = {}
+                for head_index in self.annotation_item:
+                    key = self.conf[head_index][0]
+                    annotation_item[key] = ''
+                rows.append({
+                    **basic_item,
+                    **annotation_item,
+                    **ctrl_item,
+                })
+
+        self.data = rows
+        return rows
+
+    def to_tree(self):
+        '''trim data for tree display'''
+        rows = []
+        for i in self.data:
+            values = [i.get(h[0], '') for h in self.conf]
+            rows.append(values)
+        return rows
+
+    def group_image_sequence(self, time_interval, highlight='', seq_tag=''):
+        seq_info = {
+            'group_prev': False,
+            'group_next': False,
+            'map': {},
+            'idx': 0,
+            'salt': random.random(),
+            'int': int(time_interval),
+        }
+        # via: https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
+        golden_ratio_conjugate = 0.618033988749895
+
+        for i, v in enumerate(self.data):
+            tag_name = ''
+            next_idx = min(i+1, len(self.data)-1)
+            this_time = self.data[i]['time']
+            next_time = self.data[next_idx]['time']
+
+            seq_info['group_prev'] = seq_info['group_next']
+            if next_time and (next_time - this_time) <= seq_info['int']:
+                seq_info['group_next'] = True
+            else:
+                seq_info['group_next'] = False
+
+            if seq_info['group_next'] == True and not seq_info['group_prev']:
+                seq_info['idx'] += 1
+                seq_info['salt'] += golden_ratio_conjugate
+                seq_info['salt'] %= 1
+
+            if seq_info['group_next'] or seq_info['group_prev']:
+                tag_name = 'tag{}'.format(seq_info['idx'])
+            else:
+                seq_num = ''
+
+            rgb_hex = ''
+            if tag_name:
+                rgb = colorsys.hls_to_rgb(seq_info['salt']*265, 0.8, 0.5)
+                rgb_hex = f'#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}'
+                if seq_info['idx'] not in seq_info['map']:
+                    seq_info['map'][tag_name] = {
+                        'color': rgb_hex,
+                        'rows': []
+                    }
+                seq_info['map'][tag_name]['rows'].append(i)
+
+            if highlight:
+                v[highlight] = rgb_hex
+            if seq_tag:
+                v[seq_tag] = tag_name
+
+        return seq_info
 
 def _get_status_display(code):
     status_map = {
@@ -31,71 +181,68 @@ def _get_status_display(code):
     }
     return status_map.get(code, '-')
 
+def data_to_tree_values(data):
+    rows = []
+    for i in data:
+        values = [i.get(h[0], '')for h in HEADING]
+        rows.append(values)
+    return rows
+
 def image_list_to_table(image_list):
     rows = []
-
     counter = 0
     for i in image_list:
-        filename = i[2]
-        dtime_display = str(datetime.fromtimestamp(i[3]))
         alist = json.loads(i[7])
         path = i[1]
         status_display = '{} / {}'.format(
             _get_status_display(i[5]),
             _get_status_display(i[12]),
         )
-        image_id = i[0]
+        basic_item = {
+            'status_display': status_display,
+            'filename': i[2],
+            'datetime_display': str(datetime.fromtimestamp(i[3])),
+        }
+        ctrl_item = {
+            'image_id': i[0],
+            'path': i[1],
+            'status': i[5],
+            'upload_status': i[12],
+            'time': i[3],
+            'seq': 0,
+        }
         if len(alist) >= 1:
             for j in alist:
                 counter += 1
-                species = j.get('species', '')
-                lifestage = j.get('lifestage', '')
-                sex = j.get('sex', '')
-                antler = j.get('antler', '')
-                animal_id = j.get('animal_id', '')
-                remarks = j.get('remarks', '')
-                rows.append([
-                    counter,
-                    status_display,
-                    filename,
-                    dtime_display,
-                    species,
-                    lifestage,
-                    sex,
-                    antler,
-                    remarks,
-                    animal_id,
-                    {
-                        'image_id': image_id,
-                        'path': path,
-                        'status': i[5],
-                        'upload_status': i[12],
-                        'time': i[3],
-                        'seq': 0,
-                    }
-                ])
+                basic_item['index'] = counter
+                annotation_item = {
+                    'species': j.get('species', ''),
+                    'lifestage': j.get('lifestage', ''),
+                    'sex': j.get('sex', ''),
+                    'antler':j.get('antler', ''),
+                    'animal_id':j.get('animal_id', ''),
+                    'remarks': j.get('remarks', ''),
+                }
+                rows.append({
+                    **basic_item,
+                    **annotation_item,
+                    **ctrl_item,
+                })
         else:
             counter += 1
-            rows.append([
-                counter,
-                status_display,
-                filename,
-                dtime_display,
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                {
-                    'image_id': image_id,
-                    'path': path,
-                    'status': i[5],
-                    'upload_status': i[12],
-                    'time': i[3],
-                    'seq': 0
-                },
-            ])
+            annotation_item = {
+                'species': '',
+                'lifestage': '',
+                'sex': '',
+                'antler': '',
+                'animal_id': '',
+                'remarks': '',
+            }
+            rows.append({
+                **basic_item,
+                **annotation_item,
+                **ctrl_item,
+            })
     return rows
 
 def get_tree_rc(tree):
@@ -331,15 +478,31 @@ class FreeSolo(ttk.Entry, object):
         self.value_trace_id = self.value.trace('w', self.handle_trace)
         #self.bind('<Return>', self.handle_update) # next?
         #self.bind('<Escape>', self.handle_update)
-        self.bind('<Down>', lambda event: self.create_listbox())
+        #self.bind('<Down>', lambda event: self.create_listbox())
+        self.bind('<Return>', lambda _: self.create_listbox())
+        self.bind("<FocusOut>", lambda _: self.remove_listbox())
 
         self.listbox = None
         #self.build_listbox()
 
+    #def set_value(self, value, close_listbox=False):
+        #self._entry_var.trace_vdelete("w", self._trace_id)
+        #self._entry_var.set(text)
+        #self._trace_id = self._entry_var.trace('w', self._on_change_entry_var)
+    #    self.value.set(value)
+    #    if close_listbox:
+    #        self.close_listbox()
+
+    def set_focus(self):
+        self.focus()
+
     def handle_trace(self, name, index, mode):
         val = self.value.get()
-
-        if val and self.choices:
+        #print ('free trace', val)
+        #if val == '':
+        #    #self.focus() # ?
+        #else:
+        if val:
             filtered = [i for i in self.choices if i.startswith(val)]
             #print ('filtered:', filtered, self.listbox)
             if len(filtered) > 0:

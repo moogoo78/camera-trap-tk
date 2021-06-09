@@ -40,7 +40,7 @@ class Sidebar(tk.Frame):
             source_button = ttk.Button(
                 self,
                 text=i[3],
-                command=lambda x=i[0]: self.parent.main.refresh(x))
+                command=lambda x=i[0]: self.parent.main.from_source(x))
             source_button.grid(pady=2)
             self.source_list.append(source_button)
 
