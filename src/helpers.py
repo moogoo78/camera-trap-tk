@@ -11,8 +11,8 @@ key, label, type, choices in ini
 '''
 
 HEADING = (
-    ('index', '#',
-     {'width': 25, 'stretch': False}),
+    #('index', '#',
+    # {'width': 25, 'stretch': False}),
     ('status_display', '標注/上傳狀態',
      {'width': 40, 'stretch': False}),
     ('filename', '檔名',
@@ -47,8 +47,8 @@ HEADING = (
 
 class TreeHelper(object):
     def __init__(self):
-        self.conf = HEADING
-        self.annotation_item = [4, 5, 6, 7, 8, 9]
+        self.heading = HEADING
+        self.annotation_item = [3, 4, 5, 6, 7, 8]
         self.data = []
 
     def get_conf(self, cat='annotation'):
@@ -57,7 +57,7 @@ class TreeHelper(object):
         '''
         #return list(filter(lambda x: x[0] == key, self.conf))[0] or None
         if cat == 'annotation':
-            return [(x, self.conf[x]) for x in self.annotation_item]
+            return [(x, self.heading[x]) for x in self.annotation_item]
 
     def set_data_from_list(self, image_list):
         rows = []
@@ -88,7 +88,7 @@ class TreeHelper(object):
                     basic_item['index'] = counter
                     annotation_item = {}
                     for head_index in self.annotation_item:
-                        key = self.conf[head_index][0]
+                        key = self.heading[head_index][0]
                         annotation_item[key] = j.get(key, '')
                     rows.append({
                         **basic_item,
@@ -97,9 +97,10 @@ class TreeHelper(object):
                     })
             else:
                 counter += 1
+                basic_item['index'] = counter
                 annotation_item = {}
                 for head_index in self.annotation_item:
-                    key = self.conf[head_index][0]
+                    key = self.heading[head_index][0]
                     annotation_item[key] = ''
                 rows.append({
                     **basic_item,
@@ -114,7 +115,7 @@ class TreeHelper(object):
         '''trim data for tree display'''
         rows = []
         for i in self.data:
-            values = [i.get(h[0], '') for h in self.conf]
+            values = [i.get(h[0], '') for h in self.heading]
             rows.append(values)
         return rows
 
@@ -169,6 +170,17 @@ class TreeHelper(object):
                 v[seq_tag] = tag_name
 
         return seq_info
+
+    # via: https://stackoverflow.com/questions/56331001/python-tkinter-treeview-colors-are-not-updating
+    def fixed_map(self, style, option):
+        # Returns the style map for 'option' with any styles starting with
+        # ("!disabled", "!selected", ...) filtered out
+
+        # style.map() returns an empty list for missing options, so this should
+        # be future-safe
+        return [elm for elm in style.map("Treeview", query_opt=option)
+                if elm[:2] != ("!disabled", "!selected")]
+
 
 def _get_status_display(code):
     status_map = {
