@@ -73,7 +73,7 @@ class Source(object):
             timestamp = int(stat.st_mtime)
             via = 'mtime'
 
-        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, exif, source_id) VALUES ('{}','{}', {}, '{}', '{}', '{}','{}', {}, '{}', {})".format(
+        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, exif, source_id, sys_note) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, '{}', {}, '{}')".format(
             i['path'],
             i['name'],
             timestamp,
@@ -83,7 +83,9 @@ class Source(object):
             '[]',
             ts_now,
             json.dumps(exif),
-            source_id)
+            source_id,
+            '{}',
+        )
 
         db.exec_sql(sql, True)
 

@@ -32,7 +32,7 @@ class Main(tk.Frame):
         self.source_id = None
 
         self.tree_helper = TreeHelper()
-        self.annotation_list = []
+        self.annotation_entry_list = []
 
         # layout
         #self.grid_propagate(False)
@@ -119,7 +119,7 @@ class Main(tk.Frame):
             value=self.species_value,
         )
         self.species_free.grid(row=1, column=0, padx=4)
-        self.annotation_list.append((self.species_free, self.species_value))
+        self.annotation_entry_list.append((self.species_free, self.species_value))
         self.species_free.bind('<Up>', self.move_key)
         self.species_free.bind('<Down>', self.move_key)
         self.species_free.bind('<Left>', self.move_key)
@@ -138,7 +138,7 @@ class Main(tk.Frame):
             value=self.lifestage_value,
         )
         self.lifestage_free.grid(row=1, column=1, padx=4)
-        self.annotation_list.append((self.lifestage_free, self.lifestage_value))
+        self.annotation_entry_list.append((self.lifestage_free, self.lifestage_value))
 
         sex_label = ttk.Label(
             self.annotation_label_frame,
@@ -152,7 +152,7 @@ class Main(tk.Frame):
             value=self.sex_value,
         )
         self.sex_free.grid(row=1, column=2, padx=4)
-        self.annotation_list.append((self.sex_free, self.sex_value))
+        self.annotation_entry_list.append((self.sex_free, self.sex_value))
 
         antler_label = ttk.Label(
             self.annotation_label_frame,
@@ -166,7 +166,7 @@ class Main(tk.Frame):
             value=self.antler_value,
         )
         self.antler_free.grid(row=3, column=0, padx=4)
-        self.annotation_list.append((self.antler_free, self.antler_value))
+        self.annotation_entry_list.append((self.antler_free, self.antler_value))
 
         remark_label = ttk.Label(
             self.annotation_label_frame,
@@ -178,7 +178,7 @@ class Main(tk.Frame):
             textvariable=self.remark_value
         )
         self.remark_entry.grid(row=3, column=1, padx=4)
-        self.annotation_list.append((self.remark_entry, self.remark_value))
+        self.annotation_entry_list.append((self.remark_entry, self.remark_value))
 
         animal_id_label = ttk.Label(
             self.annotation_label_frame,
@@ -190,11 +190,11 @@ class Main(tk.Frame):
             textvariable=self.animal_id_value
         )
         self.animal_id_entry.grid(row=3, column=2, padx=4)
-        self.annotation_list.append((self.animal_id_entry, self.animal_id_value))
+        self.annotation_entry_list.append((self.animal_id_entry, self.animal_id_value))
 
         annotation_update_button = ttk.Button(
             self.annotation_label_frame,
-            text='寫入表格',
+            text='存檔',
             command=self.update_annotation,
         )
         annotation_update_button.grid(row=4, column=0, padx=16, pady=16)
@@ -259,11 +259,11 @@ class Main(tk.Frame):
         self.upload_button.grid(row=0, column=6, padx=20, sticky='w')
 
         # save button
-        self.save_button = ttk.Button(
-            self.ctrl_frame,
-            text='儲存',
-            command=self.save_annotation)
-        self.save_button.grid(row=0, column=7, padx=5, sticky='e')
+        #self.save_button = ttk.Button(
+        #    self.ctrl_frame,
+        #    text='儲存',
+        #    command=self.save_tree_to_db)
+        #self.save_button.grid(row=0, column=7, padx=5, sticky='e')
 
         # image sequence
         #self.seq_label = ttk.Label(self.ctrl_frame,  text='連拍自動補齊')
@@ -343,46 +343,48 @@ class Main(tk.Frame):
 
 
     def from_source(self, source_id=None):
-        # get source_data
-        print ('from source', source_id)
-        self.source_data = self.app.source.get_source(source_id)
+        self.source_id = source_id
         self.refresh()
 
-    def refresh(self, *args):
-        print ('refresh', self, *args)
+    def refresh(self):
+        print ('refresh')
+
+        # get source_data
+        print ('get source', self.source_id)
+        self.source_data = self.app.source.get_source(self.source_id)
+
         self.tree.delete(*self.tree.get_children())
 
-        self.tree_helper.set_data_from_list(self.source_data['image_list'])
+        tree_data = self.tree_helper.set_data_from_list(self.source_data['image_list'])
 
         seq_info = None
         if self.seq_checkbox_val.get() == 'Y':
             if seq_int := self.seq_interval_val.get():
                 seq_info = self.tree_helper.group_image_sequence(seq_int, seq_tag='tag_name')
 
-        tree_data = self.tree_helper.to_tree()
-        #for i, v in enumerate(tree_data):
-        #    self.tree.insert('', tk.END, iid='iid-{}'.format(i), text='{}'.format(i), values=v, open=True)
-        #self.tree.move('iid-3', 'iid-5', 0)
 
         if seq_info:
             for i, v in enumerate(tree_data):
-                tag = self.tree_helper.data[i]['tag_name']
-                iid = 'iid{}'.format(i)
-                text = self.tree_helper.data[i]['index']
-                self.tree.insert('', tk.END, iid, text=text, values=v, tags=(tag), open=True)
+                data = self.tree_helper.data[i]
+                tag = data['tag_name']
+                iid = data['iid']
+                parent = data['iid_parent']
+                text = str(i+i)
+                self.tree.insert(parent, tk.END, iid, text=text, values=v, tags=(tag), open=True)
             for tag_name, item in seq_info['map'].items():
                 self.tree.tag_configure(tag_name, background=item['color'])
         else:
             for i, v in enumerate(tree_data):
-                iid = 'iid{}'.format(i)
-                text = self.tree_helper.data[i]['index']
+                data = self.tree_helper.data[i]
+                iid = data['iid']
+                parent = data['iid_parent']
+                text = str(i+1)
                 if i%2 == 0:
-                    self.tree.insert('', tk.END, iid, values=v, tags=('even',), text=text, open=True)
+                    self.tree.insert(parent, tk.END, iid, values=v, tags=('even',), text=text, open=True)
                 else:
-                    self.tree.insert('', tk.END, iid, values=v, tags=('odd',), text=text, open=True)
+                    self.tree.insert(parent, tk.END, iid, values=v, tags=('odd',), text=text, open=True)
             self.tree.tag_configure('odd', background='#E8E8E8')
             self.tree.tag_configure('even', background='#DFDFDF')
-
 
     def project_option_changed(self, *args):
         name = self.project_var.get()
@@ -505,19 +507,25 @@ class Main(tk.Frame):
         self.update_idletasks()
         tk.messagebox.showinfo('info', '上傳成功')
 
-    def save_annotation(self):
+    def save_tree_to_db(self):
+        print ('save to db')
         a_conf = self.tree_helper.get_conf('annotation')
-        for row in self.tree.get_children():
-            record = self.tree.item(row, 'values')
+        ts_now = int(time.time())
+        for iid in self.tree.get_children():
+            record = self.tree.item(iid, 'values')
             d = {x[1][0]: record[x[0]] for x in a_conf}
 
-            image_id = self.tree_helper.data[int(row)]['image_id']
+            row = int(iid[3:])
+            item = self.tree_helper.data[row]
+            image_id = item['image_id']
+            print (iid, image_id, item)
             if image_id:
-                sql = "UPDATE image SET annotation='[{}]', changed={} WHERE image_id={}".format(json.dumps(d), int(time.time()), image_id)
-                self.app.db.exec_sql(sql)
+                sql = "UPDATE image SET annotation='[{}]', changed={} WHERE image_id={}".format(json.dumps(d), ts_now, image_id)
+                #print (sql)
+                #self.app.db.exec_sql(sql)
 
-        self.app.db.commit()
-        tk.messagebox.showinfo('info', '儲存成功')
+        #self.app.db.commit()
+        #tk.messagebox.showinfo('info', '儲存成功')
 
     def get_status_display(self, code):
         status_map = {
@@ -531,23 +539,23 @@ class Main(tk.Frame):
         return status_map.get(code, '-')
 
     def handle_select(self, event):
-        row_id = None
+        iid = ''
         for selected_item in self.tree.selection():
             print ('select first: ', selected_item)
             #values = self.tree.item(selected_item, 'values')
-            row_id = selected_item
+            iid = selected_item
             break
 
-        if row_id:
-            path = self.tree_helper.data[int(row_id)]['path']
-            self.show_thumb(path)
+        if iid:
+            row = self.tree_helper.get_data(iid)
+            self.show_thumb(row['path'])
 
-            self.edit_annotation(row_id)
+            self.begin_edit_annotation(iid)
 
-    def edit_annotation(self, row_id):
-        record = self.tree.item(row_id, 'values')
+    def begin_edit_annotation(self, iid):
+        record = self.tree.item(iid, 'values')
         a_conf = self.tree_helper.get_conf('annotation')
-        for i, v in enumerate(self.annotation_list):
+        for i, v in enumerate(self.annotation_entry_list):
             a_index = a_conf[i][0]
             v[1].set(record[a_index])
             if a_conf[i][1][3]['widget'] == 'freesolo':
@@ -555,9 +563,9 @@ class Main(tk.Frame):
                     v[0].remove_listbox()
 
         # set first entry focus
-        #self.annotation_list([0][0].focus()) # not work ?
+        #self.annotation_entry_list([0][0].focus()) # not work ?
         # !!
-        #print (self.annotation_list[0][0].set_focus())
+        #print (self.annotation_entry_list[0][0].set_focus())
 
     def show_thumb(self, image_path):
         #if not hasattr(self, 'sheet_data') or len(self.sheet_data) <= 0:
@@ -578,27 +586,55 @@ class Main(tk.Frame):
         self.update_idletasks()
 
     def update_annotation(self):
+        '''update to tree and save'''
         a_conf = self.tree_helper.get_conf('annotation')
-        for selected_item in self.tree.selection():
-            record = self.tree.item(selected_item, 'values')
-            new_values = list(record)
-            for i, h in enumerate(a_conf):
-                new_values[h[0]] = self.annotation_list[i][1].get()
-            self.tree.item(selected_item, text='', values=new_values)
-        for a in self.annotation_list:
+        ts_now = int(time.time())
+        for iid in self.tree.selection():
+            row = self.tree_helper.get_data(iid)
+            d = self.tree_helper.get_annotation_dict(self.annotation_entry_list)
+            #print (row['image_id'], row['iid'], )
+            alist = row['alist'].copy()
+            if len(alist) > 1:
+                a_index = None
+                if row.get('iid_parent', '') == '':
+                    a_index = 0
+                else:
+                    a_index = int(row['iid'].split(':')[2])
+                alist[a_index] = d
+            else:
+                alist = [d]
+
+            sql = "UPDATE image SET annotation='{}', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
+            print ('update annotation:', sql)
+            self.app.db.exec_sql(sql, True)
+
+        for a in self.annotation_entry_list:
             a[1].set('')
 
+        self.refresh()
+
+
     def clone_row(self):
-        move_to = None
-        for selected_item in self.tree.selection():
-            record = self.tree.item(selected_item, 'values')
-            move_to = int(selected_item) + 1
-            # get first
+        source_iid = ''
+        for iid in self.tree.selection():
+            record = self.tree.item(iid, 'values')
+            source_iid = iid # clone only get first
             break
 
-        self.tree.insert('', tk.END, iid=100, values=record, text='new')
-        self.tree.move(100, move_to-1, 1)
-        #self.refresh()
+        row = self.tree_helper.get_data(iid)
+        d = self.tree_helper.get_annotation_dict(self.annotation_entry_list)
+        alist = row['alist'].copy()
+
+        if len(alist) > 0:
+            alist.append(alist[0])
+        else:
+            alist = []
+
+        ts_now = int(time.time())
+        sql = "UPDATE image SET annotation='{}', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
+        print ('clone annotation:', sql)
+        self.app.db.exec_sql(sql, True)
+        self.refresh()
 
     def move_key(self, event):
         print ('move', event)

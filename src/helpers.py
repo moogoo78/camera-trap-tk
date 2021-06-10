@@ -19,27 +19,27 @@ HEADING = (
      {'width': 150, 'stretch': False}),
     ('datetime_display','日期時間',
      {'width': 150, 'stretch': False}),
-    ('species', '物種',
+    ('annotation_species', '物種',
      {'width': 80, 'stretch': False},
      {'widget': 'freesolo',
       'config_section': 'AnnotationFieldSpecies'}),
-    ('lifestage', '年齡',
+    ('annotation_lifestage', '年齡',
      {'width': 50, 'stretch': False},
      {'widget': 'freesolo',
       'config_section': 'AnnotationFieldLifeStage'}),
-    ('sex', '性別',
+    ('annotation_sex', '性別',
      {'width': 50, 'stretch': False},
      {'widget': 'freesolo',
       'config_section': 'AnnotationFieldSex'}),
-    ('antler', '角況',
+    ('annotation_antler', '角況',
      {'width': 50, 'stretch': False},
      {'widget': 'freesolo',
       'config_section': 'AnnotationFieldAntler'}),
-    ('remark', '備註',
+    ('annotation_remark', '備註',
      {'width': 50, 'stretch': False},
      {'widget': 'entry',
           'config_section': 'AnnotationFieldRemarks'}),
-    ('animal_id', '個體 ID',
+    ('annotation_animal_id', '個體 ID',
      {'width': 50, 'stretch': False},
      {'widget': 'entry',
       'config_section': 'AnnotationFieldAnimalID'}),
@@ -50,6 +50,20 @@ class TreeHelper(object):
         self.heading = HEADING
         self.annotation_item = [3, 4, 5, 6, 7, 8]
         self.data = []
+
+    def get_annotation_dict(self, entry_list):
+        d = {}
+        for i, v in enumerate(self.annotation_item):
+            key = self.heading[v][0]
+            d[key] = entry_list[i][1].get()
+
+        return d
+
+    def get_data(self, iid):
+        found = list(filter(lambda x: x['iid'] == iid, self.data))[0]
+        return found
+        #index = int(iid.split(':')[1])
+        #return (index, self.data[index])
 
     def get_conf(self, cat='annotation'):
         '''
@@ -62,62 +76,67 @@ class TreeHelper(object):
     def set_data_from_list(self, image_list):
         rows = []
         counter = 0
-        for i in image_list:
+        for i_index, i in enumerate(image_list):
             alist = json.loads(i[7])
-            path = i[1]
             status_display = '{} / {}'.format(
                 _get_status_display(i[5]),
                 _get_status_display(i[12]),
             )
-            basic_item = {
+            row = {
                 'status_display': status_display,
                 'filename': i[2],
                 'datetime_display': str(datetime.fromtimestamp(i[3])),
-            }
-            ctrl_item = {
                 'image_id': i[0],
+                'image_index': i_index,
                 'path': i[1],
                 'status': i[5],
                 'upload_status': i[12],
                 'time': i[3],
                 'seq': 0,
+                'sys_note': json.loads(i[13]),
+                'alist': alist,
             }
+
             if len(alist) >= 1:
-                for j in alist:
+                for j_index, j in enumerate(alist):
                     counter += 1
-                    basic_item['index'] = counter
-                    annotation_item = {}
+                    apart = {
+                        'counter':counter,
+                        'annotation_index': j_index
+                    }
                     for head_index in self.annotation_item:
                         key = self.heading[head_index][0]
-                        annotation_item[key] = j.get(key, '')
-                    rows.append({
-                        **basic_item,
-                        **annotation_item,
-                        **ctrl_item,
-                    })
+                        apart[key] = j.get(key, '')
+                        apart['iid'] = 'iid:{}:{}'.format(i_index, j_index)
+                        if j_index > 0:
+                            apart['iid_parent'] = 'iid:{}:0'.format(i_index)
+                        else:
+                            apart['iid_parent'] = ''
+                    rows.append({**row, **apart})
             else:
                 counter += 1
-                basic_item['index'] = counter
-                annotation_item = {}
+                apart = {
+                    'counter': counter,
+                    'annotation_index': 0
+                }
+                apart['iid'] = 'iid:{}:-'.format(i_index)
+                apart['iid_parent'] = ''
                 for head_index in self.annotation_item:
                     key = self.heading[head_index][0]
-                    annotation_item[key] = ''
-                rows.append({
-                    **basic_item,
-                    **annotation_item,
-                    **ctrl_item,
-                })
+                    apart[key] = ''
+                rows.append({**row, **apart})
 
         self.data = rows
-        return rows
 
-    def to_tree(self):
-        '''trim data for tree display'''
-        rows = []
-        for i in self.data:
-            values = [i.get(h[0], '') for h in self.heading]
-            rows.append(values)
-        return rows
+        tree_data = []
+        for i in rows:
+            values = [i.get(h[0], '')
+                      for h_index, h in enumerate(self.heading)]
+            #print (i['iid'], i.get('iid_parent', ''))
+            #print (values)
+            tree_data.append(values)
+
+        return tree_data
 
     def group_image_sequence(self, time_interval, highlight='', seq_tag=''):
         seq_info = {
