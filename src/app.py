@@ -7,6 +7,10 @@ from tkinter import (
     font,
  )
 
+# log
+import logging
+import sys
+
 from frame import (
     Toolbar,
     Sidebar,
@@ -30,7 +34,6 @@ from config import Config
 # ffffff
 # ef8354
 
-DB_FILE = 'ct.db'
 
 '''MAIN_FRAMES = {
     'landing': Landing,
@@ -49,6 +52,22 @@ class Application(tk.Tk):
         #self.maxsize(1000, 400)
 
         self.config = config
+
+        # logging
+        file_handler = logging.FileHandler(
+            filename='ct-log.txt',
+            encoding='utf-8', mode='a+')
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        logging.basicConfig(
+            handlers=[
+                file_handler,
+                stdout_handler],
+            format="%(asctime)s|%(levelname)s|%(filename)s:%(lineno)d|%(funcName)s => %(message)s",
+            datefmt="%Y-%m-%d:%H:%M:%S",
+            level=logging.INFO)
+
+        # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s 
+        self.logger = logging.getLogger('ct-tk')
 
         self.db = Database(config.get('SQLite', 'dbfile'))
         self.db.init()

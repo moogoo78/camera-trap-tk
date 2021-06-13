@@ -59,12 +59,15 @@ class TreeHelper(object):
 
         return d
 
-    def get_data(self, iid):
-        found = list(filter(lambda x: x['iid'] == iid, self.data))[0]
-        return found
-        #index = int(iid.split(':')[1])
-        #return (index, self.data[index])
+    def set_data(self, iid, alist):
+        for i, v in enumerate(self.data):
+            if v['iid'] == iid:
+                self.data[i]['alist'] = alist
+        #print (self.data)
+        #found = self.get_data(iid)
 
+    def get_data(self, iid):
+        return list(filter(lambda x: x['iid'] == iid, self.data))[0]
     def get_conf(self, cat='annotation'):
         '''
         return [(index, conf)...]
@@ -74,6 +77,9 @@ class TreeHelper(object):
             return [(x, self.heading[x]) for x in self.annotation_item]
 
     def set_data_from_list(self, image_list):
+        '''
+        iid rule: `iid:{image_index}:{annotation_index}`
+        '''
         rows = []
         counter = 0
         for i_index, i in enumerate(image_list):
@@ -82,49 +88,50 @@ class TreeHelper(object):
                 _get_status_display(i[5]),
                 _get_status_display(i[12]),
             )
-            row = {
+            row_basic = {
                 'status_display': status_display,
                 'filename': i[2],
                 'datetime_display': str(datetime.fromtimestamp(i[3])),
                 'image_id': i[0],
-                'image_index': i_index,
                 'path': i[1],
                 'status': i[5],
                 'upload_status': i[12],
                 'time': i[3],
                 'seq': 0,
                 'sys_note': json.loads(i[13]),
-                'alist': alist,
             }
 
             if len(alist) >= 1:
-                for j_index, j in enumerate(alist):
+                for a_index, a in enumerate(alist):
                     counter += 1
-                    apart = {
-                        'counter':counter,
-                        'annotation_index': j_index
+                    row_multi = {
+                        'counter': counter,
+                        'iid': f'iid:{i_index}:{a_index}',
+                        'iid_parent': '',
+                        'alist': [],
                     }
                     for head_index in self.annotation_item:
                         key = self.heading[head_index][0]
-                        apart[key] = j.get(key, '')
-                        apart['iid'] = 'iid:{}:{}'.format(i_index, j_index)
-                        if j_index > 0:
-                            apart['iid_parent'] = 'iid:{}:0'.format(i_index)
-                        else:
-                            apart['iid_parent'] = ''
-                    rows.append({**row, **apart})
+                        row_multi[key] = a.get(key, '')
+
+                    if a_index == 0:
+                        row_multi['alist'] = alist
+                    else:
+                        row_multi['iid_parent'] = f'iid:{i_index}:0'
+
+                    rows.append({**row_basic, **row_multi})
             else:
                 counter += 1
-                apart = {
+                row_multi = {
                     'counter': counter,
-                    'annotation_index': 0
+                    'iid': 'iid:{}:0'.format(i_index),
+                    'iid_parent': '',
+                    'alist': alist,
                 }
-                apart['iid'] = 'iid:{}:-'.format(i_index)
-                apart['iid_parent'] = ''
                 for head_index in self.annotation_item:
                     key = self.heading[head_index][0]
-                    apart[key] = ''
-                rows.append({**row, **apart})
+                    row_multi[key] = ''
+                rows.append({**row_basic, **row_multi})
 
         self.data = rows
 

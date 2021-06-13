@@ -2,7 +2,8 @@ import json
 import time
 import tkinter as tk
 from tkinter import ttk
-
+from logging import debug as _d
+from logging import info as _i
 from PIL import ImageTk, Image
 
 from helpers import (
@@ -14,6 +15,7 @@ from helpers import (
 
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
+
         tk.Frame.__init__(self, parent, *args, **kwargs)
 
         #self.parent = parent
@@ -347,10 +349,8 @@ class Main(tk.Frame):
         self.refresh()
 
     def refresh(self):
-        print ('refresh')
-
         # get source_data
-        print ('get source', self.source_id)
+        #print ('refresh, main: get source', self.source_id)
         self.source_data = self.app.source.get_source(self.source_id)
 
         self.tree.delete(*self.tree.get_children())
@@ -364,25 +364,25 @@ class Main(tk.Frame):
 
 
         if seq_info:
-            for i, v in enumerate(tree_data):
+            for i, values in enumerate(tree_data):
                 data = self.tree_helper.data[i]
                 tag = data['tag_name']
                 iid = data['iid']
                 parent = data['iid_parent']
-                text = str(i+i)
-                self.tree.insert(parent, tk.END, iid, text=text, values=v, tags=(tag), open=True)
+                text = data['counter']
+                self.tree.insert(parent, tk.END, iid, text=text, values=values, tags=(tag), open=True)
             for tag_name, item in seq_info['map'].items():
                 self.tree.tag_configure(tag_name, background=item['color'])
         else:
-            for i, v in enumerate(tree_data):
+            for i, values in enumerate(tree_data):
                 data = self.tree_helper.data[i]
                 iid = data['iid']
                 parent = data['iid_parent']
-                text = str(i+1)
+                text = data['counter']
                 if i%2 == 0:
-                    self.tree.insert(parent, tk.END, iid, values=v, tags=('even',), text=text, open=True)
+                    self.tree.insert(parent, tk.END, iid, values=values, tags=('even',), text=text, open=True)
                 else:
-                    self.tree.insert(parent, tk.END, iid, values=v, tags=('odd',), text=text, open=True)
+                    self.tree.insert(parent, tk.END, iid, values=values, tags=('odd',), text=text, open=True)
             self.tree.tag_configure('odd', background='#E8E8E8')
             self.tree.tag_configure('even', background='#DFDFDF')
 
@@ -507,6 +507,7 @@ class Main(tk.Frame):
         self.update_idletasks()
         tk.messagebox.showinfo('info', '上傳成功')
 
+    # DEPRICATED
     def save_tree_to_db(self):
         print ('save to db')
         a_conf = self.tree_helper.get_conf('annotation')
@@ -541,7 +542,7 @@ class Main(tk.Frame):
     def handle_select(self, event):
         iid = ''
         for selected_item in self.tree.selection():
-            print ('select first: ', selected_item)
+            #print ('select first: ', selected_item)
             #values = self.tree.item(selected_item, 'values')
             iid = selected_item
             break
@@ -585,27 +586,42 @@ class Main(tk.Frame):
         self.image_thumb.image = photo
         self.update_idletasks()
 
+    def set_annotation_list(self, iid, iid_parent, entry_dict):
+        data = []
+        annotation_iid = iid if iid_parent == '' else iid_parent
+        index = int(annotation_iid.split(':')[1])
+        annotation_index = int(iid.split(':')[2])
+        alist = self.tree_helper.data[index].get('alist', [])
+        if len(alist) > 0:
+            alist[annotation_index] = entry_dict
+        else:
+            alist = [entry_dict]
+        return alist
+
     def update_annotation(self):
         '''update to tree and save'''
         a_conf = self.tree_helper.get_conf('annotation')
         ts_now = int(time.time())
+        entry_dict = self.tree_helper.get_annotation_dict(self.annotation_entry_list)
         for iid in self.tree.selection():
             row = self.tree_helper.get_data(iid)
-            d = self.tree_helper.get_annotation_dict(self.annotation_entry_list)
+            _i('- %s'%iid)
+            alist = self.set_annotation_list(iid, row['iid_parent'],entry_dict)
+            _i(alist)
+            #print (iid, alist)
+            #self.tree_helper.set_data(iid, alist)
+            #_i('x==row%s==\n%s'%(iid, alist))
+            #if sub_item_list := self.tree.get_children(iid):
+            #    _i('---%s'%sub_item_list)
+            #    for sub_iid in sub_item_list:
+                    #print (sub_iid)
+            #        sub_row = self.tree_helper.get_data(sub_iid)
+            #        aa = self.set_annotation_list(sub_row, entry_dict)
+            #        _i(aa)
             #print (row['image_id'], row['iid'], )
-            alist = row['alist'].copy()
-            if len(alist) > 1:
-                a_index = None
-                if row.get('iid_parent', '') == '':
-                    a_index = 0
-                else:
-                    a_index = int(row['iid'].split(':')[2])
-                alist[a_index] = d
-            else:
-                alist = [d]
 
             sql = "UPDATE image SET annotation='{}', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
-            print ('update annotation:', sql)
+            #print ('update annotation:', sql)
             self.app.db.exec_sql(sql, True)
 
         for a in self.annotation_entry_list:
@@ -632,9 +648,9 @@ class Main(tk.Frame):
 
         ts_now = int(time.time())
         sql = "UPDATE image SET annotation='{}', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
-        print ('clone annotation:', sql)
+        #print ('clone annotation:', sql)
         self.app.db.exec_sql(sql, True)
         self.refresh()
 
-    def move_key(self, event):
+    def move_key(selfg, event):
         print ('move', event)
