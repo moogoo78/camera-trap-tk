@@ -74,7 +74,7 @@ class Main(tk.Frame):
         self.left_frame.grid_rowconfigure(1, weight=1) # expand vertical
         self.left_frame.grid_columnconfigure(0, weight=1)
 
-        self.ctrl_frame = tk.Frame(self.left_frame, bg='#2d3142')
+        self.ctrl_frame = tk.Frame(self.left_frame)
         self.table_frame = tk.Frame(self.left_frame)
 
         self.ctrl_frame.grid(row=0, column=0, sticky='we')
@@ -216,6 +216,21 @@ class Main(tk.Frame):
 
         #self.image_viewer_button.grid(row=1, column=1, sticky='n')
     def config_ctrl_frame(self):
+        self.ctrl_frame.grid_rowconfigure(0, weight=0)
+        self.ctrl_frame.grid_rowconfigure(1, weight=0)
+        self.ctrl_frame.grid_columnconfigure(0, weight=0)
+        self.ctrl_frame.grid_columnconfigure(1, weight=0)
+        self.ctrl_frame.grid_columnconfigure(2, weight=0)
+        self.ctrl_frame.grid_columnconfigure(3, weight=0)
+        self.ctrl_frame.grid_columnconfigure(4, weight=0)
+        self.ctrl_frame.grid_columnconfigure(5, weight=0)
+        self.ctrl_frame.grid_columnconfigure(6, weight=0)
+
+        self.ctrl_frame2 = tk.Frame(self.ctrl_frame)
+        self.ctrl_frame2.grid_rowconfigure(0, weight=0)
+        self.ctrl_frame2.grid_columnconfigure(0, weight=0)
+        self.ctrl_frame2.grid(row=1, column=0, sticky='we', columnspan=6)
+
         # project menu
         self.label_project = ttk.Label(self.ctrl_frame,  text='計畫')
         self.label_project.grid(row=0, column=0)
@@ -227,10 +242,10 @@ class Main(tk.Frame):
             '-- 選擇計畫 --',
             *self.project_options,
             command=self.project_option_changed)
-        self.project_menu.grid(row=0, column=1, sticky=tk.W)
+        self.project_menu.grid(row=0, column=1, sticky=tk.W, padx=(6, 16))
 
         # studyarea menu
-        self.label_studyarea = ttk.Label(self.ctrl_frame,  text='| 樣區')
+        self.label_studyarea = ttk.Label(self.ctrl_frame,  text='樣區')
         self.label_studyarea.grid(row=0, column=2)
         self.studyarea_var = tk.StringVar()
         self.studyarea_options = []
@@ -239,10 +254,10 @@ class Main(tk.Frame):
             self.studyarea_var,
             '')
         self.studyarea_var.trace('w', self.studyarea_option_changed)
-        self.studyarea_menu.grid(row=0, column=3, sticky=tk.W)
+        self.studyarea_menu.grid(row=0, column=3, sticky=tk.W,padx=(6, 20))
 
         # deployment menu
-        self.label_deployment = ttk.Label(self.ctrl_frame,  text=' | 相機位置')
+        self.label_deployment = ttk.Label(self.ctrl_frame,  text='相機位置')
         self.label_deployment.grid(row=0, column=4)
         self.deployment_options = []
         self.deployment_var = tk.StringVar(self.ctrl_frame)
@@ -251,7 +266,7 @@ class Main(tk.Frame):
             self.ctrl_frame,
             self.deployment_var,
             '')
-        self.deployment_menu.grid(row=0, column=5, sticky=tk.W)
+        self.deployment_menu.grid(row=0, column=5, sticky=tk.W, padx=(6, 20))
 
         # upload button
         self.upload_button = ttk.Button(
@@ -268,22 +283,20 @@ class Main(tk.Frame):
         #self.save_button.grid(row=0, column=7, padx=5, sticky='e')
 
         # image sequence
-        #self.seq_label = ttk.Label(self.ctrl_frame,  text='連拍自動補齊')
-        #self.seq_label.grid(row=1, column=0)
         self.seq_checkbox_val = tk.StringVar(self)
         self.seq_checkbox = ttk.Checkbutton(
-            self.ctrl_frame,
-            text='連拍自動補齊',
+            self.ctrl_frame2,
+            text='連拍分組',
 	    command=self.refresh,
             variable=self.seq_checkbox_val,
 	    onvalue='Y',
             offvalue='N')
-        self.seq_checkbox.grid(row=1, column=0)
+        self.seq_checkbox.grid(row=0, column=0, padx=(4, 10))
 
         self.seq_interval_val = tk.StringVar(self)
         #self.seq_interval_val.trace('w', self.on_seq_interval_changed)
         self.seq_interval_entry = ttk.Entry(
-            self.ctrl_frame,
+            self.ctrl_frame2,
             textvariable=self.seq_interval_val,
             width=4,
             #validate='focusout',
@@ -291,11 +304,10 @@ class Main(tk.Frame):
         )
         self.seq_interval_entry.bind(
             "<KeyRelease>", lambda _: self.refresh())
-        self.seq_interval_entry.grid(row=1, column=1)
+        self.seq_interval_entry.grid(row=0, column=1)
 
-        self.seq_unit = ttk.Label(self.ctrl_frame,  text='分鐘 (相鄰照片間隔__分鐘，自動補齊所編輯的欄位資料)')
-        self.seq_unit.grid(row=1, column=2)
-
+        self.seq_unit = ttk.Label(self.ctrl_frame2,  text='分鐘 (相鄰照片間隔__分鐘，顯示分組)')
+        self.seq_unit.grid(row=0, column=2)
 
     def config_table_frame(self):
         self.table_frame.grid_columnconfigure(0, weight=2)
@@ -346,12 +358,22 @@ class Main(tk.Frame):
 
     def from_source(self, source_id=None):
         self.source_id = source_id
+        self.source_data = self.app.source.get_source(self.source_id)
+        if descr := self.source_data['source'][7]:
+            d = json.loads(descr)
+            # set init value
+            self.project_var.set(d.get('project_name', ''))
+            self.studyarea_var.set(d.get('studyarea_name', ''))
+            self.deployment_var.set(d.get('deployment_name', ''))
+        else:
+            self.project_var.set('')
+            self.studyarea_var.set('')
+            self.deployment_var.set('')
         self.refresh()
 
     def refresh(self):
         # get source_data
         #print ('refresh, main: get source', self.source_id)
-        self.source_data = self.app.source.get_source(self.source_id)
 
         self.tree.delete(*self.tree.get_children())
 
@@ -445,9 +467,9 @@ class Main(tk.Frame):
 
             # save to db
             sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(descr), self.source_id)
+            _i('change deployment) %s'%sql)
             self.app.db.exec_sql(sql, True)
 
-            self.source_id = self.parent.state.get('source_id', '')
             # update source_data (for upload: first time import folder, get no deployment_id even if selected)
             self.source_data = self.app.source.get_source(self.source_id)
             # TODO
