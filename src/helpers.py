@@ -520,7 +520,7 @@ class FreeSolo(ttk.Entry, object):
         #self.bind('<Escape>', self.handle_update)
         #self.bind('<Down>', lambda event: self.create_listbox())
         self.bind('<Return>', lambda _: self.create_listbox())
-        self.bind("<FocusOut>", lambda _: self.remove_listbox())
+        #self.bind("<FocusOut>", lambda _: self.remove_listbox()) # will cause listbox gone!
 
         self.listbox = None
         #self.build_listbox()
@@ -554,12 +554,12 @@ class FreeSolo(ttk.Entry, object):
                         self.listbox.insert(tk.END, i)
 
     def handle_update(self, event):
+        #print ('handle_update')
         if listbox := self.listbox:
             current_selection = listbox.curselection()
             if current_selection:
                 text = listbox.get(current_selection)
                 self.value.set(text)
-                print ('update', event)
 
 
         # destroy listbox
@@ -576,7 +576,7 @@ class FreeSolo(ttk.Entry, object):
 
         self.listbox.bind("<ButtonRelease-1>", self.handle_update)
 #        self.listbox.bind("<Return>", self._update_entry)
-        self.listbox.bind("<Escape>", lambda event: self.unpost_listbox())
+        self.listbox.bind("<Escape>", lambda _: self.unpost_listbox())
 
         listbox_frame.grid_columnconfigure(0, weight= 1)
         listbox_frame.grid_rowconfigure(0, weight= 1)

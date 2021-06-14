@@ -136,11 +136,6 @@ class Main(tk.Frame):
         )
         self.species_free.grid(row=1, column=0, padx=4)
         self.annotation_entry_list.append((self.species_free, self.species_value))
-        self.species_free.bind('<Up>', self.move_key)
-        self.species_free.bind('<Down>', self.move_key)
-        self.species_free.bind('<Left>', self.move_key)
-        self.species_free.bind('<Right>', self.move_key)
-
 
         lifestage_label = ttk.Label(
             self.annotation_label_frame,
@@ -207,6 +202,16 @@ class Main(tk.Frame):
         )
         self.animal_id_entry.grid(row=3, column=2, padx=4)
         self.annotation_entry_list.append((self.animal_id_entry, self.animal_id_value))
+
+        # append keyboard navigation
+        self.species_free.bind('<Up>', self.move_key)
+        self.species_free.bind('<Down>', self.move_key)
+        self.lifestage_free.bind('<Up>', self.move_key)
+        self.lifestage_free.bind('<Down>', self.move_key)
+        self.sex_free.bind('<Up>', self.move_key)
+        self.sex_free.bind('<Down>', self.move_key)
+        self.antler_free.bind('<Up>', self.move_key)
+        self.antler_free.bind('<Down>', self.move_key)
 
         annotation_update_button = ttk.Button(
             self.annotation_label_frame,
@@ -683,6 +688,7 @@ class Main(tk.Frame):
         self.from_source(self.source_id)
 
     def move_key(self, event):
+        #print ('move_key', event)
         if event.keysym == 'Down':
             self.move_selection('next')
         elif event.keysym == 'Up':
@@ -695,6 +701,9 @@ class Main(tk.Frame):
             row = self.tree_helper.get_data(iid)
             data = self.tree_helper.data
             break
+
+        if not row or len(data) <= 0:
+            return False
 
         if current := row['counter']:
             #print ('from', iid, current)
