@@ -5,8 +5,8 @@ from tkinter import (
 class Landing(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, background='pink', *args, **kwargs)
+        tk.Frame.__init__(self, parent, background='#2d3142', *args, **kwargs)
         self.parent = parent
 
-        self.message = ttk.Label(self, text="Hello")
+        self.message = ttk.Label(self, text="Dashboard")
         self.message.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)

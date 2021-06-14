@@ -57,12 +57,14 @@ class Main(tk.Frame):
         self.grid_rowconfigure(0, weight=0) # fix
         self.grid_columnconfigure(0, weight=1)
 
+        #panedwindow_style = ttk.Style()
         self.panedwindow = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
+        #panedwindow_style = configure('PanedWindow', sashpad=5)
         self.panedwindow.pack(fill=tk.BOTH, expand=True)
         self.panedwindow.grid_rowconfigure(0, weight=1)
         self.panedwindow.grid_columnconfigure(0, weight=1)
 
-        self.right_frame = tk.Frame(self.panedwindow)
+        self.right_frame = tk.Frame(self.panedwindow, bg='#2d3142')
         self.left_frame = tk.Frame(self.panedwindow)
         #self.right_frame = tk.Frame(self.panedwindow, bg='brown')
 
@@ -357,6 +359,8 @@ class Main(tk.Frame):
 
 
     def from_source(self, source_id=None):
+        self.app.remove_landing()
+
         self.source_id = source_id
         self.source_data = self.app.source.get_source(self.source_id)
         if descr := self.source_data['source'][7]:

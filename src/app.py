@@ -1,3 +1,4 @@
+
 import os
 import argparse
 import tkinter as tk
@@ -51,6 +52,9 @@ class Application(tk.Tk):
         self.title('Camera Trap Desktop')
         #self.maxsize(1000, 400)
 
+        s = ttk.Style()
+        s.theme_use('clam')
+
         self.config = config
 
         # logging
@@ -91,6 +95,7 @@ class Application(tk.Tk):
             self,
             background='#ffffff',
         )
+        self.landing = Landing(self)
         self.sidebar = Sidebar(
             self,
             background='#4f5d75',
@@ -111,6 +116,7 @@ class Application(tk.Tk):
         self.toolbar.grid(row=0, column=0, columnspan=2)
         self.sidebar.grid(row=2, column=0, sticky='nsew')
         self.main.grid(row=2, column=1, sticky='nsew')
+        self.landing.grid(row=2, column=1, sticky='nsew')
         self.statusbar.grid(row=3, column=0, columnspan=2)
 
     def toggle_sidebar(self):
@@ -119,6 +125,9 @@ class Application(tk.Tk):
         else:
             self.sidebar.grid()
 
+    def remove_landing(self):
+        if self.landing.winfo_viewable():
+            self.landing.grid_remove()
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(
