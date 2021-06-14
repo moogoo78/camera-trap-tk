@@ -17,7 +17,7 @@ from frame import (
     Sidebar,
     #Main,
     Statusbar,
-    Datatable,
+    #Datatable,
     Landing,
     ImageViewer,
 )
