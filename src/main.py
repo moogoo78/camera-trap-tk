@@ -389,7 +389,9 @@ class Main(tk.Frame):
 
     def refresh(self):
         # get source_data
-        #print ('refresh, main: get source', self.source_id)
+        #print ('refresh, main: get source', self.source_id, from_source)
+        #if self.source_id and from_source == True:
+        #    self.from_source(source_id)
 
         self.tree.delete(*self.tree.get_children())
 
@@ -654,7 +656,7 @@ class Main(tk.Frame):
         for a in self.annotation_entry_list:
             a[1].set('')
 
-        self.refresh()
+        self.from_source(self.source_id)
 
     def clone_row(self):
         source_iid = ''
@@ -677,7 +679,37 @@ class Main(tk.Frame):
         #print ('clone annotation:', sql)
         #_i('sql:%s'%sql)
         self.app.db.exec_sql(sql, True)
-        self.refresh()
+        #self.refresh()
+        self.from_source(self.source_id)
 
     def move_key(self, event):
-        print ('move', event)
+        if event.keysym == 'Down':
+            self.move_selection('next')
+        elif event.keysym == 'Up':
+            self.move_selection('prev')
+
+    def move_selection(self, action):
+        for selected_item in self.tree.selection():
+            iid = selected_item
+
+            row = self.tree_helper.get_data(iid)
+            data = self.tree_helper.data
+            break
+
+        if current := row['counter']:
+            #print ('from', iid, current)
+            move_to = None
+            if action == 'next':
+                if current < len(data):
+                    move_to = data[current]['iid']
+                    #move_to = main.tree.next(next_iid)
+            elif action == 'prev':
+                if current > 0:
+                    move_to = data[current-2]['iid']
+                    #move_to = main.tree.prev(iid)
+            #print ('to', move_to)
+            # tk.treeview next & prev need to consider children
+            if move_to:
+                self.tree.focus(move_to)
+                #main.tree.focus_set() # cause double action
+                self.tree.selection_set(move_to)

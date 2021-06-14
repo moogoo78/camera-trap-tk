@@ -38,35 +38,11 @@ class ImageViewer(tk.Frame):
         self.annotation_label.grid(row=3, column=1, sticky='ew', padx=10, pady=10)
 
     def on_key(self, action):
-        #print ('key', action)
-        main = self.parent.main
-        for selected_item in main.tree.selection():
-            iid = selected_item
-            #item = main.tree.item(iid)
-
-            #main.tree.get_children(iid)
-            row = main.tree_helper.get_data(iid)
-            data = main.tree_helper.data
-            break
-
-        if current := row['counter']:
-            #print ('from', iid, current)
-            move_to = None
-            if action in ['down', 'right']:
-                if current < len(data):
-                    move_to = data[current]['iid']
-                    #move_to = main.tree.next(next_iid)
-            elif action in ['up', 'left']:
-                if current > 0:
-                    move_to = data[current-2]['iid']
-                    #move_to = main.tree.prev(iid)
-            #print ('to', move_to)
-            # tk.treeview next & prev need to consider children
-            if move_to:
-                main.tree.focus(move_to)
-                #main.tree.focus_set() # cause double action
-                main.tree.selection_set(move_to)
-                self.refresh()
+        if action in ['down', 'right']:
+            self.parent.main.move_selection('next')
+        elif action in ['up', 'left']:
+            self.parent.main.move_selection('prev')
+        self.refresh()
 
     # def on_back(self):
     #     self.parent.state['current_row'] = 0
