@@ -50,6 +50,7 @@ class TreeHelper(object):
         self.heading = HEADING
         self.annotation_item = [3, 4, 5, 6, 7, 8]
         self.data = []
+        self.current_index = 0
 
     def get_annotation_dict(self, entry_list):
         d = {}

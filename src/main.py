@@ -5,6 +5,7 @@ from tkinter import ttk
 from logging import debug as _d
 from logging import info as _i
 from PIL import ImageTk, Image
+#import threading
 
 from helpers import (
     FreeSolo,
@@ -12,6 +13,16 @@ from helpers import (
 )
 
 #from autocomplete_widget import FreeSolo
+
+class Worker:
+    finished = False
+    def do_work(self):
+        time.sleep(10)
+        self.finished=True
+    def start(self):
+        self.th = threading.Thread(target=self.do_work)
+        self.th.start()
+
 
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -32,6 +43,7 @@ class Main(tk.Frame):
         self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
 
         self.source_id = None
+        self.current_row = 0
 
         self.tree_helper = TreeHelper()
         self.annotation_entry_list = []
@@ -274,7 +286,7 @@ class Main(tk.Frame):
         self.upload_button = ttk.Button(
             self.ctrl_frame,
             text='上傳',
-            command=self.on_upload)
+            command=self.handle_upload)
         self.upload_button.grid(row=0, column=6, padx=20, sticky='w')
 
         # save button
@@ -359,7 +371,7 @@ class Main(tk.Frame):
 
 
     def from_source(self, source_id=None):
-        self.app.remove_landing()
+        self.app.begin_from_source()
 
         self.source_id = source_id
         self.source_data = self.app.source.get_source(self.source_id)
@@ -478,7 +490,7 @@ class Main(tk.Frame):
             self.source_data = self.app.source.get_source(self.source_id)
             # TODO
             #tk.messagebox.showinfo('info', '已設定相機位置')
-    def on_upload(self):
+    def handle_upload(self):
         #self.app.source.do_upload(self.source_data)
         ans = tk.messagebox.askquestion('上傳確認', '確定要上傳?')
         if ans == 'no':
@@ -533,6 +545,7 @@ class Main(tk.Frame):
         self.update_idletasks()
         tk.messagebox.showinfo('info', '上傳成功')
 
+
     # DEPRICATED
     def save_tree_to_db(self):
         print ('save to db')
@@ -571,8 +584,11 @@ class Main(tk.Frame):
             #print ('select first: ', selected_item)
             #values = self.tree.item(selected_item, 'values')
             iid = selected_item
-            break
+            text = self.tree.item(selected_item, 'text')
+            #self.current_row = int(text)
 
+            break
+        #print ('select)', iid)
         if iid:
             row = self.tree_helper.get_data(iid)
             self.show_thumb(row['path'])
@@ -663,5 +679,5 @@ class Main(tk.Frame):
         self.app.db.exec_sql(sql, True)
         self.refresh()
 
-    def move_key(selfg, event):
+    def move_key(self, event):
         print ('move', event)

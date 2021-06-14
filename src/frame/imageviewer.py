@@ -29,57 +29,90 @@ class ImageViewer(tk.Frame):
             command=lambda: self.on_key('right'))
         self.right_button.grid(row=1, column=2, pady=5, sticky='e')
 
-        self.back_button = ttk.Button(
-            self,
-            text='回上頁',
-            command=self.on_back)
-        self.back_button.grid(row=2, column=0, pady=20, sticky='n')
-
+        # self.back_button = ttk.Button(
+        #     self,
+        #     text='回上頁',
+        #     command=self.on_back)
+        # self.back_button.grid(row=2, column=0, pady=20, sticky='n')
+        self.annotation_label = ttk.Label(self, text='')
+        self.annotation_label.grid(row=3, column=1, sticky='ew', padx=10, pady=10)
 
     def on_key(self, action):
-        row = self.parent.state.get('current_row', '')
-        #print ('key', action, row)
-        if row == '':
-            return False
+        #print ('key', action)
+        main = self.parent.main
+        for selected_item in main.tree.selection():
+            iid = selected_item
+            #item = main.tree.item(iid)
 
-        if action in ['down', 'right']:
-            row += 1
-        elif action in ['up', 'left']:
-            row -= 1
+            #main.tree.get_children(iid)
+            row = main.tree_helper.get_data(iid)
+            data = main.tree_helper.data
+            break
 
-        if row < len(self.parent.state['alist']) and \
-           row >= 0:
-            #print ('goto', row)
-            self.parent.state['current_row'] = row
-            self.refresh()
-        else:
-            #print ('limit', row)
-            pass
+        if current := row['counter']:
+            #print ('from', iid, current)
+            move_to = None
+            if action in ['down', 'right']:
+                if current < len(data):
+                    move_to = data[current]['iid']
+                    #move_to = main.tree.next(next_iid)
+            elif action in ['up', 'left']:
+                if current > 0:
+                    move_to = data[current-2]['iid']
+                    #move_to = main.tree.prev(iid)
+            #print ('to', move_to)
+            # tk.treeview next & prev need to consider children
+            if move_to:
+                main.tree.focus(move_to)
+                #main.tree.focus_set() # cause double action
+                main.tree.selection_set(move_to)
+                self.refresh()
 
-    def on_back(self):
-        self.parent.state['current_row'] = 0
-        self.parent.show_frame('datatable')
-        # unbind key event
-        self.parent.parent.unbind('<Left>')
-        self.parent.parent.unbind('<Up>')
-        self.parent.parent.unbind('<Right>')
-        self.parent.parent.unbind('<Down>')
+    # def on_back(self):
+    #     self.parent.state['current_row'] = 0
+    #     self.parent.show_frame('datatable')
+    #     # unbind key event
+    #     self.parent.parent.unbind('<Left>')
+    #     self.parent.parent.unbind('<Up>')
+    #     self.parent.parent.unbind('<Right>')
+    #     self.parent.parent.unbind('<Down>')
 
 
     def refresh(self):
         # bind key event
-        self.parent.parent.bind('<Down>', lambda _: self.on_key('down'))
-        self.parent.parent.bind('<Up>', lambda _: self.on_key('up'))
-        self.parent.parent.bind('<Left>', lambda _: self.on_key('left'))
-        self.parent.parent.bind('<Right>', lambda _: self.on_key('right'))
+        self.parent.bind('<Down>', lambda _: self.on_key('down'))
+        self.parent.bind('<Up>', lambda _: self.on_key('up'))
+        self.parent.bind('<Left>', lambda _: self.on_key('left'))
+        self.parent.bind('<Right>', lambda _: self.on_key('right'))
 
-        state = self.parent.state
-        #print ('refresh', state)
-        total = len(state['alist'])
-        row = state['current_row']
-        self.label['text'] = f'{row+1}/{total}'
+        main = self.parent.main
+        iid = None
+        text = None
+        for selected_item in main.tree.selection():
+            iid = selected_item
+            text = main.tree.item(iid, 'text')
+            break
 
-        image_path = state['alist'][state['current_row']][9]['path']
+        if not iid:
+            return False
+
+        row = main.tree_helper.get_data(iid)
+        data = main.tree_helper.data
+
+        if not len(data):
+            return False
+
+        total = len(data)
+        #row = 0
+        self.label['text'] = f'{text}/{total}'
+        a_conf = main.tree_helper.get_conf(cat='annotation')
+        atext_list = []
+        for a in a_conf:
+            if x := row.get(a[1][0], ''):
+                atext_list.append(f'{a[1][1]}: {x}')
+        self.annotation_label['text'] = f'Annotation: {", ".join(atext_list)}'
+
+        image_path = row['path']
         image = Image.open(image_path)
         # aspect ratio
         basewidth = 800

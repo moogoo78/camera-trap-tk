@@ -87,15 +87,13 @@ class Application(tk.Tk):
         self.grid_columnconfigure(1, weight=1)
 
         #self.title_font = font.Font(family='Helvetica', size=18, weight="bold", slant="italic")
-        self.toolbar = Toolbar(
-            self,
-            background='#2d3142'
-        )
+        self.toolbar = Toolbar(self)
         self.main = Main(
             self,
             background='#ffffff',
         )
         self.landing = Landing(self)
+        self.image_viewer = ImageViewer(self)
         self.sidebar = Sidebar(
             self,
             background='#4f5d75',
@@ -115,19 +113,18 @@ class Application(tk.Tk):
 
         self.toolbar.grid(row=0, column=0, columnspan=2)
         self.sidebar.grid(row=2, column=0, sticky='nsew')
+        #self.image_viewer.grid(row=2, column=1, sticky='nsew')
         self.main.grid(row=2, column=1, sticky='nsew')
         self.landing.grid(row=2, column=1, sticky='nsew')
         self.statusbar.grid(row=3, column=0, columnspan=2)
 
-    def toggle_sidebar(self):
-        if self.sidebar.winfo_viewable():
-            self.sidebar.grid_remove()
-        else:
-            self.sidebar.grid()
-
-    def remove_landing(self):
+    def begin_from_source(self):
         if self.landing.winfo_viewable():
             self.landing.grid_remove()
+
+        if self.image_viewer.winfo_viewable():
+            self.image_viewer.grid_remove()
+
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(
