@@ -586,17 +586,10 @@ class Main(tk.Frame):
         self.image_thumb.image = photo
         self.update_idletasks()
 
-    def set_annotation_list(self, iid, iid_parent, entry_dict):
-        data = []
+    def _get_alist(self, iid, iid_parent):
         annotation_iid = iid if iid_parent == '' else iid_parent
-        index = int(annotation_iid.split(':')[1])
-        annotation_index = int(iid.split(':')[2])
-        alist = self.tree_helper.data[index].get('alist', [])
-        if len(alist) > 0:
-            alist[annotation_index] = entry_dict
-        else:
-            alist = [entry_dict]
-        return alist
+        row = self.tree_helper.get_data(annotation_iid)
+        return row.get('alist', [])
 
     def update_annotation(self):
         '''update to tree and save'''
@@ -605,20 +598,12 @@ class Main(tk.Frame):
         entry_dict = self.tree_helper.get_annotation_dict(self.annotation_entry_list)
         for iid in self.tree.selection():
             row = self.tree_helper.get_data(iid)
-            _i('- %s'%iid)
-            alist = self.set_annotation_list(iid, row['iid_parent'],entry_dict)
-            _i(alist)
-            #print (iid, alist)
-            #self.tree_helper.set_data(iid, alist)
-            #_i('x==row%s==\n%s'%(iid, alist))
-            #if sub_item_list := self.tree.get_children(iid):
-            #    _i('---%s'%sub_item_list)
-            #    for sub_iid in sub_item_list:
-                    #print (sub_iid)
-            #        sub_row = self.tree_helper.get_data(sub_iid)
-            #        aa = self.set_annotation_list(sub_row, entry_dict)
-            #        _i(aa)
-            #print (row['image_id'], row['iid'], )
+            alist = self._get_alist(iid, row['iid_parent'])
+            annotation_index = int(iid.split(':')[2])
+            if len(alist) > 0:
+                alist[annotation_index] = entry_dict
+            else:
+                alist = [entry_dict]
 
             sql = "UPDATE image SET annotation='{}', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
             #print ('update annotation:', sql)
@@ -629,7 +614,6 @@ class Main(tk.Frame):
 
         self.refresh()
 
-
     def clone_row(self):
         source_iid = ''
         for iid in self.tree.selection():
@@ -637,18 +621,19 @@ class Main(tk.Frame):
             source_iid = iid # clone only get first
             break
 
-        row = self.tree_helper.get_data(iid)
-        d = self.tree_helper.get_annotation_dict(self.annotation_entry_list)
-        alist = row['alist'].copy()
-
+        row = self.tree_helper.get_data(source_iid)
+        alist = self._get_alist(source_iid, row['iid_parent'])
+        a_index = int(iid.split(':')[2])
+        cloned_annotation = {}
         if len(alist) > 0:
-            alist.append(alist[0])
+            alist.append(alist[a_index])
         else:
-            alist = []
+            alist = [{},{}]
 
         ts_now = int(time.time())
         sql = "UPDATE image SET annotation='{}', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
         #print ('clone annotation:', sql)
+        #_i('sql:%s'%sql)
         self.app.db.exec_sql(sql, True)
         self.refresh()
 

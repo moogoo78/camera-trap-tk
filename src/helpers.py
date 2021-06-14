@@ -55,6 +55,7 @@ class TreeHelper(object):
         d = {}
         for i, v in enumerate(self.annotation_item):
             key = self.heading[v][0]
+            key = key.replace('annotation_', '')
             d[key] = entry_list[i][1].get()
 
         return d
@@ -112,7 +113,8 @@ class TreeHelper(object):
                     }
                     for head_index in self.annotation_item:
                         key = self.heading[head_index][0]
-                        row_multi[key] = a.get(key, '')
+                        k = key.replace('annotation_', '')
+                        row_multi[key] = a.get(k, '')
 
                     if a_index == 0:
                         row_multi['alist'] = alist
@@ -134,7 +136,6 @@ class TreeHelper(object):
                 rows.append({**row_basic, **row_multi})
 
         self.data = rows
-
         tree_data = []
         for i in rows:
             values = [i.get(h[0], '')
