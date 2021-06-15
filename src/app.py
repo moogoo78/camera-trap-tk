@@ -29,9 +29,9 @@ from server import Server
 from config import Config
 
 # colors
-# 2d3142
+# 2d3142 # deep blue
 # 4f5d75
-# bfc0c0
+# bfc0c0 # gray
 # ffffff
 # ef8354
 
@@ -87,7 +87,10 @@ class Application(tk.Tk):
         self.grid_columnconfigure(1, weight=1)
 
         #self.title_font = font.Font(family='Helvetica', size=18, weight="bold", slant="italic")
-        self.toolbar = Toolbar(self)
+        self.toolbar = Toolbar(
+            self,
+            background='#ef8354'
+        )
         self.main = Main(
             self,
             background='#ffffff',
@@ -111,7 +114,7 @@ class Application(tk.Tk):
         #self.message = tk.Label(self, text="Hello, world!")
         #self.message.grid(row=1, column=0, columnspan=2)
 
-        self.toolbar.grid(row=0, column=0, columnspan=2)
+        self.toolbar.grid(row=0, column=0, columnspan=2, sticky='nsew')
         self.sidebar.grid(row=2, column=0, sticky='nsew')
         #self.image_viewer.grid(row=2, column=1, sticky='nsew')
         self.main.grid(row=2, column=1, sticky='nsew')

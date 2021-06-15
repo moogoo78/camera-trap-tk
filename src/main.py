@@ -44,6 +44,7 @@ class Main(tk.Frame):
 
         self.source_id = None
         self.current_row = 0
+        self.thumb_basewidth = 300
 
         self.tree_helper = TreeHelper()
         self.annotation_entry_list = []
@@ -53,6 +54,14 @@ class Main(tk.Frame):
         self.layout()
         self.config_ctrl_frame()
         self.config_table_frame()
+
+    def handle_panedwindow_release(self, event):
+        w = self.right_frame.winfo_width()
+        # border: 8, padx: 10
+        self.thumb_basewidth = w - 36
+        data = self.get_current_item('data')
+        if data:
+            self.show_thumb(data['path'])
 
     def layout(self):
         '''
@@ -75,7 +84,7 @@ class Main(tk.Frame):
         self.panedwindow.pack(fill=tk.BOTH, expand=True)
         self.panedwindow.grid_rowconfigure(0, weight=1)
         self.panedwindow.grid_columnconfigure(0, weight=1)
-
+        self.panedwindow.bind("<ButtonRelease-1>", self.handle_panedwindow_release)
         self.right_frame = tk.Frame(self.panedwindow, bg='#2d3142')
         self.left_frame = tk.Frame(self.panedwindow)
         #self.right_frame = tk.Frame(self.panedwindow, bg='brown')
@@ -234,6 +243,7 @@ class Main(tk.Frame):
         # )
 
         #self.image_viewer_button.grid(row=1, column=1, sticky='n')
+
     def config_ctrl_frame(self):
         self.ctrl_frame.grid_rowconfigure(0, weight=0)
         self.ctrl_frame.grid_rowconfigure(1, weight=0)
@@ -244,15 +254,22 @@ class Main(tk.Frame):
         self.ctrl_frame.grid_columnconfigure(4, weight=0)
         self.ctrl_frame.grid_columnconfigure(5, weight=0)
         self.ctrl_frame.grid_columnconfigure(6, weight=0)
+        self.ctrl_frame.grid_columnconfigure(7, weight=0)
 
         self.ctrl_frame2 = tk.Frame(self.ctrl_frame)
         self.ctrl_frame2.grid_rowconfigure(0, weight=0)
         self.ctrl_frame2.grid_columnconfigure(0, weight=0)
         self.ctrl_frame2.grid(row=1, column=0, sticky='we', columnspan=6)
+        # folder
+        self.label_folder = ttk.Label(
+            self.ctrl_frame,
+            text='',
+            font=tk.font.Font(family='Helvetica', size=18, weight='bold'))
+        self.label_folder.grid(row=0, column=0, padx=(0, 36))
 
         # project menu
         self.label_project = ttk.Label(self.ctrl_frame,  text='計畫')
-        self.label_project.grid(row=0, column=0)
+        self.label_project.grid(row=0, column=1)
         self.project_options = [x['name'] for x in self.projects]
         self.project_var = tk.StringVar(self)
         self.project_menu = tk.OptionMenu(
@@ -261,11 +278,11 @@ class Main(tk.Frame):
             '-- 選擇計畫 --',
             *self.project_options,
             command=self.project_option_changed)
-        self.project_menu.grid(row=0, column=1, sticky=tk.W, padx=(6, 16))
+        self.project_menu.grid(row=0, column=2, sticky=tk.W, padx=(6, 16))
 
         # studyarea menu
         self.label_studyarea = ttk.Label(self.ctrl_frame,  text='樣區')
-        self.label_studyarea.grid(row=0, column=2)
+        self.label_studyarea.grid(row=0, column=3)
         self.studyarea_var = tk.StringVar()
         self.studyarea_options = []
         self.studyarea_menu = tk.OptionMenu(
@@ -273,11 +290,11 @@ class Main(tk.Frame):
             self.studyarea_var,
             '')
         self.studyarea_var.trace('w', self.studyarea_option_changed)
-        self.studyarea_menu.grid(row=0, column=3, sticky=tk.W,padx=(6, 20))
+        self.studyarea_menu.grid(row=0, column=4, sticky=tk.W,padx=(6, 20))
 
         # deployment menu
         self.label_deployment = ttk.Label(self.ctrl_frame,  text='相機位置')
-        self.label_deployment.grid(row=0, column=4)
+        self.label_deployment.grid(row=0, column=5)
         self.deployment_options = []
         self.deployment_var = tk.StringVar(self.ctrl_frame)
         self.deployment_var.trace('w', self.deployment_option_changed)
@@ -285,14 +302,14 @@ class Main(tk.Frame):
             self.ctrl_frame,
             self.deployment_var,
             '')
-        self.deployment_menu.grid(row=0, column=5, sticky=tk.W, padx=(6, 20))
+        self.deployment_menu.grid(row=0, column=6, sticky=tk.W, padx=(6, 20))
 
         # upload button
         self.upload_button = ttk.Button(
             self.ctrl_frame,
             text='上傳',
             command=self.handle_upload)
-        self.upload_button.grid(row=0, column=6, padx=20, sticky='w')
+        self.upload_button.grid(row=0, column=7, padx=20, sticky='w')
 
         # save button
         #self.save_button = ttk.Button(
@@ -391,6 +408,8 @@ class Main(tk.Frame):
             self.studyarea_var.set('')
             self.deployment_var.set('')
         self.refresh()
+        # default show first image
+        self.show_thumb(self.tree_helper.data[0]['path'])
 
     def refresh(self):
         # get source_data
@@ -407,7 +426,7 @@ class Main(tk.Frame):
             if seq_int := self.seq_interval_val.get():
                 seq_info = self.tree_helper.group_image_sequence(seq_int, seq_tag='tag_name')
 
-
+        #print (seq_info)
         if seq_info:
             for i, values in enumerate(tree_data):
                 data = self.tree_helper.data[i]
@@ -430,6 +449,9 @@ class Main(tk.Frame):
                     self.tree.insert(parent, tk.END, iid, values=values, tags=('odd',), text=text, open=True)
             self.tree.tag_configure('odd', background='#E8E8E8')
             self.tree.tag_configure('even', background='#DFDFDF')
+
+        # folder name
+        self.label_folder['text'] = self.source_data['source'][3]
 
     def project_option_changed(self, *args):
         name = self.project_var.get()
@@ -497,6 +519,7 @@ class Main(tk.Frame):
             self.source_data = self.app.source.get_source(self.source_id)
             # TODO
             #tk.messagebox.showinfo('info', '已設定相機位置')
+
     def handle_upload(self):
         #self.app.source.do_upload(self.source_data)
         ans = tk.messagebox.askquestion('上傳確認', '確定要上傳?')
@@ -585,13 +608,24 @@ class Main(tk.Frame):
         }
         return status_map.get(code, '-')
 
+    def get_current_item(self, cat='data'):
+        sel = self.tree.selection()
+        if len(sel) <= 0:
+            return None
+
+        iid = sel[0]
+        #text = self.tree.item(selected_item, 'text')
+        if cat == 'data':
+            return self.tree_helper.get_data(iid)
+
     def handle_select(self, event):
         iid = ''
+        record = None
         for selected_item in self.tree.selection():
             #print ('select first: ', selected_item)
             #values = self.tree.item(selected_item, 'values')
             iid = selected_item
-            text = self.tree.item(selected_item, 'text')
+            record = self.tree.item(selected_item, 'values')
             #self.current_row = int(text)
 
             break
@@ -599,6 +633,19 @@ class Main(tk.Frame):
         if iid:
             row = self.tree_helper.get_data(iid)
             self.show_thumb(row['path'])
+
+            # set viewed
+            if st := row.get('status', 0):
+                if int(st) < 20:
+                    sql = "UPDATE image SET status='20' where image_id={}".format(row['image_id'])
+                    self.app.db.exec_sql(sql, True)
+                    values = list(record)
+                    values[0] = values[0].replace('new', 'viewed')
+                    self.tree.item(iid, values=values)
+                    # refresh cause blink and slow
+                    #self.from_source(self.source_id)
+                    #self.tree.focus(iid)
+                    #self.tree.selection_set(iid)
 
             self.begin_edit_annotation(iid)
 
@@ -624,10 +671,10 @@ class Main(tk.Frame):
         #image_path = self.sheet_data[row][9]['path']
         image = Image.open(image_path)
         # aspect ratio
-        basewidth = 450
+        basewidth = self.thumb_basewidth
         wpercent = (basewidth/float(image.size[0]))
         hsize = int((float(image.size[1])*float(wpercent)))
-        img = image.resize((basewidth,hsize))
+        img = image.resize((basewidth, hsize))
         #img = image.resize((300,300))
         #img = image.resize((300,300), Image.ANTIALIAS)
         photo = ImageTk.PhotoImage(img)
@@ -654,7 +701,7 @@ class Main(tk.Frame):
             else:
                 alist = [entry_dict]
 
-            sql = "UPDATE image SET annotation='{}', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
+            sql = "UPDATE image SET annotation='{}', status='30', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
             #print ('update annotation:', sql)
             self.app.db.exec_sql(sql, True)
 

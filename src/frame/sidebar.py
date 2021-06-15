@@ -16,7 +16,7 @@ class Sidebar(tk.Frame):
 
         add_button = ttk.Button(
             self,
-            text='新增目錄',
+            text='加入資料夾',
             command=self.add_folder)
         add_button.grid(pady=4)
 
@@ -56,7 +56,7 @@ class Sidebar(tk.Frame):
 
         folder_path = src.get_folder_path(directory)
         if not folder_path:
-            tk.messagebox.showinfo('info', '已經加過此目錄')
+            tk.messagebox.showinfo('info', '已經加過此資料夾')
             return False
 
         image_list = src.get_image_list(folder_path)

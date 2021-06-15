@@ -70,6 +70,7 @@ class TreeHelper(object):
 
     def get_data(self, iid):
         return list(filter(lambda x: x['iid'] == iid, self.data))[0]
+
     def get_conf(self, cat='annotation'):
         '''
         return [(index, conf)...]
@@ -163,10 +164,10 @@ class TreeHelper(object):
             tag_name = ''
             next_idx = min(i+1, len(self.data)-1)
             this_time = self.data[i]['time']
-            next_time = self.data[next_idx]['time']
-
+            next_time = self.data[next_idx]['time'] if i < next_idx else 0
             seq_info['group_prev'] = seq_info['group_next']
-            if next_time and (next_time - this_time) <= seq_info['int']:
+            if next_time and \
+               (next_time - this_time) <= seq_info['int']:
                 seq_info['group_next'] = True
             else:
                 seq_info['group_next'] = False
