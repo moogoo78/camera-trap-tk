@@ -60,8 +60,12 @@ class Main(tk.Frame):
         # border: 8, padx: 10
         self.thumb_basewidth = w - 36
         data = self.get_current_item('data')
+
         if data:
             self.show_thumb(data['path'])
+        elif self.tree_helper.data:
+            # when default no selection
+            self.show_thumb(self.tree_helper.data[0]['path'])
 
     def layout(self):
         '''
@@ -408,6 +412,7 @@ class Main(tk.Frame):
             self.studyarea_var.set('')
             self.deployment_var.set('')
         self.refresh()
+
         # default show first image
         self.show_thumb(self.tree_helper.data[0]['path'])
 

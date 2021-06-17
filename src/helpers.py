@@ -155,7 +155,7 @@ class TreeHelper(object):
             'map': {},
             'idx': 0,
             'salt': random.random(),
-            'int': int(time_interval),
+            'int': int(time_interval) * 60,
         }
         # via: https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
         golden_ratio_conjugate = 0.618033988749895
