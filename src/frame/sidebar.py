@@ -72,3 +72,4 @@ class Sidebar(tk.Frame):
         self.update_idletasks()
 
         self.refresh_source_list()
+

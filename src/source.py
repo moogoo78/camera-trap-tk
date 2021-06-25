@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 import time
 from datetime import datetime
 import json
@@ -236,3 +237,12 @@ class Source(object):
         else:
             pass
             #pbstop && raise
+
+    def delete_folder(self, source_id):
+        #print ('delete', source_id)
+        sql = f"DELETE FROM source WHERE source_id = {source_id}"
+        self.db.exec_sql(sql, True)
+        sql = f"DELETE FROM image WHERE source_id = {source_id}"
+        self.db.exec_sql(sql, True)
+
+        shutil.rmtree(Path(f'./thumbnails/{source_id}'), ignore_errors=True)

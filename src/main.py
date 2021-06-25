@@ -278,6 +278,7 @@ class Main(tk.Frame):
         self.ctrl_frame.grid_columnconfigure(5, weight=0)
         self.ctrl_frame.grid_columnconfigure(6, weight=0)
         self.ctrl_frame.grid_columnconfigure(7, weight=0)
+        self.ctrl_frame.grid_columnconfigure(8, weight=0)
 
         self.ctrl_frame2 = tk.Frame(self.ctrl_frame)
         self.ctrl_frame2.grid_rowconfigure(0, weight=0)
@@ -334,12 +335,11 @@ class Main(tk.Frame):
             command=self.handle_upload)
         self.upload_button.grid(row=0, column=7, padx=20, sticky='w')
 
-        # save button
-        #self.save_button = ttk.Button(
-        #    self.ctrl_frame,
-        #    text='儲存',
-        #    command=self.save_tree_to_db)
-        #self.save_button.grid(row=0, column=7, padx=5, sticky='e')
+        self.delete_button = ttk.Button(
+            self.ctrl_frame,
+            text='刪除資料夾',
+            command=self.handle_delete)
+        self.delete_button.grid(row=0, column=8, padx=5, sticky='e')
 
         # image sequence
         self.seq_checkbox_val = tk.StringVar(self)
@@ -599,6 +599,14 @@ class Main(tk.Frame):
         self.update_idletasks()
         tk.messagebox.showinfo('info', '上傳成功')
 
+    def handle_delete(self):
+        ans = tk.messagebox.askquestion('確認', f"確定要刪除資料夾: {self.source_data['source'][3]}?")
+        if ans == 'no':
+            return False
+
+        self.app.source.delete_folder(self.source_id)
+        self.app.sidebar.refresh_source_list()
+        self.app.show_landing()
 
     # DEPRICATED
     def save_tree_to_db(self):

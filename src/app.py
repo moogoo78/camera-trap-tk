@@ -128,6 +128,9 @@ class Application(tk.Tk):
         if self.image_viewer.winfo_viewable():
             self.image_viewer.grid_remove()
 
+    def show_landing(self):
+        self.landing.grid()
+
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(
