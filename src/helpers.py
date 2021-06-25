@@ -180,13 +180,14 @@ class TreeHelper(object):
             if seq_info['group_next'] or seq_info['group_prev']:
                 tag_name = 'tag{}'.format(seq_info['idx'])
             else:
-                seq_num = ''
+                tag_name = ''
 
             rgb_hex = ''
             if tag_name:
                 rgb = colorsys.hls_to_rgb(seq_info['salt']*265, 0.8, 0.5)
                 rgb_hex = f'#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}'
-                if seq_info['idx'] not in seq_info['map']:
+                #print (i, tag_name, seq_info['idx'])
+                if tag_name not in seq_info['map']:
                     seq_info['map'][tag_name] = {
                         'color': rgb_hex,
                         'rows': []
@@ -198,6 +199,7 @@ class TreeHelper(object):
             if seq_tag:
                 v[seq_tag] = tag_name
 
+        #print (seq_info)
         return seq_info
 
     # via: https://stackoverflow.com/questions/56331001/python-tkinter-treeview-colors-are-not-updating

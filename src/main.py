@@ -445,13 +445,13 @@ class Main(tk.Frame):
 
         tree_data = self.tree_helper.set_data_from_list(self.source_data['image_list'])
 
-        seq_info = None
+        self.seq_info = None
         if self.seq_checkbox_val.get() == 'Y':
             if seq_int := self.seq_interval_val.get():
-                seq_info = self.tree_helper.group_image_sequence(seq_int, seq_tag='tag_name')
+                self.seq_info = self.tree_helper.group_image_sequence(seq_int, seq_tag='tag_name')
 
         #print (seq_info)
-        if seq_info:
+        if self.seq_info:
             for i, values in enumerate(tree_data):
                 data = self.tree_helper.data[i]
                 tag = data['tag_name']
@@ -459,7 +459,7 @@ class Main(tk.Frame):
                 parent = data['iid_parent']
                 text = data['counter']
                 self.tree.insert(parent, tk.END, iid, text=text, values=values, tags=(tag), open=True)
-            for tag_name, item in seq_info['map'].items():
+            for tag_name, item in self.seq_info['map'].items():
                 self.tree.tag_configure(tag_name, background=item['color'])
         else:
             for i, values in enumerate(tree_data):
@@ -716,7 +716,14 @@ class Main(tk.Frame):
         a_conf = self.tree_helper.get_conf('annotation')
         ts_now = int(time.time())
         entry_dict = self.tree_helper.get_annotation_dict(self.annotation_entry_list)
+
         for iid in self.tree.selection():
+            seq_name = ''
+            if tag_list := self.tree.item(iid, 'tag'):
+                seq_tag_list= [x for x in tag_list if 'tag' in x]
+                if seq_tag_list:
+                    seq_name = seq_tag_list[0]
+
             row = self.tree_helper.get_data(iid)
             alist = self._get_alist(iid, row['iid_parent'])
             annotation_index = int(iid.split(':')[2])
@@ -725,9 +732,22 @@ class Main(tk.Frame):
             else:
                 alist = [entry_dict]
 
+            # update selected
             sql = "UPDATE image SET annotation='{}', status='30', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
             #print ('update annotation:', sql)
-            self.app.db.exec_sql(sql, True)
+            self.app.db.exec_sql(sql)
+
+            # image seq related
+            index_list = self.seq_info['map'][seq_name]['rows']
+            for x in index_list:
+                related_image_id = self.tree_helper.data[x]['image_id']
+                if related_image_id != row['image_id']:
+                    sql = "UPDATE image SET annotation='{}', status='30', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, related_image_id)
+                    self.app.db.exec_sql(sql)
+                    #print ('update annotation (image_seq):', sql)
+
+            self.app.db.commit()
+
 
         for a in self.annotation_entry_list:
             a[1].set('')
