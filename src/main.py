@@ -225,7 +225,10 @@ class Main(tk.Frame):
         self.sex_free.bind('<Down>', self.move_key)
         self.antler_free.bind('<Up>', self.move_key)
         self.antler_free.bind('<Down>', self.move_key)
-
+        self.species_free.bind('<FocusOut>', self.fo_species)
+        self.lifestage_free.bind('<FocusOut>', self.fo_lifestage)
+        self.sex_free.bind('<FocusOut>', self.fo_sex)
+        self.antler_free.bind('<FocusOut>', self.fo_antler)
         annotation_update_button = ttk.Button(
             self.annotation_label_frame,
             text='存檔',
@@ -247,6 +250,22 @@ class Main(tk.Frame):
         # )
 
         #self.image_viewer_button.grid(row=1, column=1, sticky='n')
+
+    def fo_species(self, event):
+        if self.species_free.listbox:
+            self.species_free.handle_update(event)
+
+    def fo_lifestage(self, event):
+        if self.lifestage_free.listbox:
+            self.lifestage_free.handle_update(event)
+
+    def fo_sex(self, event):
+        if self.sex_free.listbox:
+            self.sex_free.handle_update(event)
+
+    def fo_antler(self, event):
+        if self.antler_free.listbox:
+            self.antler_free.handle_update(event)
 
     def config_ctrl_frame(self):
         self.ctrl_frame.grid_rowconfigure(0, weight=0)
