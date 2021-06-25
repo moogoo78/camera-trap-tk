@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from pathlib import Path
 import json
 from datetime import datetime
 import random
@@ -16,9 +17,9 @@ HEADING = (
     ('status_display', '標注/上傳狀態',
      {'width': 40, 'stretch': False}),
     ('filename', '檔名',
-     {'width': 150, 'stretch': False}),
+     {'width': 120, 'stretch': False}),
     ('datetime_display','日期時間',
-     {'width': 150, 'stretch': False}),
+     {'width': 120, 'stretch': False}),
     ('annotation_species', '物種',
      {'width': 80, 'stretch': False},
      {'widget': 'freesolo',
@@ -91,6 +92,7 @@ class TreeHelper(object):
                 _get_status_display(i[5]),
                 _get_status_display(i[12]),
             )
+            thumb = f'./thumbnails/{i[10]}/{Path(i[2]).stem}-l.jpg'
             row_basic = {
                 'status_display': status_display,
                 'filename': i[2],
@@ -102,6 +104,7 @@ class TreeHelper(object):
                 'time': i[3],
                 'seq': 0,
                 'sys_note': json.loads(i[13]),
+                'thumb': thumb,
             }
 
             if len(alist) >= 1:

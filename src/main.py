@@ -5,14 +5,14 @@ from tkinter import ttk
 from logging import debug as _d
 from logging import info as _i
 from PIL import ImageTk, Image
+
 #import threading
 
 from helpers import (
     FreeSolo,
     TreeHelper,
 )
-
-#from autocomplete_widget import FreeSolo
+from image import check_thumb
 
 class Worker:
     finished = False
@@ -44,7 +44,7 @@ class Main(tk.Frame):
 
         self.source_id = None
         self.current_row = 0
-        self.thumb_basewidth = 300
+        self.thumb_basewidth = 500
 
         self.tree_helper = TreeHelper()
         self.annotation_entry_list = []
@@ -62,10 +62,10 @@ class Main(tk.Frame):
         data = self.get_current_item('data')
 
         if data:
-            self.show_thumb(data['path'])
+            self.show_thumb(data['thumb'], data['path'])
         elif self.tree_helper.data:
             # when default no selection
-            self.show_thumb(self.tree_helper.data[0]['path'])
+            self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
 
     def layout(self):
         '''
@@ -384,7 +384,7 @@ class Main(tk.Frame):
             columns=[x[0] for x in self.tree_helper.heading],
             show='tree headings')
 
-        self.tree.column('#0', width=60, stretch=False)
+        self.tree.column('#0', width=40, stretch=False)
         for i in self.tree_helper.heading:
             self.tree.heading(i[0], text=i[1])
             self.tree.column(i[0], **i[2])
@@ -433,7 +433,7 @@ class Main(tk.Frame):
         self.refresh()
 
         # default show first image
-        self.show_thumb(self.tree_helper.data[0]['path'])
+        self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
 
     def refresh(self):
         # get source_data
@@ -656,7 +656,7 @@ class Main(tk.Frame):
         #print ('select)', iid)
         if iid:
             row = self.tree_helper.get_data(iid)
-            self.show_thumb(row['path'])
+            self.show_thumb(row['thumb'], row['path'])
 
             # set viewed
             if st := row.get('status', 0):
@@ -688,12 +688,9 @@ class Main(tk.Frame):
         # !!
         #print (self.annotation_entry_list[0][0].set_focus())
 
-    def show_thumb(self, image_path):
-        #if not hasattr(self, 'sheet_data') or len(self.sheet_data) <= 0:
-        #    return False
-
-        #image_path = self.sheet_data[row][9]['path']
-        image = Image.open(image_path)
+    def show_thumb(self, thumb_path, image_path):
+        real_thumb_path = check_thumb(thumb_path, image_path)
+        image = Image.open(real_thumb_path)
         # aspect ratio
         basewidth = self.thumb_basewidth
         wpercent = (basewidth/float(image.size[0]))

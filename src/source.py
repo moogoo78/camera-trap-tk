@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 from boto3.exceptions import S3UploadFailedError
 #S3UploadFailedError
 
-from image import ImageManager
+from image import ImageManager, make_thumb, get_thumb
 from upload import UploadThread
 
 
@@ -48,16 +48,26 @@ class Source(object):
         sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '10')".format(folder_path, dir_name, len(image_list), ts_now)
         source_id = db.exec_sql(sql, True)
 
+        # mkdir thumbnails dir
+        thumb_conf = 'thumbnails' # TODO config
+        thumb_path = Path(thumb_conf)
+        if not thumb_path.exists():
+            thumb_path.mkdir()
+
+        thumb_source_path = thumb_path.joinpath(f'{source_id}')
+        if not thumb_source_path.exists():
+            thumb_source_path.mkdir()
+
         for i in image_list:
             data = {
                 'path': i.as_posix(),
                 'name': i.name,
                 'img': ImageManager(i),
             }
-            self._insert_image_db(data, ts_now, source_id)
+            self._insert_image_db(data, ts_now, source_id, thumb_source_path)
             yield data
 
-    def _insert_image_db(self, i, ts_now, source_id):
+    def _insert_image_db(self, i, ts_now, source_id, thumb_source_path):
         db = self.db
         timestamp = None
 
@@ -88,6 +98,9 @@ class Source(object):
         )
 
         db.exec_sql(sql, True)
+
+        make_thumb(i['path'], thumb_source_path)
+
 
     @staticmethod
     def _check_image_filename(dirent):
@@ -159,7 +172,9 @@ class Source(object):
             server_image_id = server_image_map.get(str(i[0]), '')
             object_name = f'{server_image_id}.jpg'
 
-            res = self.upload_to_s3(file_path, object_name)
+            thumb_path = get_thumb(i[10], i[2], i[1])
+            #print (thumb_path))
+            res = self.upload_to_s3(str(thumb_path), object_name)
             #print ('upload file:', file_path, object_name, res)
             if res['error']:
                 yield None

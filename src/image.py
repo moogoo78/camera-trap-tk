@@ -1,8 +1,44 @@
 import hashlib
+from pathlib import Path
 
 from PIL import Image as PILImage
 from PIL import ExifTags
 from PIL import TiffImagePlugin
+
+THUMB_MAP = (
+    #('s', (320, 320)),
+    ('m', (500, 500)),
+    ('l', (1280, 1280)),
+    ('x', (2048, 2048)),
+)
+
+def make_thumb(src_path, thumb_source_path):
+    for i in THUMB_MAP:
+        stem = Path(src_path).stem
+        target_filename = f'{stem}-{i[0]}.jpg'
+        target_path = thumb_source_path.joinpath(Path(target_filename))
+        #print (source_path, target_path)
+        thumb = PILImage.open(src_path)
+        thumb.thumbnail(i[1] , PILImage.ANTIALIAS)
+        thumb.save(target_path, "JPEG")
+
+def check_thumb(thumb_path, image_path):
+    thumb_path = Path(thumb_path)
+    # create thumb if not exist
+    if not thumb_path.exists():
+        thumb_source_path = Path('/'.join(thumb_path.parts[0:2]))
+        make_thumb(image_path, thumb_source_path)
+
+    return thumb_path
+
+def get_thumb(source_id, filename, image_path, size='l'):
+    stem = Path(filename).stem
+    thumb_source_path = Path(f'./thumbnails/{source_id}')
+    thumb_path = thumb_source_path.joinpath(f'{stem}-{size}.jpg')
+    if not thumb_path.exists():
+        make_thumb(image_path, thumb_source_path)
+    return thumb_path
+
 
 class ImageManager(object):
     exif = None
@@ -50,3 +86,4 @@ class ImageManager(object):
                 h.update(chunk)
 
         return h.hexdigest()
+
