@@ -20,6 +20,8 @@ def make_thumb(src_path, thumb_source_path):
         #print (source_path, target_path)
         thumb = PILImage.open(src_path)
         thumb.thumbnail(i[1] , PILImage.ANTIALIAS)
+        if thumb.mode != 'RGB': # RGBA, P?
+            thumb = thumb.convert('RGB')
         thumb.save(target_path, "JPEG")
 
 def check_thumb(thumb_path, image_path):

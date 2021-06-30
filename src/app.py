@@ -47,7 +47,7 @@ class Application(tk.Tk):
     def __init__(self, config, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
         #print (config)
-        self.iconbitmap('trees.ico')
+        #self.iconbitmap('trees.ico')
         self.geometry("1200x760+40+20")
         self.title('Camera Trap Desktop')
         #self.maxsize(1000, 400)

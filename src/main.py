@@ -252,6 +252,7 @@ class Main(tk.Frame):
         #self.image_viewer_button.grid(row=1, column=1, sticky='n')
 
     def fo_species(self, event):
+        #print (self.species_free.listbox, event)
         if self.species_free.listbox:
             self.species_free.handle_update(event)
 
@@ -450,7 +451,6 @@ class Main(tk.Frame):
             if seq_int := self.seq_interval_val.get():
                 self.seq_info = self.tree_helper.group_image_sequence(seq_int, seq_tag='tag_name')
 
-        #print (seq_info)
         if self.seq_info:
             for i, values in enumerate(tree_data):
                 data = self.tree_helper.data[i]
@@ -718,6 +718,7 @@ class Main(tk.Frame):
 
     def update_annotation(self):
         '''update to tree and save'''
+        is_selected_parent = False
         a_conf = self.tree_helper.get_conf('annotation')
         ts_now = int(time.time())
         entry_dict = self.tree_helper.get_annotation_dict(self.annotation_entry_list)
@@ -730,6 +731,8 @@ class Main(tk.Frame):
                     seq_name = seq_tag_list[0]
 
             row = self.tree_helper.get_data(iid)
+            if row['iid_parent'] == '':
+                is_selected_parent = True
             alist = self._get_alist(iid, row['iid_parent'])
             annotation_index = int(iid.split(':')[2])
             if len(alist) > 0:
@@ -742,14 +745,27 @@ class Main(tk.Frame):
             #print ('update annotation:', sql)
             self.app.db.exec_sql(sql)
 
-            # image seq related
-            index_list = self.seq_info['map'][seq_name]['rows']
+            index_list = []
+            # only work while select parent and enable seq_info
+            if is_selected_parent == True and self.seq_info and seq_name != '':
+                index_list = self.seq_info['map'][seq_name]['rows']
             for x in index_list:
-                related_image_id = self.tree_helper.data[x]['image_id']
-                if related_image_id != row['image_id']:
-                    sql = "UPDATE image SET annotation='{}', status='30', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, related_image_id)
-                    self.app.db.exec_sql(sql)
-                    #print ('update annotation (image_seq):', sql)
+                has_parent = self.tree_helper.data[x]['iid_parent']
+                if not has_parent:
+                    related_image_id = self.tree_helper.data[x]['image_id']
+                    if related_image_id != row['image_id']:
+                        # set alist
+                        foo_iid = self.tree_helper.data[x]['iid']
+                        alist = self._get_alist(foo_iid, self.tree_helper.data[x]['iid_parent'])
+                        annotation_index = int(foo_iid.split(':')[2])
+                        if len(alist) > 0:
+                            alist[annotation_index] = entry_dict
+                        else:
+                            alist = [entry_dict]
+                            
+                        sql = "UPDATE image SET annotation='{}', status='30', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, related_image_id)
+                        self.app.db.exec_sql(sql)
+                        #print ('update annotation (image_seq):', sql)
 
             self.app.db.commit()
 

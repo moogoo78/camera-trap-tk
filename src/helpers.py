@@ -168,6 +168,7 @@ class TreeHelper(object):
             next_idx = min(i+1, len(self.data)-1)
             this_time = self.data[i]['time']
             next_time = self.data[next_idx]['time'] if i < next_idx else 0
+            #print (i, this_time, next_time,(next_time - this_time), seq_info['int'])
             seq_info['group_prev'] = seq_info['group_next']
             if next_time and \
                (next_time - this_time) <= seq_info['int']:
@@ -304,6 +305,7 @@ class FreeSolo(ttk.Entry, object):
         #autocomplete_function=None, , ignorecase_match=False, startswith_match=True, vscrollbar=True, hscrollbar=True, value_callback=None, **kwargs):
         self.choices = choices
         self.filtered_choices = []
+        self.listbox_frame = None
 
         if not value:
             entry_args['textvariable'] = tk.StringVar()
@@ -329,7 +331,8 @@ class FreeSolo(ttk.Entry, object):
         self.bind('<Return>', self.handle_update) # next?
         self.bind('<Escape>',  self.handle_update)
         #self.bind('<Down>', lambda event: self.create_listbox())
-        self.bind('<Return>', lambda _: self.create_listbox())
+        #self.bind('<Return>', lambda _: self.create_listbox())
+        self.bind('<Return>', self.toggle_listbox)
         #self.bind("<FocusOut>", lambda _: self.remove_listbox()) # will cause listbox gone!
         #self.bind('<FocusOut>', self.haldel_update)
 
@@ -383,17 +386,29 @@ class FreeSolo(ttk.Entry, object):
         self.icursor(tk.END)
         self.xview_moveto(1.0)
 
+    def toggle_listbox(self, event):
+        #if not self.list_box_frame:
+        #    self
+        #if not self.listbox_frame:
+        #    self.listbox_frame = tk.Frame()
+
+        if not self.listbox:
+            self.create_listbox()
+        else:
+            print ('pass')
+
     def create_listbox(self, filtered_choices=[]):
-        listbox_frame = tk.Frame()
-        self.listbox = tk.Listbox(listbox_frame, **self.listbox_args)
+        #print (self.listbox, 'create', self.listbox_frame)
+        self.listbox_frame = tk.Frame()
+        self.listbox = tk.Listbox(self.listbox_frame, **self.listbox_args)
         self.listbox.grid(row=0, column=0, sticky = 'news')
 
         self.listbox.bind("<ButtonRelease-1>", self.handle_update)
         #        self.listbox.bind("<Return>", self._update_entry)
         #self.listbox.bind("<Escape>", lambda _: self.unpost_listbox())
 
-        listbox_frame.grid_columnconfigure(0, weight= 1)
-        listbox_frame.grid_rowconfigure(0, weight= 1)
+        self.listbox_frame.grid_columnconfigure(0, weight= 1)
+        self.listbox_frame.grid_rowconfigure(0, weight= 1)
 
         #x = -self.cget("borderwidth") - self.cget("highlightthickness")
         x = 0
@@ -407,7 +422,7 @@ class FreeSolo(ttk.Entry, object):
         #print (x, y, width, self.winfo_height(),self.cget("borderwidth"),self.cget("highlightthickness"))
         y = 22
         width = 120
-        listbox_frame.place(in_=self, x=x, y=y, width=width)
+        self.listbox_frame.place(in_=self, x=x, y=y, width=width)
 
         #self.update_listbox_choices(filtered_choices)
 
@@ -423,6 +438,7 @@ class FreeSolo(ttk.Entry, object):
 
     def remove_listbox(self):
         if self.listbox is not None:
+            #print (self.listbox.master, 'master')
             self.listbox.master.destroy()
             self.listbox = None
 
