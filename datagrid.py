@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 
 """
 mist: #90AFC5
@@ -7,23 +8,28 @@ shadow: #2A3132
 automn leaf: #763626
 #https://www.canva.com/design/DADfC5CQ0W4/remix?action2=create&mediaId=DADfC5CQ0W4&signupReferrer=blog&utm_source=blog&utm_medium=content&utm_campaign=100-color-combinations&_branch_match_id=812929534608293691
 """
-HEADER = {
-    'a': {
+HEADER = [
+    {
+        'key': 'a',
         'label': 'A',
-    },
-    'b': {
+        'width': 30,
+        'readonly': 1,
+    }, {
+        'key': 'b',
         'label': 'B',
-    },
-    'c': {
+        'width': 150,
+        'readonly': 1,
+    }, {
+        'key': 'c',
         'label': 'C',
-    },
-    'd': {
-    'label': 'D',
-    },
-    'e': {
+    }, {
+        'key': 'd',
+        'label': 'D',
+    }, {
+        'key': 'e',
         'label': 'E',
     }
-}
+]
 
 from tkintertable.Testing import sampledata
 DATA=sampledata()
@@ -42,7 +48,7 @@ class DataGrid(tk.Canvas):
             height=None,
             bgcolor='#F7F7FA',
             fgcolor='black',
-            header=None,
+            header_list=None,
             **kwargs):
         # super().__init__(
         #     self,
@@ -58,32 +64,57 @@ class DataGrid(tk.Canvas):
         self.width = width
         self.height = height
 
-        self.num_cols = len(data[0])
-        self.num_rows = len(data)
-        self.cell_width = 150
+        self.data = data
+        self.num_cols = len(self.data[0])
+        self.num_rows = len(self.data)
+
+        # set default
+        self.x_start = 2
+        self.y_start = 2
+        self.cell_width = 100
         self.cell_height = 20
 
-        self.header = header
-        self.col_pos_list = []
-        if not self.header:
-            self.header = {
-                {
+        self.header_list = header_list
+        self.x_del_list = [0]
+        wx = 0
+        if not self.header_list:
+            self.header_list = []
+            for x in self.data[0].keys():
+                self.header_list.append({
+                    'key': x,
                     'label': x,
                     'width': self.cell_width
-                } for x in self.data[0].keys()
-            }
-        wx = 0
-        for i, v in header.items():
-            self.col_pos_list.append(wx)
-            wx += v.get('width', self.cell_width)
+                })
+                wx += self.cell_width
+                self.x_del_list.append(wx)
+        else:
+            for i in self.header_list:
+                if 'width' not in i:
+                    i['width'] = self.cell_width
+                wx += i['width']
+                self.x_del_list.append(wx)
 
-        if self.width < wx:
+        #if self.width < wx:
             # expend width if header has larger width
-            self.width = wx
+        #    self.width = wx
 
+        self.width = wx
+
+        self.entry_queue = {}
+
+        self.current_row = None
+        self.current_col = None
+
+        # color
         self.color_grid = 'gray'
+        self.color_rect = '#ddeeff'
 
-        self.data = data
+
+        # binding
+        self.bind("<Button-1>",self.handle_left_click)
+
+    def foo(self, e):
+        print ('foo', e)
 
     def render(self):
         self.column_header = ColumnHeader(self.parent, self)
@@ -96,12 +127,9 @@ class DataGrid(tk.Canvas):
         self.parent.rowconfigure(1,weight=1)
         self.parent.columnconfigure(1,weight=1)
 
-
         self.column_header.grid(row=0, column=1, rowspan=1, sticky='news', pady=0, ipady=0)
         self.row_index.grid(row=1, column=0, rowspan=1, sticky='news', pady=0, ipady=0)
         self.grid(row=1, column=1, sticky='news', rowspan=1, pady=0, ipady=0)
-
-
 
         self.render_grid()
         self.column_header.render()
@@ -111,43 +139,171 @@ class DataGrid(tk.Canvas):
         # draw_grid
         self.delete('girdline')
 
-        x_start = 2
-        y_start = 2
         #476042
 
         # grid border
         # vertical line
         for i in range(self.num_cols+1): # fixed size
-            if i < len(self.col_pos_list):
-                x = self.col_pos_list[i]
+            if i < len(self.x_del_list):
+                x = self.x_del_list[i]
             else:
-                x = self.col_pos_list[-1] + self.cell_width
-            x += x_start
-            self.create_line(x, y_start,
-                             x, y_start + self.num_rows * self.cell_height,
+                x = self.x_del_list[-1] + self.cell_width
+            x += self.x_start
+            self.create_line(x, self.y_start,
+                             x, self.y_start + self.num_rows * self.cell_height,
                              tag='gridborder',
                              fill=self.color_grid, width=1)
 
         # horizontal line
         for i in range(self.num_rows+1):
             y = i * self.cell_height
-            y += y_start
-            self.create_line(x_start, y, self.width, y,
+            y += self.y_start
+            self.create_line(self.x_start, y, self.x_del_list[-1]+self.x_start, y,
                              tag='gridborder',
                              fill=self.color_grid, width=1)
 
+
         for row_index, row in enumerate(self.data.items()):
             for col_index, col in enumerate(row[1].items()):
-                x = self.col_pos_list[col_index]
+                x = self.x_del_list[col_index] + self.header_list[col_index]['width'] / 2
                 rect = self.create_text(
-                    x + x_start + self.cell_width/2,
-                    row_index * self.cell_height + y_start + self.cell_height/2,
+                    x + self.x_start,
+                    row_index * self.cell_height + self.y_start + self.cell_height/2,
                     text=col[1])
                     #fill=linkcolor,
                     #font=linkfont,
                     #tag=('text','hlink','celltext'+str(col)+'_'+str(row)))
 
+    def render_entry(self, row, col, text):
+        cell_tag = f'cell-text-{row}_{col}'
 
+        sv = tk.StringVar()
+        sv.set(text)
+        if hasattr(self, 'cell_entry'):
+            # save data if last entry not Enter or Escape
+            if len(self.entry_queue):
+                for i, v in self.entry_queue.items():
+                    rc = i.replace('cell-text-', '').split('_')
+                    self.set_data_value(int(rc[0]), int(rc[1]), v)
+                self.entry_queue = {}
+            self.cell_entry.destroy()
+
+        x1, y1, x2, y2 = self.get_cell_coords(row, col)
+
+        self.cell_entry = ttk.Entry(
+            self.parent,
+            width=x2-x1,
+            textvariable=sv,
+            takefocus=1)
+
+        def callback(e):
+            value = sv.get()
+
+            # draw text
+            self.delete(cell_tag)
+            self.create_text(
+                x1+self.cell_width/2,
+                y1+self.cell_height/2,
+                text=value,
+                fill='brown',
+                anchor='w',
+                tag=(cell_tag,)
+            )
+            print (e.keysym)
+            self.entry_queue[cell_tag] = value
+
+            if e.keysym in ['Return', 'Escape']:
+                self.set_data_value(row, col, value)
+                #self.entry_queue.pop()
+                del self.entry_queue[cell_tag]
+                self.delete('entry_win')
+
+
+        self.cell_entry.icursor(tk.END)
+        #self.cell_entry.bind('<Return>', callback)
+        self.cell_entry.bind('<KeyRelease>', callback)
+        self.cell_entry.focus_set()
+        #create_window
+        self.create_window(
+            x1,
+            y1,
+            width=x2-x1+self.x_start,
+            height=self.cell_height,
+            window=self.cell_entry,
+            anchor='nw',
+            tag='entry_win')
+
+    def clearSelected(self):
+        self.delete('rect')
+        self.delete('entry')
+        self.delete('tooltip')
+        self.delete('searchrect')
+        self.delete('colrect')
+        self.delete('multicellrect')
+
+    def get_cell_coords(self, row, col):
+        #print (row, col, self.x_del_list)
+        x1 = self.x_start + self.x_del_list[col]
+        x2 = self.x_del_list[col+1]
+        y1 = self.y_start + (self.cell_height * row)
+        y2 = y1 + self.cell_height
+        return x1, y1, x2, y2
+
+    def get_data_value(self, row, col):
+        return self.data[row][self.header_list[col]['key']]
+
+    def set_data_value(self, row, col, value):
+        self.data[row][self.header_list[col]['key']] = value
+        print ('save', self.data)
+        return
+
+    def get_rc(self, event):
+        #print (event.x, event.y)
+        x = int(self.canvasx(event.x))
+        y = int(self.canvasy(event.y))
+
+        if x > self.x_del_list[-1] or y > self.num_rows*self.cell_height:
+            return None, None
+        col = None
+        for i, v in enumerate(self.x_del_list):
+            next_x = self.x_del_list[min(i+1, len(self.x_del_list))]
+            if x > v and x <= next_x:
+                col = i
+                break
+        return int((y-self.y_start)/self.cell_height), col
+
+    def handle_left_click(self, event):
+        # clear
+        self.delete('entry_win')
+        self.delete('rect')
+
+        row, col = self.get_rc(event)
+
+        if row == None or col == None:
+            return
+
+        # draw selected
+        self.delete('rowrect')
+        #row = self.currentrow
+        x1, y1, x2, y2 = self.get_cell_coords(row, col)
+        #x2 = self.tablewidth
+        #print (x1, y1, x2, y2)
+
+        text = self.get_data_value(row, col)
+
+        if self.header_list[col].get('readonly', ''):
+            return
+
+        self.render_entry(row, col, text)
+
+        # render row highlight
+        rect = self.create_rectangle(0, y1, self.width + self.x_start, y2,
+                                     fill=self.color_rect,
+                                     outline='red',
+                                     tag='rowrect')
+        self.lower('rowrect')
+        #self.lower('fillrect')
+        #self.tablerowheader.drawSelectedRows(self.currentrow)
 
 class ColumnHeader(tk.Canvas):
 
@@ -161,12 +317,12 @@ class ColumnHeader(tk.Canvas):
         #self.delete('gridline','text')
         #self.delete('rect')
         pad = 4
-        for i, v in enumerate(self.data_grid.header.items()):
+        for i, v in enumerate(self.data_grid.header_list):
 
-            x = self.data_grid.col_pos_list[i]
+            x = self.data_grid.x_del_list[i] + self.data_grid.header_list[i]['width'] / 2
             self.create_text(
                 x + pad, self.data_grid.cell_height/2,
-                text=v[1]['label'],
+                text=v['label'],
                 anchor='w',
                 fill='white',
                 #font=self.thefont,
@@ -216,7 +372,7 @@ class TestApp(tk.Tk):
         self.title('Test')
         f = tk.Frame(self)
         f.pack(fill=tk.BOTH,expand=1)
-        datagrid = DataGrid(f, data=DATA, width=500, header=HEADER, bd=0)
+        datagrid = DataGrid(f, data=DATA, width=500, header_list=HEADER)
         #datagrid.grid()
         datagrid.render()
         return
