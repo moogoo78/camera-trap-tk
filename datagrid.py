@@ -292,19 +292,29 @@ class DataGrid(tk.Canvas):
     def render_box(self, selected):
         self.delete('box-highlight')
 
-        for row in selected['row_list']:
-            for col in selected['col_list']:
-                x1, y1, x2, y2 = self.get_cell_coords(row, col)
-                self.create_rectangle(
-                    x1,
-                    y1,
-                    x2+self.x_start,
-                    y2,
-                    fill='#c1ceff',
-                    #outline='blue',
-                    #width=4,
-                    tag=('box-highlight',))
-
+        # for row in selected['row_list']:
+        #     for col in selected['col_list']:
+        #         x1, y1, x2, y2 = self.get_cell_coords(row, col)
+        #         self.create_rectangle(
+        #             x1,
+        #             y1,
+        #             x2+self.x_start,
+        #             y2,
+        #             fill='#c1ceff',
+        #             #outline='purple',
+        #             #width=4,
+        #             tag=('box-highlight',))
+        xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['row_start'], selected['col_start'])
+        xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['row_end'], selected['col_end'])
+        self.create_rectangle(
+            xs1,
+            ys1,
+            xe2+self.x_start,
+            ye2,
+            fill='#c1ceff',
+            outline='blue',
+            width=2,
+            tag=('box-highlight',))
         self.lower('box-highlight')
 
     def clearSelected(self):
