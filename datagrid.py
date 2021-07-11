@@ -102,8 +102,7 @@ class DataGrid(tk.Canvas):
 
         self.entry_queue = {}
 
-        self.current_row = None
-        self.current_col = None
+        self.current_rc = [None, None]
 
         # color
         self.color_grid = 'gray'
@@ -111,7 +110,11 @@ class DataGrid(tk.Canvas):
 
 
         # binding
-        self.bind("<Button-1>",self.handle_left_click)
+        self.bind('<Button-1>',self.handle_left_click)
+        #self.parentframe.master.bind_all("<Up>", self.handle_arrow_keys)
+        ## check master
+        self.parent.master.bind_all('<Up>', self.handle_arrow_key)
+        self.parent.master.bind_all('<Down>', self.handle_arrow_key)
 
     def foo(self, e):
         print ('foo', e)
@@ -132,11 +135,11 @@ class DataGrid(tk.Canvas):
         self.grid(row=1, column=1, sticky='news', rowspan=1, pady=0, ipady=0)
 
         self.render_grid()
+        self.render_data()
         self.column_header.render()
         self.row_index.render()
 
     def render_grid(self):
-        # draw_grid
         self.delete('girdline')
 
         #476042
@@ -163,29 +166,30 @@ class DataGrid(tk.Canvas):
                              fill=self.color_grid, width=1)
 
 
+    def render_data(self):
+        self.delete('text')
         for row_index, row in enumerate(self.data.items()):
             for col_index, col in enumerate(row[1].items()):
                 x = self.x_del_list[col_index] + self.header_list[col_index]['width'] / 2
+                cell_tag = f'cell-text-{row_index}_{col_index}'
                 rect = self.create_text(
                     x + self.x_start,
                     row_index * self.cell_height + self.y_start + self.cell_height/2,
-                    text=col[1])
+                    text=col[1],
+                    tag=('text', cell_tag)
+                )
                     #fill=linkcolor,
                     #font=linkfont,
                     #tag=('text','hlink','celltext'+str(col)+'_'+str(row)))
 
     def render_entry(self, row, col, text):
         cell_tag = f'cell-text-{row}_{col}'
-
         sv = tk.StringVar()
         sv.set(text)
         if hasattr(self, 'cell_entry'):
             # save data if last entry not Enter or Escape
             if len(self.entry_queue):
-                for i, v in self.entry_queue.items():
-                    rc = i.replace('cell-text-', '').split('_')
-                    self.set_data_value(int(rc[0]), int(rc[1]), v)
-                self.entry_queue = {}
+                self.save_entry_queue()
             self.cell_entry.destroy()
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
@@ -201,15 +205,15 @@ class DataGrid(tk.Canvas):
 
             # draw text
             self.delete(cell_tag)
-            self.create_text(
-                x1+self.cell_width/2,
-                y1+self.cell_height/2,
-                text=value,
-                fill='brown',
-                anchor='w',
-                tag=(cell_tag,)
-            )
-            print (e.keysym)
+            # self.create_text(
+            #     x1+self.cell_width/2,
+            #     y1+self.cell_height/2,
+            #     text=value,
+            #     fill='brown',
+            #     anchor='w',
+            #     tag=(cell_tag,)
+            # )
+            #print ('entry-callback', e.keysym, cell_tag, value)
             self.entry_queue[cell_tag] = value
 
             if e.keysym in ['Return', 'Escape']:
@@ -233,6 +237,18 @@ class DataGrid(tk.Canvas):
             anchor='nw',
             tag='entry_win')
 
+    def render_selected(self, row, col):
+        # render row highlight
+        self.delete('row-rect')
+        x1, y1, x2, y2 = self.get_cell_coords(row, col)
+        rect = self.create_rectangle(0, y1, self.width + self.x_start, y2,
+                                     fill=self.color_rect,
+                                     outline='red',
+                                     tag='row-rect')
+        self.lower('row-rect')
+        #self.lower('fillrect')
+        #self.tablerowheader.drawSelectedRows(self.currentrow)
+
     def clearSelected(self):
         self.delete('rect')
         self.delete('entry')
@@ -255,6 +271,7 @@ class DataGrid(tk.Canvas):
     def set_data_value(self, row, col, value):
         self.data[row][self.header_list[col]['key']] = value
         print ('save', self.data)
+        self.render()
         return
 
     def get_rc(self, event):
@@ -262,8 +279,13 @@ class DataGrid(tk.Canvas):
         x = int(self.canvasx(event.x))
         y = int(self.canvasy(event.y))
 
-        if x > self.x_del_list[-1] or y > self.num_rows*self.cell_height:
+        if y > self.num_rows*self.cell_height:
+            # 點到表格下面, 不要動作
             return None, None
+        elif x > self.x_del_list[-1]:
+            # 點到表格右邊, select row
+            return int((y-self.y_start)/self.cell_height), -1
+
         col = None
         for i, v in enumerate(self.x_del_list):
             next_x = self.x_del_list[min(i+1, len(self.x_del_list))]
@@ -272,18 +294,31 @@ class DataGrid(tk.Canvas):
                 break
         return int((y-self.y_start)/self.cell_height), col
 
+    def save_entry_queue(self):
+        for i, v in self.entry_queue.items():
+            rc = i.replace('cell-text-', '').split('_')
+            self.set_data_value(int(rc[0]), int(rc[1]), v)
+            self.entry_queue = {}
+
     def handle_left_click(self, event):
+        # flush entry_queue
+        if len(self.entry_queue):
+            self.save_entry_queue()
+            self.render()
+
         # clear
         self.delete('entry_win')
         self.delete('rect')
 
         row, col = self.get_rc(event)
-
+        #print (row, col)
         if row == None or col == None:
             return
 
+        if col == -1:
+            col = 0 # 預設如點第一格
+
         # draw selected
-        self.delete('rowrect')
         #row = self.currentrow
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         #x2 = self.tablewidth
@@ -291,19 +326,33 @@ class DataGrid(tk.Canvas):
 
         text = self.get_data_value(row, col)
 
+        is_render_entry = True
         if self.header_list[col].get('readonly', ''):
-            return
+            is_render_entry = False
 
-        self.render_entry(row, col, text)
+        if is_render_entry:
+            self.render_entry(row, col, text)
 
-        # render row highlight
-        rect = self.create_rectangle(0, y1, self.width + self.x_start, y2,
-                                     fill=self.color_rect,
-                                     outline='red',
-                                     tag='rowrect')
-        self.lower('rowrect')
-        #self.lower('fillrect')
-        #self.tablerowheader.drawSelectedRows(self.currentrow)
+        self.current_rc = [row, col]
+        self.render_selected(row, col)
+
+
+
+    def handle_arrow_key(self, event):
+        #print ('handle_arrow:', event)
+        if event.keysym == 'Up':
+            if self.current_rc[0] == 0:
+                return
+            else:
+                self.current_rc[0] = self.current_rc[0] - 1
+        elif event.keysym == 'Down':
+            if self.current_rc[0] >= self.num_rows - 1:
+                return
+            else:
+                self.current_rc[0] = self.current_rc[0] + 1
+
+        self.render_selected(self.current_rc[0], self.current_rc[1])
+
 
 class ColumnHeader(tk.Canvas):
 
