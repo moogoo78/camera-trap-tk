@@ -101,8 +101,15 @@ class DataGrid(tk.Canvas):
         self.width = wx
 
         self.entry_queue = {}
-
         self.current_rc = [None, None]
+        self.selected = {
+            'row_start': None,
+            'row_end': None,
+            'col_start': None,
+            'col_end': None,
+            'col_list': [],
+            'row_list': [],
+        }
 
         # color
         self.color_grid = 'gray'
@@ -110,7 +117,8 @@ class DataGrid(tk.Canvas):
 
 
         # binding
-        self.bind('<Button-1>',self.handle_left_click)
+        self.bind('<Button-1>',self.handle_mouse_click_left)
+        self.bind('<B1-Motion>', self.handle_mouse_drag)
         #self.parentframe.master.bind_all("<Up>", self.handle_arrow_keys)
         ## check master
         self.parent.master.bind_all('<Up>', self.handle_arrow_key)
@@ -237,17 +245,67 @@ class DataGrid(tk.Canvas):
             anchor='nw',
             tag='entry_win')
 
+    def handle_enter_drag(self, event):
+        print (event, 'entry drag')
+
     def render_selected(self, row, col):
-        # render row highlight
-        self.delete('row-rect')
+        self.delete('cell-highlight')
+        self.delete('cell-highlight-drag')
+        self.delete('row-highlight')
+
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
-        rect = self.create_rectangle(0, y1, self.width + self.x_start, y2,
+        # cell highlight
+        self.create_rectangle(
+            x1,
+            y1,
+            x2+self.x_start,
+            y2,
+            #fill='pink',
+            outline='blue',
+            width=4,
+            tag=('cell-highlight',))
+        self.lower('cell-highlight')
+
+        rect_drag = self.create_rectangle(
+            x2,
+            y2,
+            x2+4,
+            y2+4,
+            fill='pink',
+            outline='blue',
+            width=1,
+            activefill='cyan',
+            tag=('cell-highlight-drag',))
+        self.lift('cell-highlight-drag')
+        rect_drag.bind("<Enter>", self.handle_enter_drag)
+        rect_drag.bind("<Leave>", self.handle_enter_drag)
+
+        # render row highlight
+        self.create_rectangle(0, y1, self.width + self.x_start, y2,
                                      fill=self.color_rect,
                                      outline='red',
-                                     tag='row-rect')
-        self.lower('row-rect')
+                                     tag='row-highlight')
+        self.lower('row-highlight')
         #self.lower('fillrect')
         #self.tablerowheader.drawSelectedRows(self.currentrow)
+
+    def render_box(self, selected):
+        self.delete('box-highlight')
+
+        for row in selected['row_list']:
+            for col in selected['col_list']:
+                x1, y1, x2, y2 = self.get_cell_coords(row, col)
+                self.create_rectangle(
+                    x1,
+                    y1,
+                    x2+self.x_start,
+                    y2,
+                    fill='#c1ceff',
+                    #outline='blue',
+                    #width=4,
+                    tag=('box-highlight',))
+
+        self.lower('box-highlight')
 
     def clearSelected(self):
         self.delete('rect')
@@ -300,7 +358,45 @@ class DataGrid(tk.Canvas):
             self.set_data_value(int(rc[0]), int(rc[1]), v)
             self.entry_queue = {}
 
-    def handle_left_click(self, event):
+    def handle_mouse_drag(self, event):
+        #print (event, 'drag')
+        row, col = self.get_rc(event)
+
+        if row == None or col == None:
+            return
+
+        if row >= self.num_rows:
+            #or self.startrow > self.rows:
+            return
+        else:
+            self.selected['row_end'] = row
+
+        if col > self.num_cols:
+            #or self.startcol > self.cols:
+            return
+        else:
+            self.selected['col_end'] = col
+            if self.selected['col_start'] is None or self.selected['col_end'] is None:
+                return
+            if self.selected['col_end'] < self.selected['col_start']:
+                self.selected['col_list'] = range(self.selected['col_end'], self.selected['col_start']+1)
+            else:
+                self.selected['col_list'] = range(self.selected['col_start'], self.selected['col_end']+1)
+
+
+        if self.selected['row_end'] != self.selected['row_start']:
+            if self.selected['row_end'] < self.selected['row_start']:
+                self.selected['row_list'] = range(self.selected['row_end'], self.selected['row_start']+1)
+            else:
+                self.selected['row_list'] = range(self.selected['row_start'], self.selected['row_end']+1)
+
+        else:
+            self.selected['row_list'] = [self.current_rc[0]]
+
+        self.render_box(self.selected)
+        #print (self.selected)
+
+    def handle_mouse_click_left(self, event):
         # flush entry_queue
         if len(self.entry_queue):
             self.save_entry_queue()
@@ -314,6 +410,17 @@ class DataGrid(tk.Canvas):
         #print (row, col)
         if row == None or col == None:
             return
+
+        # reset selected
+        self.selected = {
+            'row_start': row,
+            'row_end': row,
+            'col_start': col,
+            'col_end': col,
+            'row_list': [row],
+            'col_list': [col],
+        }
+        self.render_box(self.selected)
 
         if col == -1:
             col = 0 # 預設如點第一格
