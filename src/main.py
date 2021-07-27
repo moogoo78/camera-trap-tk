@@ -13,6 +13,33 @@ from helpers import (
     TreeHelper,
 )
 from image import check_thumb
+from tkdatagrid import DataGrid
+
+HEADER = [
+    {
+        'key': 'a',
+        'label': 'A',
+        'width': 30,
+        'readonly': 1,
+    }, {
+        'key': 'b',
+        'label': 'B',
+        'width': 150,
+        'readonly': 1,
+    }, {
+        'key': 'c',
+        'label': 'C',
+    }, {
+        'key': 'd',
+        'label': 'D',
+    }, {
+        'key': 'e',
+        'label': 'E',
+    }
+]
+
+from tkintertable.Testing import sampledata
+DATA=sampledata()
 
 class Worker:
     finished = False
@@ -26,7 +53,6 @@ class Worker:
 
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
-
         tk.Frame.__init__(self, parent, *args, **kwargs)
 
         #self.parent = parent
@@ -52,8 +78,8 @@ class Main(tk.Frame):
         # layout
         #self.grid_propagate(False)
         self.layout()
-        self.config_ctrl_frame()
-        self.config_table_frame()
+        #self.config_ctrl_frame()
+        #self.config_table_frame()
 
     def handle_panedwindow_release(self, event):
         w = self.right_frame.winfo_width()
@@ -380,6 +406,9 @@ class Main(tk.Frame):
         #self.message.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
 
         # treeview
+        self.data_grid = DataGrid(self.table_frame, data=DATA, columns=HEADER)
+        self.data_grid.grid(row=0, column=0, sticky='nsew')
+        '''
         self.tree = ttk.Treeview(
             self.table_frame,
             columns=[x[0] for x in self.tree_helper.heading],
@@ -414,7 +443,7 @@ class Main(tk.Frame):
             "Treeview",
             foreground=self.tree_helper.fixed_map(tree_style, "foreground"),
             background=self.tree_helper.fixed_map(tree_style, "background"))
-
+        '''
 
     def from_source(self, source_id=None):
         self.app.begin_from_source()
@@ -434,7 +463,9 @@ class Main(tk.Frame):
         self.refresh()
 
         # default show first image
+        '''
         self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
+        '''
 
     def refresh(self):
         # get source_data
@@ -442,6 +473,7 @@ class Main(tk.Frame):
         #if self.source_id and from_source == True:
         #    self.from_source(source_id)
 
+        '''
         self.tree.delete(*self.tree.get_children())
 
         tree_data = self.tree_helper.set_data_from_list(self.source_data['image_list'])
@@ -473,7 +505,7 @@ class Main(tk.Frame):
                     self.tree.insert(parent, tk.END, iid, values=values, tags=('odd',), text=text, open=True)
             self.tree.tag_configure('odd', background='#E8E8E8')
             self.tree.tag_configure('even', background='#DFDFDF')
-
+        '''
         # folder name
         self.label_folder['text'] = self.source_data['source'][3]
 
