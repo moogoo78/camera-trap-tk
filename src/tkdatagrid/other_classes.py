@@ -18,7 +18,7 @@ class ColumnHeader(tk.Canvas):
             x = self.ps['column_width_list'][i] + self.ps['columns'][i]['width'] / 2
 
             self.create_text(
-                x + pad, self.ps['cell_height']/2,
+                x + pad, self.ps['column_header_height']/2,
                 text=v['label'],
                 anchor='w',
                 fill='white',

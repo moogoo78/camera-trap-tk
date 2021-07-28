@@ -28,19 +28,25 @@ class DataGrid(tk.Frame):
             'height': height,
             'cell_height': 20,
             'cell_width': 100,
-            'styles': {
+            'style': {
                 'color': {
                     'bg': '#f7f7fa',
-                    'grid-border': '#d3d3d3',
-                    'rect': '#ddeeff',
-                    'something': '#476042',
+                    'cell-border': '#d3d3d3',
+                    'cell-highlight-border': '#6699ff',
+                    'row-highlight': '#ddeeff',
+                    'box-highlight': '#fff2cc',
+                    'box-border': '#ffcc33',
                 }
             },
+            'image_tmp': {}, # for canvas image, will deleted by garbage collect
+            'column_header_height': 20,
             'column_width_list': [], # count by update_columns()
             'num_rows': 0, # count by refresh()
             'num_cols': 0, # count by update_columns()
         }
-
+        # other not default
+        # cell_image_x_pad
+        # cell_image_y_pad
         self.update_columns(columns)
         #logging.debug(self.state)
 
@@ -50,10 +56,11 @@ class DataGrid(tk.Frame):
         self.main_table = MainTable(self)
         self.column_header = ColumnHeader(self)
         self.row_index = RowIndex(self)
-        #self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.yview)
-        #self.scrollbar_y.grid(row=1, column=2, rowspan=1, sticky='news',pady=0, ipady=0)
-        #self.scrollbar_x = AutoScrollbar(self, orient=tk.HORIZONTAL, command=self.xview)
-        #self.scrollbar_x.grid(row=2, column=1, columnspan=1, sticky='news')
+
+        self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.main_table.yview)
+        self.scrollbar_y.grid(row=1, column=2, rowspan=1, sticky='news',pady=0, ipady=0)
+        self.scrollbar_x = AutoScrollbar(self, orient=tk.HORIZONTAL, command=self.main_table.xview)
+        self.scrollbar_x.grid(row=2, column=1, columnspan=1, sticky='news')
         #self['xscrollcommand'] = self.Xscrollbar.set
         #self['yscrollcommand'] = self.Yscrollbar.set
 

@@ -11,42 +11,48 @@ HEADER = [
     {
         'key': 'status_display',
         'label': '標注/上傳狀態',
-        'width': 40,
+        'width': 100,
         'readonly': 1,
+    }, {
+        'key': 'thumb',
+        'label': '照片',
+        'width': 55,
+        'readonly': 1,
+        'type': 'image',
     }, {
         'key': 'filename',
         'label': '檔名',
-        'width': 120,
+        'width': 150,
         'readonly': 1,
     }, {
         'key': 'datetime_display',
         'label': '日期時間',
-        'width': 120,
+        'width': 130,
         'readonly': 1
     }, {
         'key': 'annotation_species',
         'label': '物種',
-        'width': 50,
+        'width': 80,
     }, {
         'key': 'annotation_lifestage',
         'label': '年齡',
-        'width': 50
+        'width': 80
     },{
         'key': 'annotation_sex',
         'label': '性別',
-        'width': 50
+        'width': 80
     },{
         'key': 'annotaion_antler',
         'label': '角況',
-        'width': 50
+        'width': 80
     } ,{
         'key': 'annotation_remark',
         'label': '性別',
-        'width': 50
+        'width': 80
     },{
         'key': 'annotation_animal_id',
         'label': '個體ID',
-        'width': 50
+        'width': 80
     }
 ]
 
@@ -63,7 +69,7 @@ def _get_status_display(code):
 
 class DataHelper(object):
     def __init__(self):
-        self.annotation_item = [3, 4, 5, 6, 7, 8] # index from sqlite
+        self.annotation_item = [4, 5, 6, 7, 8, 9] # index from sqlite
         self.data = {}
         self.columns = HEADER
         #self.current_index = 0
@@ -80,7 +86,7 @@ class DataHelper(object):
                 _get_status_display(i[5]),
                 _get_status_display(i[12]),
             )
-            thumb = f'./thumbnails/{i[10]}/{Path(i[2]).stem}-l.jpg'
+            thumb = f'./thumbnails/{i[10]}/{Path(i[2]).stem}-q.jpg'
             row_basic = {
                 'status_display': status_display,
                 'filename': i[2],

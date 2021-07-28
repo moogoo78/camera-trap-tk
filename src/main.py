@@ -75,6 +75,34 @@ class Main(tk.Frame):
             self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
 
     def layout(self):
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+
+        #panedwindow_style = ttk.Style()
+        self.panedwindow = ttk.PanedWindow(self, orient=tk.VERTICAL)
+        #panedwindow_style = configure('PanedWindow', sashpad=5)
+        self.panedwindow.pack(fill=tk.BOTH, expand=True)
+        self.panedwindow.grid_rowconfigure(0, weight=1)
+        self.panedwindow.grid_columnconfigure(0, weight=1)
+        #self.panedwindow.bind("<ButtonRelease-1>", self.handle_panedwindow_release)
+        self.top_paned_frame = tk.Frame(self.panedwindow, bg='#2d3142')
+        self.bottom_paned_frame = tk.Frame(self.panedwindow, bg='gray')
+
+        self.panedwindow.add(self.top_paned_frame)
+        self.panedwindow.add(self.bottom_paned_frame)
+
+
+        self.ctrl_frame = tk.Frame(self.top_paned_frame)
+        self.ctrl_frame.grid(row=0, column=0, sticky='we')
+        self.table_frame = tk.Frame(self.bottom_paned_frame)
+        self.table_frame.grid(row=0, column=0, sticky='news')
+        self.config_ctrl_frame()
+        self.config_table_frame()
+        #self.image_thumb_frame = tk.Frame(self.top_paned_frame, bg='#ef8354')
+        #self.image_thumb_frame.grid(row=0, column=0, sticky='nswe')
+        # top paned
+
+    def layout_x(self):
         '''
            left_frame        right_frame
         +================================+
@@ -109,7 +137,7 @@ class Main(tk.Frame):
         self.left_frame.grid_columnconfigure(0, weight=1)
 
         self.ctrl_frame = tk.Frame(self.left_frame)
-        self.table_frame = tk.Frame(self.left_frame)
+        self.table_frame = tk.Frame(self.left_frame, bg='gray')
 
         self.ctrl_frame.grid(row=0, column=0, sticky='we')
         self.table_frame.grid(row=1, column=0, sticky='news')
@@ -377,19 +405,16 @@ class Main(tk.Frame):
         self.seq_unit.grid(row=0, column=2)
 
     def config_table_frame(self):
-        self.table_frame.grid_columnconfigure(0, weight=2)
-        self.table_frame.grid_columnconfigure(1, weight=0)
-        self.table_frame.grid_rowconfigure(0, weight=2)
-        self.table_frame.grid_rowconfigure(1, weight=0)
+        self.table_frame.grid_columnconfigure(0, weight=0)
+        self.table_frame.grid_rowconfigure(0, weight=1)
         #print (self.table_frame.grid_info(), self.table_frame.grid_bbox())
 
-        #self.message = ttk.Label(self.table_frame, text="Hello", width=50)
-        #self.message.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
-
-        # treeview
-        #print (self.source_data['image_list'])
-        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns)
+        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-200)
+        self.data_grid.state['cell_height'] = 35
+        self.data_grid.state['cell_image_x_pad'] = 3
+        self.data_grid.state['cell_image_y_pad'] = 1
         self.data_grid.grid(row=0, column=0, sticky='nsew')
+
         '''
         self.tree = ttk.Treeview(
             self.table_frame,
@@ -439,9 +464,10 @@ class Main(tk.Frame):
             self.studyarea_var.set(d.get('studyarea_name', ''))
             self.deployment_var.set(d.get('deployment_name', ''))
         else:
-            self.project_var.set('')
-            self.studyarea_var.set('')
-            self.deployment_var.set('')
+            #self.project_var.set('')
+            #self.studyarea_var.set('')
+            #self.deployment_var.set('')
+            pass
         self.refresh()
 
         # default show first image
@@ -457,6 +483,9 @@ class Main(tk.Frame):
 
         data = self.data_helper.read_image_list(self.source_data['image_list'])
         self.data_grid.refresh(data)
+
+        #img = ImageTk.PhotoImage(Image.open('sample2.jpg'))
+        #self.data_grid.main_table.create_image(320, 320, anchor='nw', image=img)
         '''
         self.tree.delete(*self.tree.get_children())
 

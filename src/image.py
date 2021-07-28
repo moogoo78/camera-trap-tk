@@ -6,9 +6,10 @@ from PIL import ExifTags
 from PIL import TiffImagePlugin
 
 THUMB_MAP = (
-    #('s', (320, 320)),
+    ('q', (75, 75)),
     ('m', (500, 500)),
-    ('l', (1280, 1280)),
+    #('l', (1280, 1280)),
+    ('l', (1024, 1024)),
     ('x', (2048, 2048)),
 )
 

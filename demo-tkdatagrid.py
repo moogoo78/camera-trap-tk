@@ -6,12 +6,12 @@ HEADER = [
         'key': 'a',
         'label': 'A',
         'width': 30,
-        'readonly': 1,
+        'type': 'text'
     }, {
         'key': 'b',
         'label': 'B',
         'width': 150,
-        'readonly': 1,
+        'type': 'text',
     }, {
         'key': 'c',
         'label': 'C',
@@ -65,14 +65,14 @@ class DemoApp(tk.Tk):
         self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=100)
 
         # redraw another
-        data2=sampledata()
-        self.data_grid.refresh(data2)
+        #data2=sampledata()
+        #self.data_grid.refresh(data2)
 
         # change style
-        self.data_grid.state['styles']['color']['grid-border'] = 'green'
+        #self.data_grid.state['styles']['color']['grid-border'] = 'green'
         # redraw again
-        self.data_grid.update_columns(HEADER2)
-        self.data_grid.refresh(DATA3)
+        #self.data_grid.update_columns(HEADER2)
+        #self.data_grid.refresh(DATA3)
 
         self.frame.grid(row = 0, column = 0, sticky = "nswe")
         self.data_grid.grid(row = 0, column = 0, sticky = "nswe")
