@@ -7,6 +7,128 @@ from datetime import datetime
 import random
 import colorsys
 
+HEADER = [
+    {
+        'key': 'status_display',
+        'label': '標注/上傳狀態',
+        'width': 40,
+        'readonly': 1,
+    }, {
+        'key': 'filename',
+        'label': '檔名',
+        'width': 120,
+        'readonly': 1,
+    }, {
+        'key': 'datetime_display',
+        'label': '日期時間',
+        'width': 120,
+        'readonly': 1
+    }, {
+        'key': 'annotation_species',
+        'label': '物種',
+        'width': 50,
+    }, {
+        'key': 'annotation_lifestage',
+        'label': '年齡',
+        'width': 50
+    },{
+        'key': 'annotation_sex',
+        'label': '性別',
+        'width': 50
+    },{
+        'key': 'annotaion_antler',
+        'label': '角況',
+        'width': 50
+    } ,{
+        'key': 'annotation_remark',
+        'label': '性別',
+        'width': 50
+    },{
+        'key': 'annotation_animal_id',
+        'label': '個體ID',
+        'width': 50
+    }
+]
+
+def _get_status_display(code):
+    status_map = {
+        '10': 'new',
+        '20': 'viewed',
+        '30': 'annotated',
+        '100': 'start',
+        '110': '-',
+        '200': 'uploaded',
+    }
+    return status_map.get(code, '-')
+
+class DataHelper(object):
+    def __init__(self):
+        self.annotation_item = [3, 4, 5, 6, 7, 8] # index from sqlite
+        self.data = {}
+        self.columns = HEADER
+        #self.current_index = 0
+
+    def read_image_list(self, image_list):
+        '''
+        iid rule: `iid:{image_index}:{annotation_index}`
+        '''
+        self.data = {}
+        counter = 0
+        for i_index, i in enumerate(image_list):
+            alist = json.loads(i[7])
+            status_display = '{} / {}'.format(
+                _get_status_display(i[5]),
+                _get_status_display(i[12]),
+            )
+            thumb = f'./thumbnails/{i[10]}/{Path(i[2]).stem}-l.jpg'
+            row_basic = {
+                'status_display': status_display,
+                'filename': i[2],
+                'datetime_display': str(datetime.fromtimestamp(i[3])),
+                'image_id': i[0],
+                'path': i[1],
+                'status': i[5],
+                'upload_status': i[12],
+                'time': i[3],
+                'seq': 0,
+                'sys_note': json.loads(i[13]),
+                'thumb': thumb,
+            }
+
+            if len(alist) >= 1:
+                for a_index, a in enumerate(alist):
+                    counter += 1
+                    row_multi = {
+                        'counter': counter,
+                        'iid': f'iid:{i_index}:{a_index}',
+                        'iid_parent': '',
+                        'alist': [],
+                    }
+                    for head_index in self.annotation_item:
+                        key = self.columns[head_index]['key']
+                        k = key.replace('annotation_', '')
+                        row_multi[key] = a.get(k, '')
+
+                    if a_index == 0:
+                        row_multi['alist'] = alist
+                    else:
+                        row_multi['iid_parent'] = f'iid:{i_index}:0'
+
+                    self.data[counter] = {**row_basic, **row_multi}
+            else:
+                counter += 1
+                row_multi = {
+                    'counter': counter,
+                    'iid': 'iid:{}:0'.format(i_index),
+                    'iid_parent': '',
+                    'alist': alist,
+                }
+                for head_index in self.annotation_item:
+                    key = self.columns[head_index]['key']
+                    row_multi[key] = ''
+                self.data[counter] = {**row_basic, **row_multi}
+
+        return self.data
 '''
 key, label, type, choices in ini
 '''
@@ -217,16 +339,7 @@ class TreeHelper(object):
                 if elm[:2] != ("!disabled", "!selected")]
 
 
-def _get_status_display(code):
-    status_map = {
-        '10': 'new',
-        '20': 'viewed',
-        '30': 'annotated',
-        '100': 'start',
-        '110': '-',
-        '200': 'uploaded',
-    }
-    return status_map.get(code, '-')
+
 
 def data_to_tree_values(data):
     rows = []

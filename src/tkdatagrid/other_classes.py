@@ -7,10 +7,11 @@ class ColumnHeader(tk.Canvas):
         self.ps = parent.state
         self.config(width=self.ps['width'])
 
-    #def render(self):
+    def render(self):
         #self.configure(scrollregion=(0,0, self.table.tablewidth+self.table.x_start, self.height))
         #self.delete('gridline','text')
-        #self.delete('rect')
+        self.delete('header-text')
+
         pad = 0
         for i, v in enumerate(self.ps['columns']):
 
@@ -22,7 +23,7 @@ class ColumnHeader(tk.Canvas):
                 anchor='w',
                 fill='white',
                 #font=self.thefont,
-                #tag='text')
+                tag='header-text'
             )
 
         #x=self.table.col_positions[col+1]
@@ -41,7 +42,10 @@ class RowIndex(tk.Canvas):
 
         self.ps = parent.state
 
-        # render
+    def render(self):
+        self.delete('header-border')
+        self.delete('header-text')
+
         for i, v in enumerate(self.ps['data'].items()):
             x = self.width - 10
             y1 = i * self.ps['cell_height']
@@ -49,13 +53,13 @@ class RowIndex(tk.Canvas):
             self.create_rectangle(0, y1, self.width-1, y2,
                               outline='white',
                               width=1,
-                              tag='rowheader')
+                              tag='header-border')
 
             self.create_text(x, i*self.ps['cell_height'] + self.ps['cell_height']/2,
                              text=i+1,
                              fill='white',
                              #font=self.table.thefont,
-                             tag='text', anchor='e')
+                             tag='header-text', anchor='e')
 
 class AutoScrollbar(tk.Scrollbar):
     """a scrollbar that hides itself if it's not needed.  only

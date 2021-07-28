@@ -16,28 +16,22 @@ class MainTable(tk.Canvas):
             parent=None,
             width=None,
             height=None,
-            bgcolor='#F7F7FA',
-            fgcolor='black',
             **kwargs):
-        super().__init__(parent, bg='gray75',bd=2, relief='groove',scrollregion=(0,0,300,200))
+
         self.parent = parent
         self.ps = self.parent.state
         self.width = self.ps['width']
         self.height = self.ps['height']
+        self.styles = self.ps['styles']
 
-        #self.data = ps['data']
-        self.num_cols = len(self.ps['data'][0])
-        self.num_rows = len(self.ps['data'])
+        super().__init__(
+            parent,
+            bg=self.styles['color']['bg'], bd=2, relief='groove',
+            scrollregion=(0,0,300,200))
 
         # set default
         self.x_start = 0
         self.y_start = 0
-
-
-
-        #if self.width < wx:
-            # expend width if header has larger width
-        #    self.width = wx
 
         self.width = self.ps['width']
 
@@ -52,11 +46,6 @@ class MainTable(tk.Canvas):
             'row_list': [],
         }
 
-        # color
-        self.color_grid = 'gray'
-        self.color_rect = '#ddeeff'
-
-
         # binding
         self.bind('<Button-1>',self.handle_mouse_click_left)
         self.bind('<B1-Motion>', self.handle_mouse_drag)
@@ -65,54 +54,59 @@ class MainTable(tk.Canvas):
         # TODO
         #self.parent.master.bind_all('<Up>', self.handle_arrow_key)
         #self.parent.master.bind_all('<Down>', self.handle_arrow_key)
-        self.render()
 
     def render(self):
         #self.configure(scrollregion=(0,0, self.table.tablewidth+self.table.x_start, self.height))
 
-
         self.render_grid()
-        self.render_data()
-        #self.column_header.render()
-        #self.row_index.render()
+        self.render_text()
+
 
     def render_grid(self):
-        self.delete('girdline')
+        self.delete('grid-border')
 
-        #476042
+        col_w_list = self.ps['column_width_list']
+        color = self.ps['styles']['color']
+        num_rows = self.ps['num_rows']
+        num_cols = self.ps['num_cols']
 
-        # grid border
         # vertical line
-        for i in range(self.num_cols+1): # fixed size
-            if i < len(self.ps['column_width_list']):
-                x = self.ps['column_width_list'][i]
+        for i in range(num_cols+1): # fixed size
+            if i < len(col_w_list):
+                x = col_w_list[i]
             else:
-                x = self.ps['column_width_list'][-1] + self.ps['cell_width']
+                x = col_w_list[-1] + self.ps['cell_width']
             x += self.x_start
-            self.create_line(x, self.y_start,
-                             x, self.y_start + self.num_rows * self.ps['cell_height'],
-                             tag='gridborder',
-                             fill=self.color_grid, width=1)
+            self.create_line(
+                x, self.y_start,
+                x, self.y_start + num_rows * self.ps['cell_height'],
+                tag='grid-border',
+                fill=color['grid-border'], width=1)
 
         # horizontal line
-        for i in range(self.num_rows+1):
+        for i in range(num_rows+1):
             y = i * self.ps['cell_height']
             y += self.y_start
-            self.create_line(self.x_start, y, self.ps['column_width_list'][-1]+self.x_start, y,
-                             tag='gridborder',
-                             fill=self.color_grid, width=1)
+            self.create_line(
+                self.x_start, y,
+                col_w_list[-1]+self.x_start, y,
+                tag='grid-border',
+                fill=color['grid-border'], width=1)
 
 
-    def render_data(self):
-        self.delete('text')
+    def render_text(self):
+        self.delete('cell-text')
+
+        col_w_list = self.ps['column_width_list']
         for row_index, row in enumerate(self.ps['data'].items()):
-            for col_index, col in enumerate(row[1].items()):
-                x = self.ps['column_width_list'][col_index] + self.ps['columns'][col_index]['width'] / 2
-                cell_tag = f'cell-text-{row_index}_{col_index}'
+            for col_index, col in enumerate(self.ps['columns']):
+                x = col_w_list[col_index] + col['width'] / 2
+                cell_tag = f'cell-text:{row_index}_{col_index}'
+
                 rect = self.create_text(
                     x + self.x_start,
                     row_index * self.ps['cell_height'] + self.y_start + self.ps['cell_height']/2,
-                    text=col[1],
+                    text=row[1][col['key']],
                     tag=('text', cell_tag)
                 )
                     #fill=linkcolor,
@@ -120,7 +114,7 @@ class MainTable(tk.Canvas):
                     #tag=('text','hlink','celltext'+str(col)+'_'+str(row)))
 
     def render_entry(self, row, col, text):
-        cell_tag = f'cell-text-{row}_{col}'
+        cell_tag = f'cell-text:{row}_{col}'
         sv = tk.StringVar()
         sv.set(text)
         if hasattr(self, 'cell_entry'):
@@ -245,6 +239,12 @@ class MainTable(tk.Canvas):
             width=2,
             tag=('box-highlight',))
         self.lower('box-highlight')
+
+    def clear(self):
+        self.delete('girdline')
+        self.delete('gridborder')
+        self.delete('text')
+
 
     def clearSelected(self):
         self.delete('rect')

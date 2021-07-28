@@ -11,36 +11,16 @@ from PIL import ImageTk, Image
 from helpers import (
     FreeSolo,
     TreeHelper,
+    DataHelper,
 )
 from image import check_thumb
 from tkdatagrid import DataGrid
 
-HEADER = [
-    {
-        'key': 'a',
-        'label': 'A',
-        'width': 30,
-        'readonly': 1,
-    }, {
-        'key': 'b',
-        'label': 'B',
-        'width': 150,
-        'readonly': 1,
-    }, {
-        'key': 'c',
-        'label': 'C',
-    }, {
-        'key': 'd',
-        'label': 'D',
-    }, {
-        'key': 'e',
-        'label': 'E',
-    }
-]
 
-from tkintertable.Testing import sampledata
-DATA=sampledata()
 
+#from tkintertable.Testing import sampledata
+#DATA=sampledata()
+#print (DATA)
 class Worker:
     finished = False
     def do_work(self):
@@ -73,6 +53,7 @@ class Main(tk.Frame):
         self.thumb_basewidth = 500
 
         self.tree_helper = TreeHelper()
+        self.data_helper = DataHelper()
         self.annotation_entry_list = []
 
         # layout
@@ -406,7 +387,8 @@ class Main(tk.Frame):
         #self.message.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
 
         # treeview
-        self.data_grid = DataGrid(self.table_frame, data=DATA, columns=HEADER)
+        #print (self.source_data['image_list'])
+        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns)
         self.data_grid.grid(row=0, column=0, sticky='nsew')
         '''
         self.tree = ttk.Treeview(
@@ -473,6 +455,8 @@ class Main(tk.Frame):
         #if self.source_id and from_source == True:
         #    self.from_source(source_id)
 
+        data = self.data_helper.read_image_list(self.source_data['image_list'])
+        self.data_grid.refresh(data)
         '''
         self.tree.delete(*self.tree.get_children())
 
