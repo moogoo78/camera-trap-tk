@@ -1,45 +1,38 @@
 import tkinter as tk
-from src.tkdatagrid import DataGrid
+#import pathlib
+import sys
+#cwd = pathlib.Path.cwd()
+#sys.path.insert(0, cwd)
+sys.path.insert(0, '')
+from tkdatagrid import DataGrid
 
-HEADER = [
-    {
-        'key': 'a',
+
+HEADER = {
+    'a': {
         'label': 'A',
         'width': 30,
         'type': 'text'
-    }, {
-        'key': 'b',
+    },
+    'b': {
         'label': 'B',
         'width': 150,
         'type': 'text',
-    }, {
-        'key': 'c',
+    },
+    'c': {
         'label': 'C',
-    }, {
-        'key': 'd',
+    },
+    'd': {
         'label': 'D',
-    }, {
-        'key': 'e',
+    },
+    'e': {
         'label': 'E',
     }
-]
+}
 
-HEADER2 = [
-    {
-        'key': 'a',
-        'label': 'A',
-        'width': 30,
-        'readonly': 1,
-    }, {
-        'key': 'b',
-        'label': 'B',
-        'width': 150,
-        'readonly': 1,
-    },
-]
 
 from src.tkintertable.Testing import sampledata
 DATA=sampledata()
+#DATA = {f'iid:{k}': v for k, v in DATA.items()}
 DATA3 = {
     0: {
         'a': 'a',
@@ -62,7 +55,8 @@ class DemoApp(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self.frame = tk.Frame(self)
-        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=100)
+
+        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=600)
 
         # redraw another
         #data2=sampledata()
@@ -74,8 +68,11 @@ class DemoApp(tk.Tk):
         #self.data_grid.update_columns(HEADER2)
         #self.data_grid.refresh(DATA3)
 
+        # remove row
+        #self.data_grid.main_table.remove_row(3)
+
         self.frame.grid(row = 0, column = 0, sticky = "nswe")
         self.data_grid.grid(row = 0, column = 0, sticky = "nswe")
-
+2
 app=DemoApp()
 app.mainloop()

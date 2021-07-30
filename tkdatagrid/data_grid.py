@@ -1,4 +1,5 @@
 import logging
+#import copy
 
 import tkinter as tk
 from .main_table import MainTable
@@ -23,6 +24,7 @@ class DataGrid(tk.Frame):
 
         self.state = {
             'data': data,
+            'data_keys': {},
             'columns': columns,
             'width': width,
             'height': height,
@@ -43,6 +45,9 @@ class DataGrid(tk.Frame):
             'column_width_list': [], # count by update_columns()
             'num_rows': 0, # count by refresh()
             'num_cols': 0, # count by update_columns()
+            'after_click': None,
+            'after_arrow_key': None,
+            'after_set_data_value': None,
         }
         # other not default
         # cell_image_x_pad
@@ -57,9 +62,9 @@ class DataGrid(tk.Frame):
         self.column_header = ColumnHeader(self)
         self.row_index = RowIndex(self)
 
-        self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.main_table.yview)
+        self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.set_yviews)
         self.scrollbar_y.grid(row=1, column=2, rowspan=1, sticky='news',pady=0, ipady=0)
-        self.scrollbar_x = AutoScrollbar(self, orient=tk.HORIZONTAL, command=self.main_table.xview)
+        self.scrollbar_x = AutoScrollbar(self, orient=tk.HORIZONTAL, command=self.set_xviews)
         self.scrollbar_x.grid(row=2, column=1, columnspan=1, sticky='news')
         #self['xscrollcommand'] = self.Xscrollbar.set
         #self['yscrollcommand'] = self.Yscrollbar.set
@@ -68,17 +73,21 @@ class DataGrid(tk.Frame):
         self.row_index.grid(row=1, column=0, rowspan=1, sticky='news', pady=0, ipady=0)
         self.main_table.grid(row=1, column=1, sticky='news', rowspan=1, pady=0, ipady=0)
 
+
         if len(self.state['data']):
             self.refresh(data)
 
-
-    def refresh(self, data={}):
+    def refresh(self, new_data={}):
         """now, only consider MainTable"""
         self.clear()
 
+        # use iid:{original_key} as data dict key
+        new_data_iid = {f'iid:{k}': v for k, v in new_data.items()}
+        row_keys = list(new_data_iid.keys())
         self.state.update({
-            'data': data,
-            'num_rows': len(data),
+            'data': new_data_iid,
+            'num_rows': len(new_data_iid),
+            'row_keys': row_keys
         })
 
         self.main_table.render()
@@ -90,11 +99,11 @@ class DataGrid(tk.Frame):
         self.main_table.clear()
 
     def update_columns(self, columns):
-
         # count coulmn_width_list and set new width
         last_x = 0
         self.state['column_width_list'] = [0]
         if len(columns) == 0:
+            # not test yat, must failed
             for x in data[0].keys():
                 columns.append({
                     'key': x,
@@ -104,16 +113,26 @@ class DataGrid(tk.Frame):
                 last_x += self.state['cell_width']
                 self.state['column_width_list'].append(last_x)
         else:
-            for i in columns:
-                if 'width' not in i:
-                    i['width'] = self.state['cell_width']
-                last_x += i['width']
+            for k, v in columns.items():
+                if 'width' not in v:
+                    v['width'] = self.state['cell_width']
+                last_x += v['width']
                 self.state['column_width_list'].append(last_x)
 
         logging.info('set width: {} -> {}'.format(self.state['width'], last_x))
 
+        col_keys = list(columns.keys())
         self.state.update({
             'columns': columns,
             'width': last_x,
             'num_cols': len(columns),
+            'col_keys': col_keys
         })
+
+    def set_yviews(self, *args):
+        self.main_table.yview(*args)
+        self.row_index.yview(*args)
+
+    def set_xviews(self, *args):
+        self.main_table.xview(*args)
+        self.row_index.xview(*args)

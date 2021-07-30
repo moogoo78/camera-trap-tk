@@ -68,7 +68,7 @@ class Application(tk.Tk):
                 stdout_handler],
             format="%(asctime)s|%(levelname)s|%(filename)s:%(lineno)d|%(funcName)s => %(message)s",
             datefmt="%Y-%m-%d:%H:%M:%S",
-            level=logging.INFO)
+            level=logging.DEBUG)
 
         # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s 
         self.logger = logging.getLogger('ct-tk')
@@ -81,12 +81,19 @@ class Application(tk.Tk):
         self.server = Server(dict(config['Server']))
 
 
-        #self.state = {}
+        #print(list(tk.font.families()))
+        #Yu Gothic
+        #helvetica
+        #Microsoft JhengHei UI
+        self.nice_font = {
+            'h1': tk.font.Font(family='Yu Gotic', size=16, weight="bold"),
+            'h2': tk.font.Font(family='Yu Gotic', size=14),
+            'h3': tk.font.Font(family='Yu Gotic', size=12),
+        }
 
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
-        #self.title_font = font.Font(family='Helvetica', size=18, weight="bold", slant="italic")
         self.toolbar = Toolbar(
             self,
             background='#ef8354'

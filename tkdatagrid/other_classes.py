@@ -13,13 +13,13 @@ class ColumnHeader(tk.Canvas):
         self.delete('header-text')
 
         pad = 0
-        for i, v in enumerate(self.ps['columns']):
+        for counter, (col_key, col) in enumerate(self.ps['columns'].items()):
 
-            x = self.ps['column_width_list'][i] + self.ps['columns'][i]['width'] / 2
+            x = self.ps['column_width_list'][counter] + col['width'] / 2
 
             self.create_text(
                 x + pad, self.ps['column_header_height']/2,
-                text=v['label'],
+                text=col['label'],
                 anchor='w',
                 fill='white',
                 #font=self.thefont,
@@ -35,7 +35,7 @@ class RowIndex(tk.Canvas):
 
     def __init__(self, parent, width=None):
         if not width:
-            self.width = 40
+            self.width = 60
         else:
             self.width = width
         super().__init__(parent, bg='#2A3132', width=self.width, bd=0, relief='flat')
@@ -56,7 +56,7 @@ class RowIndex(tk.Canvas):
                               tag='header-border')
 
             self.create_text(x, i*self.ps['cell_height'] + self.ps['cell_height']/2,
-                             text=i+1,
+                             text='{}({})'.format(i+1, v[0]),
                              fill='white',
                              #font=self.table.thefont,
                              tag='header-text', anchor='e')

@@ -23,7 +23,8 @@ class MainTable(tk.Canvas):
             **kwargs):
 
         self.parent = parent
-        self.ps = self.parent.state
+        self.ps = self.parent.state # parent_state
+
         self.width = self.ps['width']
         self.height = self.ps['height']
 
@@ -56,13 +57,12 @@ class MainTable(tk.Canvas):
 
 
         # binding
-        self.bind('<Button-1>',self.handle_mouse_click_left)
+        self.bind('<Button-1>', self.handle_mouse_click_left)
+        self.bind('<Button-3>', self.handle_mouse_click_right)
         self.bind('<B1-Motion>', self.handle_mouse_drag)
-        #self.parentframe.master.bind_all("<Up>", self.handle_arrow_keys)
-        ## check master
-        # TODO
-        #self.parent.master.bind_all('<Up>', self.handle_arrow_key)
-        #self.parent.master.bind_all('<Down>', self.handle_arrow_key)
+        self.parent.master.bind_all('<Up>', self.handle_arrow_key)
+        self.parent.master.bind_all('<Down>', self.handle_arrow_key)
+
 
     def render(self):
         #self.configure(scrollregion=(0,0, self.table.tablewidth+self.table.x_start, self.height))
@@ -106,54 +106,49 @@ class MainTable(tk.Canvas):
         self.delete('cell')
 
         col_w_list = self.ps['column_width_list']
-        for row_index, row in enumerate(self.ps['data'].items()):
-            for col_index, col in enumerate(self.ps['columns']):
-                x_left = col_w_list[col_index] + self.x_start
+        for row_counter, (row_key, row) in enumerate(self.ps['data'].items()):
+            for col_counter, (col_key, col) in enumerate(self.ps['columns'].items()):
+                x_left = col_w_list[col_counter] + self.x_start
                 x_center = x_left + col['width'] / 2
-                cell_tag = f'cell-text:{row_index}_{col_index}'
+                cell_tag = f'cell-text:{row_counter}_{col_counter}'
                 col_type = col.get('type', 'text')
-                y_top = row_index * self.ps['cell_height'] + self.y_start
+                y_top = row_counter * self.ps['cell_height'] + self.y_start
                 y_center = y_top + self.ps['cell_height']/2
                 if col_type == 'text':
                     rect = self.create_text(
                         x_center,
                         y_center,
-                        text=row[1][col['key']],
+                        text=row.get(col_key, ''),
                         tags=('cell', 'cell-text', cell_tag)
                     )
-                    #fill=linkcolor,
-                    #font=linkfont,
-                    #tag=('text','hlink','celltext'+str(col)+'_'+str(row)))
                 elif col_type == 'image':
-                    img_path = row[1][col['key']]
-                    img = Image.open(img_path)
-                    img = ImageTk.PhotoImage(img.resize((50, 33)))
-                    x_pad = 0
-                    if foo:= self.ps.get('cell_image_x_pad', 0):
-                        x_pad = int(foo)
-                    if foo:= self.ps.get('cell_image_y_pad', 0):
-                        y_pad = int(foo)
+                    img_path = row.get(col_key, '')
+                    if img_path: # TODO check exist
+                        img = Image.open(img_path)
+                        img = ImageTk.PhotoImage(img.resize((50, 33)))
+                        x_pad = 0
+                        if foo:= self.ps.get('cell_image_x_pad', 0):
+                            x_pad = int(foo)
+                        if foo:= self.ps.get('cell_image_y_pad', 0):
+                            y_pad = int(foo)
 
-                    self.ps['image_tmp'][row[0]] = img
-                    self.create_image(
-                        x_left+x_pad, y_top+y_pad,
-                        image=img,
-                        anchor='nw',
-                        tags=('cell','cell-image')
-                    )
+                        self.ps['image_tmp'][row_key] = img
+                        self.create_image(
+                            x_left+x_pad, y_top+y_pad,
+                            image=img,
+                            anchor='nw',
+                            tags=('cell','cell-image')
+                        )
 
-        #self.lift('cell-image')
+        self.lift('cell-image')
+
 
     def render_text_editor(self, row, col, text):
         cell_tag = f'cell-text:{row}_{col}'
         sv = tk.StringVar()
         sv.set(text)
 
-        if hasattr(self, 'text_editor'):
-            # save data if last entry not Enter or Escape
-            if len(self.entry_queue):
-                self.save_entry_queue()
-            self.text_editor.destroy()
+        self.remove_entry()
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
 
@@ -180,7 +175,8 @@ class MainTable(tk.Canvas):
             self.entry_queue[cell_tag] = value
 
             if e.keysym in ['Return', 'Escape']:
-                self.set_data_value(row, col, value)
+                row_key, col_key = self.get_rc_key(row, col)
+                self.set_data_value(row_key, col_key, value)
                 #self.entry_queue.pop()
                 del self.entry_queue[cell_tag]
                 self.delete('entry_win')
@@ -204,6 +200,8 @@ class MainTable(tk.Canvas):
         print (event, 'entry drag')
 
     def render_selected(self, row, col):
+        self.current_rc = [row, col]
+
         self.delete('cell-highlight')
         self.delete('cell-highlight-border')
         self.delete('cell-highlight-drag')
@@ -262,23 +260,44 @@ class MainTable(tk.Canvas):
         y2 = y1 + self.ps['cell_height']
         return x1, y1, x2, y2
 
-    def get_data_value(self, row, col):
-        return self.ps['data'][row][self.ps['columns'][col]['key']]
+    def get_rc_key(self, row, col):
+        iid = self.ps['row_keys'][row]
+        col_key = self.ps['col_keys'][col]
+        return (iid, col_key)
 
-    def set_data_value(self, row, col, value):
-        self.ps['data'][row][self.ps['columns'][col]['key']] = value
-        logging.debug('MainTable.save_data_value: {}'.format(self.ps['data']))
+    def set_data_value(self, row_key, col_key, value):
+        self.ps['data'][row_key][col_key] = value
+        logging.debug('MainTable.save_data_value: {}, {}: {}'.format(row_key, col_key, value))
         self.render()
+
+        if func := self.ps.get('after_set_data_value', ''):
+            return func(row_key, col_key, value)
         return
 
-    def get_rc(self, x, y):
+    def get_rc(self, event_x, event_y):
+        result = {
+            'row': None,
+            'col': None,
+            'row_key': None,
+            'col_key': None,
+            'is_available': False,
+        }
 
+        x = int(self.canvasx(event_x))
+        y = int(self.canvasy(event_y))
+
+        if x < 1 or y < 1:
+            return False
+
+        """get row, column (number) for giving mouse position: x ,y"""
         if y > self.ps['num_rows']*self.ps['cell_height']:
             # 點到表格下面, 不要動作
-            return None, None
+            return result
         elif x > self.ps['column_width_list'][-1]:
-            # 點到表格右邊, select row
-            return int((y-self.y_start)/self.ps['cell_height']), -1
+            # 點到表格右邊
+            #select row, or return?
+            #return int((y-self.y_start)/self.ps['cell_height']), -1
+            return result
 
         col = None
         for i, v in enumerate(self.ps['column_width_list']):
@@ -286,25 +305,33 @@ class MainTable(tk.Canvas):
             if x > v and x <= next_x:
                 col = i
                 break
-        return int((y-self.y_start)/self.ps['cell_height']), col
+        row = int((y-self.y_start)/self.ps['cell_height'])
+        row_key, col_key = self.get_rc_key(row, col)
+        result.update({
+            'row': row,
+            'col': col,
+            'row_key': row_key,
+            'col_key': col_key,
+            'is_available': True
+        })
+        return result
 
     def save_entry_queue(self):
         for i, v in self.entry_queue.items():
             rc = i.replace('cell-text:', '').split('_')
-            self.set_data_value(int(rc[0]), int(rc[1]), v)
+            row_key, col_key = self.get_rc_key(int(rc[0]), int(rc[1]))
+            self.set_data_value(row_key, col_key, v)
             self.entry_queue = {}
 
     def handle_mouse_drag(self, event):
         #print (event, 'drag')
-        x = int(self.canvasx(event.x))
-        y = int(self.canvasy(event.y))
 
-        if x < 1 or y < 1:
-            return False
-        row, col = self.get_rc(x, y)
-
-        if row == None or col == None:
+        res_rc = self.get_rc(event.x, event.y)
+        if not res_rc['is_available']:
             return
+
+        row = res_rc['row']
+        col = res_rc['col']
 
         if row >= self.ps['num_rows']:
             #or self.startrow > self.rows:
@@ -342,6 +369,37 @@ class MainTable(tk.Canvas):
             self.delete('cell-highlight')
             self.render_box(self.selected)
 
+    def remove_entry(self):
+        if hasattr(self, 'text_editor'):
+            # save data if last entry not Enter or Escape
+            if len(self.entry_queue):
+                self.save_entry_queue()
+            self.text_editor.destroy()
+        self.delete('entry_win')
+
+    def handle_mouse_click_right(self, event):
+        if hasattr(self, 'popup_menu'):
+            self.popup_menu.destroy()
+
+        res_rc = self.get_rc(event.x, event.y)
+        if not res_rc['is_available']:
+            return
+
+        row = res_rc['row']
+        col = res_rc['col']
+        self.current_rc = [row, col]
+
+        self.remove_entry()
+        self.render_selected(row, col)
+
+        self.popup_menu = tk.Menu(self)
+        self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
+        self.popup_menu.add_command(label='刪除一列', command=lambda: self.remove_row(res_rc['row_key']))
+        x1, y1, x2, y2 = self.get_cell_coords(row, col)
+        self.popup_menu.post(event.x_root, event.y_root)
+        #print (y1, y2, int((y1+y2)/2), event.y_root)
+
+
     def handle_mouse_click_left(self, event):
         # flush entry_queue
         if len(self.entry_queue):
@@ -351,15 +409,14 @@ class MainTable(tk.Canvas):
         # clear
         self.delete('entry_win')
 
-        x = int(self.canvasx(event.x))
-        y = int(self.canvasy(event.y))
-        if x < 1 or y < 1:
-            return False
-        row, col = self.get_rc(x, y)
-
-        #print (row, col)
-        if row == None or col == None:
+        res_rc = self.get_rc(event.x, event.y)
+        if not res_rc['is_available']:
             return
+
+        row = res_rc['row']
+        col = res_rc['col']
+        row_key = res_rc['row_key']
+        col_key = res_rc['col_key']
 
         # reset selected
         self.selected = {
@@ -375,37 +432,73 @@ class MainTable(tk.Canvas):
         if col == -1:
             col = 0 # 預設如點第一格
 
-        # draw selected
-        #row = self.currentrow
-        x1, y1, x2, y2 = self.get_cell_coords(row, col)
-        #x2 = self.tablewidth
-        #print (x1, y1, x2, y2)
-
-        text = self.get_data_value(row, col)
-
-        # draw entry if not readonly
-        if self.ps['columns'][col].get('type', 'entry') == 'entry':
-            self.render_text_editor(row, col, text)
-        else:
-            if hasattr(self, 'text_editor'):
-                self.text_editor.destroy()
-            self.delete('entry_win')
-
-        self.current_rc = [row, col]
         self.render_selected(row, col)
 
+        # draw entry if not readonly
+        text = self.ps['data'][row_key][col_key]
+        if self.ps['columns'][col_key].get('type', 'entry') == 'entry':
+            self.render_text_editor(row, col, text)
+        else:
+            self.remove_entry()
+
+        if func := self.ps.get('after_click', ''):
+            return func(self.current_rc)
 
     def handle_arrow_key(self, event):
         #print ('handle_arrow:', event)
         if event.keysym == 'Up':
+            self.remove_entry()
             if self.current_rc[0] == 0:
                 return
             else:
                 self.current_rc[0] = self.current_rc[0] - 1
         elif event.keysym == 'Down':
+            self.remove_entry()
             if self.current_rc[0] >= self.ps['num_rows'] - 1:
                 return
             else:
                 self.current_rc[0] = self.current_rc[0] + 1
 
         self.render_selected(self.current_rc[0], self.current_rc[1])
+        if func := self.ps.get('after_arrow_key', ''):
+            return func(self.current_rc)
+
+    def clone_row(self, row_key):
+        #print (row, 'clone')
+        new_data = {}
+        is_cloned = False
+        clone_data = dict(self.ps['data'][row_key])
+        keys = list(self.ps['data'].keys())
+        iid_key = row_key[4:] # remove "iid:"
+        prefix = f'iid:{iid_key}-'
+        clone_iid = f'iid:{iid_key}-0' # default add new branch
+
+        sibling_counter = 0
+        insert_to = 0
+        for counter, k in enumerate(keys):
+            if prefix in k:
+                sibling_counter += 1
+                insert_to = counter+1
+
+        if sibling_counter > 0: # already has branch, sibling
+            clone_iid = f'{prefix}{sibling_counter}'
+        else:
+            insert_to = keys.index(row_key) + 1
+
+        #print (sibling_counter, insert_to)
+        for counter, (iid, row_data) in enumerate(self.ps['data'].items()):
+            if not is_cloned and counter == insert_to:
+                trimed_clone_iid = clone_iid[4:]
+                new_data[trimed_clone_iid] = clone_data
+            trimed_iid = iid[4:]
+            new_data[trimed_iid] = row_data
+
+        logging.debug(f'clone row: {row_key} -> {clone_iid}, insert to {insert_to}')
+        self.parent.refresh(new_data)
+        if func := self.ps.get('after_clone_row', ''):
+            return func(row_key, clone_iid)
+
+    def remove_row(self, row_key=''):
+        #print (row, 'remove')
+        del self.ps['data'][row_key]
+        self.parent.refresh(self.ps['data'])

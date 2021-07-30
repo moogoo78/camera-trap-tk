@@ -1,4 +1,5 @@
 import sqlite3
+import logging
 
 SQL_INIT_SOURCE = '''
 CREATE TABLE IF NOT EXISTS source (
@@ -49,7 +50,7 @@ class Database(object):
         self.cursor.execute(SQL_INIT_IMAGE)
 
     def exec_sql(self, sql, commit=False):
-        #print(sql)
+        logging.debug(sql)
         self.cursor.execute(sql)
 
         if commit:

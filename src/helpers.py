@@ -7,54 +7,52 @@ from datetime import datetime
 import random
 import colorsys
 
-HEADER = [
-    {
-        'key': 'status_display',
+HEADER = {
+    'status_display': {
         'label': '標注/上傳狀態',
         'width': 100,
-        'readonly': 1,
-    }, {
-        'key': 'thumb',
+        'type': 'text',
+    },
+    'thumb': {
         'label': '照片',
         'width': 55,
-        'readonly': 1,
         'type': 'image',
-    }, {
-        'key': 'filename',
+    },
+    'filename': {
         'label': '檔名',
         'width': 150,
-        'readonly': 1,
-    }, {
-        'key': 'datetime_display',
+        'type': 'text',
+    },
+    'datetime_display': {
         'label': '日期時間',
         'width': 130,
-        'readonly': 1
-    }, {
-        'key': 'annotation_species',
+        'type': 'text',
+    },
+    'annotation_species': {
         'label': '物種',
         'width': 80,
-    }, {
-        'key': 'annotation_lifestage',
+    },
+    'annotation_lifestage': {
         'label': '年齡',
         'width': 80
-    },{
-        'key': 'annotation_sex',
+    },
+    'annotation_sex': {
         'label': '性別',
         'width': 80
-    },{
-        'key': 'annotaion_antler',
+    },
+    'annotation_antler': {
         'label': '角況',
         'width': 80
-    } ,{
-        'key': 'annotation_remark',
+    },
+    'annotation_remark': {
         'label': '性別',
         'width': 80
-    },{
-        'key': 'annotation_animal_id',
+    },
+    'annotation_animal_id': {
         'label': '個體ID',
         'width': 80
     }
-]
+}
 
 def _get_status_display(code):
     status_map = {
@@ -67,21 +65,72 @@ def _get_status_display(code):
     }
     return status_map.get(code, '-')
 
+
 class DataHelper(object):
-    def __init__(self):
-        self.annotation_item = [4, 5, 6, 7, 8, 9] # index from sqlite
+    def __init__(self, db):
+        #self.annotation_item = [4, 5, 6, 7, 8, 9] # index from sqlite
+        self.db = db
+        self.annotation_map = {
+            4: 'annotation_species',
+            5: 'annotation_lifestage',
+            6: 'annotation_sex',
+            7: 'annotation_antler',
+            8: 'annotation_remark',
+            9: 'annotation_animal_id'
+        } #[4, 5, 6, 7, 8, 9] # index from sqlite
         self.data = {}
         self.columns = HEADER
+        self.img_seq_rand_salt = random.random()
+        self.annotation_data = {}
         #self.current_index = 0
+
+    def save_annotation(self, iid, key, value, seq_info=None):
+        iid_root = None
+        iid_index = None
+        if '-' in iid:
+            iid_list = iid.split('-')
+            iid_root = iid_list[0]
+            a_index = int(iid_list[1]) + 1
+            item = self.data[iid_root]
+        else:
+            item = self.data[iid]
+            iid_root = item['iid_root']
+            a_index = int(item['a_index'])
+
+        key = key.replace('annotation_', '')
+        image_id = item['image_id']
+        adata = self.annotation_data[iid_root]
+        #print (self.annotation_data, a_index, key)
+        if len(adata) <= int(a_index):
+            adata.append({})
+        adata[a_index][key] = value
+        json_data = json.dumps(adata)
+
+        if seq_info:
+            if tag_name := item['img_seq_tag_name']:
+                image_list = []
+                for row in seq_info['map'][tag_name]['rows']:
+                    x = self.get_item(row)
+                    image_list.append(x['image_id'])
+                image_list_set = set(image_list)
+                rs = ','.join(str(x) for x in image_list_set)
+                sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id IN ({rs})"
+                self.db.exec_sql(sql, True)
+        else:
+            sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
+            self.db.exec_sql(sql, True)
+
 
     def read_image_list(self, image_list):
         '''
-        iid rule: `iid:{image_index}:{annotation_index}`
+        iid rule: `iid:{image_index}-{annotation_index}`
         '''
         self.data = {}
         counter = 0
         for i_index, i in enumerate(image_list):
+            image_id = i[0]
             alist = json.loads(i[7])
+            self.annotation_data[f'{counter}'] = alist
             status_display = '{} / {}'.format(
                 _get_status_display(i[5]),
                 _get_status_display(i[12]),
@@ -91,7 +140,7 @@ class DataHelper(object):
                 'status_display': status_display,
                 'filename': i[2],
                 'datetime_display': str(datetime.fromtimestamp(i[3])),
-                'image_id': i[0],
+                'image_id': image_id,
                 'path': i[1],
                 'status': i[5],
                 'upload_status': i[12],
@@ -103,38 +152,89 @@ class DataHelper(object):
 
             if len(alist) >= 1:
                 for a_index, a in enumerate(alist):
-                    counter += 1
                     row_multi = {
                         'counter': counter,
-                        'iid': f'iid:{i_index}:{a_index}',
-                        'iid_parent': '',
-                        'alist': [],
+                        'a_index': a_index,
+                        'iid_root': f'{i_index}',
                     }
-                    for head_index in self.annotation_item:
-                        key = self.columns[head_index]['key']
-                        k = key.replace('annotation_', '')
-                        row_multi[key] = a.get(k, '')
+                    for _, a_key in self.annotation_map.items():
 
-                    if a_index == 0:
-                        row_multi['alist'] = alist
-                    else:
-                        row_multi['iid_parent'] = f'iid:{i_index}:0'
+                        k = a_key.replace('annotation_', '')
+                        row_multi[a_key] = a.get(k, '')
 
-                    self.data[counter] = {**row_basic, **row_multi}
+                    #if len(alist) == 1:
+                    #self.data[f'{}'] = {**row_basic, **row_multi}
+                    #    else:
+                    self.data[f'{counter}'] = {**row_basic, **row_multi}
+                    counter += 1
             else:
-                counter += 1
                 row_multi = {
                     'counter': counter,
-                    'iid': 'iid:{}:0'.format(i_index),
-                    'iid_parent': '',
-                    'alist': alist,
+                    'a_index': 0,
+                    'iid_root': f'{i_index}',
                 }
-                for head_index in self.annotation_item:
-                    key = self.columns[head_index]['key']
-                    row_multi[key] = ''
-                self.data[counter] = {**row_basic, **row_multi}
-
+                for a_index, a_key in self.annotation_map.items():
+                    row_multi[a_key] = ''
+                self.data[f'{counter}'] = {**row_basic, **row_multi}
+                counter += 1
         return self.data
+
+    def get_item(self, row):
+        for counter, row_key in enumerate(self.data.keys()):
+            if row == counter:
+                return self.data[row_key]
+
+    def group_image_sequence(self, time_interval, seq_tag=''):
+        seq_info = {
+            'group_prev': False,
+            'group_next': False,
+            'map': {},
+            'idx': 0,
+            'salt': self.img_seq_rand_salt,
+            'int': int(time_interval) * 60,
+        }
+        # via: https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
+        golden_ratio_conjugate = 0.618033988749895
+
+        for counter, (i, v) in enumerate(self.data.items()):
+            tag_name = ''
+            next_idx = min(counter+1, len(self.data)-1)
+            this_time = self.data[i]['time']
+            next_time = self.data[str(next_idx)]['time'] if counter < next_idx else 0
+            #print (i, this_time, next_time,(next_time - this_time), seq_info['int'])
+            seq_info['group_prev'] = seq_info['group_next']
+            if next_time and \
+               (next_time - this_time) <= seq_info['int']:
+                seq_info['group_next'] = True
+            else:
+                seq_info['group_next'] = False
+
+            if seq_info['group_next'] == True and not seq_info['group_prev']:
+                seq_info['idx'] += 1
+                seq_info['salt'] += golden_ratio_conjugate
+                seq_info['salt'] %= 1
+
+            if seq_info['group_next'] or seq_info['group_prev']:
+                tag_name = 'tag{}'.format(seq_info['idx'])
+            else:
+                tag_name = ''
+
+            rgb_hex = ''
+            if tag_name:
+                rgb = colorsys.hls_to_rgb(seq_info['salt']*265, 0.8, 0.5)
+                rgb_hex = f'#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}'
+                #print (i, tag_name, seq_info['idx'])
+                if tag_name not in seq_info['map']:
+                    seq_info['map'][tag_name] = {
+                        'color': rgb_hex,
+                        'rows': []
+                    }
+                seq_info['map'][tag_name]['rows'].append(counter)
+
+            self.data[i]['img_seq_tag_name'] = tag_name
+            self.data[i]['img_seq_color'] = rgb_hex
+        #print (seq_info)
+        return seq_info
 '''
 key, label, type, choices in ini
 '''

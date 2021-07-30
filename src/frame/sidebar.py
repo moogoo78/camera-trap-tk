@@ -11,6 +11,7 @@ class Sidebar(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
+        self.app = self.parent
 
         self.source_list = []
 
@@ -36,10 +37,15 @@ class Sidebar(tk.Frame):
 
         # get all source from db
         res = db.fetch_sql_all('SELECT * FROM source')
+
+        style = ttk.Style()
+        style.configure('my.TButton', font=('Verdana', 9))
+
         for i in res:
             source_button = ttk.Button(
                 self,
                 text=i[3],
+                style='my.TButton',
                 command=lambda x=i[0]: self.parent.main.from_source(x))
             source_button.grid(pady=2)
             self.source_list.append(source_button)

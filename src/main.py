@@ -1,9 +1,11 @@
 import json
 import time
+import pathlib
+import sys
 import tkinter as tk
 from tkinter import ttk
-from logging import debug as _d
-from logging import info as _i
+import logging
+
 from PIL import ImageTk, Image
 
 #import threading
@@ -14,13 +16,11 @@ from helpers import (
     DataHelper,
 )
 from image import check_thumb
+
+sys.path.insert(0, '') # TODO: pip install -e . 
 from tkdatagrid import DataGrid
 
 
-
-#from tkintertable.Testing import sampledata
-#DATA=sampledata()
-#print (DATA)
 class Worker:
     finished = False
     def do_work(self):
@@ -53,7 +53,7 @@ class Main(tk.Frame):
         self.thumb_basewidth = 500
 
         self.tree_helper = TreeHelper()
-        self.data_helper = DataHelper()
+        self.data_helper = DataHelper(self.app.db)
         self.annotation_entry_list = []
 
         # layout
@@ -68,11 +68,13 @@ class Main(tk.Frame):
         self.thumb_basewidth = w - 36
         data = self.get_current_item('data')
 
+        '''210730
         if data:
-            self.show_thumb(data['thumb'], data['path'])
+            self.show_image(data['thumb'], data['path'])
         elif self.tree_helper.data:
             # when default no selection
             self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
+        '''
 
     def layout(self):
         self.grid_rowconfigure(0, weight=0)
@@ -91,16 +93,27 @@ class Main(tk.Frame):
         self.panedwindow.add(self.top_paned_frame)
         self.panedwindow.add(self.bottom_paned_frame)
 
-
+        # top_paned
+        self.top_paned_frame.grid_rowconfigure(0, weight=0)
+        self.top_paned_frame.grid_rowconfigure(1, weight=1)
+        self.top_paned_frame.grid_columnconfigure(0, weight=0)
         self.ctrl_frame = tk.Frame(self.top_paned_frame)
         self.ctrl_frame.grid(row=0, column=0, sticky='we')
+        self.image_thumb_frame = tk.Frame(self.top_paned_frame, bg='#ef8354')
+        self.image_thumb_frame.grid(row=1, column=0, sticky='nswe')
+        self.image_thumb_label = ttk.Label(self.image_thumb_frame, border=8, relief='raised')
+        self.image_thumb_label.grid(row=0, column=0, sticky='nw', padx=10, pady=10)
+
+        self.config_ctrl_frame()
+
+        # bottom_paned
+        self.bottom_paned_frame.grid_rowconfigure(0, weight=1)
+        self.bottom_paned_frame.grid_columnconfigure(0, weight=1)
         self.table_frame = tk.Frame(self.bottom_paned_frame)
         self.table_frame.grid(row=0, column=0, sticky='news')
-        self.config_ctrl_frame()
+
         self.config_table_frame()
-        #self.image_thumb_frame = tk.Frame(self.top_paned_frame, bg='#ef8354')
-        #self.image_thumb_frame.grid(row=0, column=0, sticky='nswe')
-        # top paned
+
 
     def layout_x(self):
         '''
@@ -270,12 +283,12 @@ class Main(tk.Frame):
             command=self.update_annotation,
         )
         annotation_update_button.grid(row=4, column=0, padx=16, pady=16)
-        annotation_clone_button = ttk.Button(
-            self.annotation_label_frame,
-            text='複製一列',
-            command=self.clone_row
-        )
-        annotation_clone_button.grid(row=4, column=1, padx=12, pady=12)
+        #annotation_clone_button = ttk.Button(
+        #    self.annotation_label_frame,
+        #    text='複製一列',
+        #    command=self.clone_row
+        #)
+        #annotation_clone_button.grid(row=4, column=1, padx=12, pady=12)
         #self._show_thumb()
 
         # self.image_viewer_button = ttk.Button(
@@ -324,11 +337,11 @@ class Main(tk.Frame):
         self.label_folder = ttk.Label(
             self.ctrl_frame,
             text='',
-            font=tk.font.Font(family='Helvetica', size=18, weight='bold'))
+            font=self.app.nice_font['h1'])
         self.label_folder.grid(row=0, column=0, padx=(0, 36))
 
         # project menu
-        self.label_project = ttk.Label(self.ctrl_frame,  text='計畫')
+        self.label_project = ttk.Label(self.ctrl_frame,  text='計畫', font=self.app.nice_font['h2'])
         self.label_project.grid(row=0, column=1)
         self.project_options = [x['name'] for x in self.projects]
         self.project_var = tk.StringVar(self)
@@ -410,9 +423,15 @@ class Main(tk.Frame):
         #print (self.table_frame.grid_info(), self.table_frame.grid_bbox())
 
         self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-200)
-        self.data_grid.state['cell_height'] = 35
-        self.data_grid.state['cell_image_x_pad'] = 3
-        self.data_grid.state['cell_image_y_pad'] = 1
+        self.data_grid.state.update({
+            'cell_height': 35,
+            'cell_image_x_pad': 3,
+            'cell_image_y_pad': 1,
+            'after_click': self.handle_after_arrow_key,
+            'after_arrow_key': self.handle_after_arrow_key,
+            'after_set_data_value': self.handle_after_set_data_value,
+            'after_clone_row': self.handle_clone_row,
+        })
         self.data_grid.grid(row=0, column=0, sticky='nsew')
 
         '''
@@ -482,43 +501,29 @@ class Main(tk.Frame):
         #    self.from_source(source_id)
 
         data = self.data_helper.read_image_list(self.source_data['image_list'])
-        self.data_grid.refresh(data)
-
-        #img = ImageTk.PhotoImage(Image.open('sample2.jpg'))
-        #self.data_grid.main_table.create_image(320, 320, anchor='nw', image=img)
-        '''
-        self.tree.delete(*self.tree.get_children())
-
-        tree_data = self.tree_helper.set_data_from_list(self.source_data['image_list'])
-
+        #print (data)
         self.seq_info = None
         if self.seq_checkbox_val.get() == 'Y':
             if seq_int := self.seq_interval_val.get():
-                self.seq_info = self.tree_helper.group_image_sequence(seq_int, seq_tag='tag_name')
+                self.seq_info = self.data_helper.group_image_sequence(seq_int)
 
-        if self.seq_info:
-            for i, values in enumerate(tree_data):
-                data = self.tree_helper.data[i]
-                tag = data['tag_name']
-                iid = data['iid']
-                parent = data['iid_parent']
-                text = data['counter']
-                self.tree.insert(parent, tk.END, iid, text=text, values=values, tags=(tag), open=True)
-            for tag_name, item in self.seq_info['map'].items():
-                self.tree.tag_configure(tag_name, background=item['color'])
-        else:
-            for i, values in enumerate(tree_data):
-                data = self.tree_helper.data[i]
-                iid = data['iid']
-                parent = data['iid_parent']
-                text = data['counter']
-                if i%2 == 0:
-                    self.tree.insert(parent, tk.END, iid, values=values, tags=('even',), text=text, open=True)
-                else:
-                    self.tree.insert(parent, tk.END, iid, values=values, tags=('odd',), text=text, open=True)
-            self.tree.tag_configure('odd', background='#E8E8E8')
-            self.tree.tag_configure('even', background='#DFDFDF')
-        '''
+
+        self.data_grid.main_table.delete('row-img-seq')
+        self.data_grid.refresh(data)
+        # draw img_seq
+        for i, (iid, row) in enumerate(data.items()):
+            tag_name = row.get('img_seq_tag_name', '')
+            color = row.get('img_seq_color', '')
+            y1 = self.data_grid.state['cell_height'] * i
+            y2 = self.data_grid.state['cell_height'] * (i+1)
+            if tag_name and color:
+                self.data_grid.main_table.create_rectangle(
+                    0, y1, self.data_grid.main_table.width + self.data_grid.main_table.x_start, y2,
+                    fill=color,
+                    tags=('row-img-seq', 'row-img-seq_{}'.format(tag_name)))
+
+        self.data_grid.main_table.lower('row-img-seq')
+
         # folder name
         self.label_folder['text'] = self.source_data['source'][3]
 
@@ -685,17 +690,27 @@ class Main(tk.Frame):
         }
         return status_map.get(code, '-')
 
-    def get_current_item(self, cat='data'):
-        sel = self.tree.selection()
-        if len(sel) <= 0:
-            return None
+    def handle_after_set_data_value(self, row_key, col_key, value):
+        iid = row_key[4:]
+        if self.seq_info:
+            # has seq_info need re-render
+            self.data_helper.save_annotation(iid, col_key, value, self.seq_info)
+            #self.refresh()
+            self.from_source(self.source_id)
+        else:
+            self.data_helper.save_annotation(iid, col_key, value)
 
-        iid = sel[0]
-        #text = self.tree.item(selected_item, 'text')
-        if cat == 'data':
-            return self.tree_helper.get_data(iid)
+    def handle_after_arrow_key(self, rc):
+        #print ('arrow', rc)
+        item = self.data_helper.get_item(rc[0])
+        self.show_image(item['thumb'], item['path'], 'm')
 
-    def handle_select(self, event):
+    def handle_after_mouse_click(self, rc):
+        #print ('handle click', rc)
+        item = self.data_helper.get_item(rc[0])
+        self.show_image(item['thumb'], item['path'], 'm')
+
+    def handle_select_x(self, event):
         iid = ''
         record = None
         for selected_item in self.tree.selection():
@@ -709,7 +724,7 @@ class Main(tk.Frame):
         #print ('select)', iid)
         if iid:
             row = self.tree_helper.get_data(iid)
-            self.show_thumb(row['thumb'], row['path'])
+            self.show_image(row['thumb'], row['path'])
 
             # set viewed
             if st := row.get('status', 0):
@@ -741,7 +756,10 @@ class Main(tk.Frame):
         # !!
         #print (self.annotation_entry_list[0][0].set_focus())
 
-    def show_thumb(self, thumb_path, image_path):
+    def show_image(self, thumb_path, image_path, size_key=''):
+        if size_key:
+            thumb_path = thumb_path.replace('-q.jpg', '-{}.jpg'.format(size_key))
+
         real_thumb_path = check_thumb(thumb_path, image_path)
         image = Image.open(real_thumb_path)
         # aspect ratio
@@ -749,11 +767,10 @@ class Main(tk.Frame):
         wpercent = (basewidth/float(image.size[0]))
         hsize = int((float(image.size[1])*float(wpercent)))
         img = image.resize((basewidth, hsize))
-        #img = image.resize((300,300))
         #img = image.resize((300,300), Image.ANTIALIAS)
         photo = ImageTk.PhotoImage(img)
-        self.image_thumb.configure(image=photo)
-        self.image_thumb.image = photo
+        self.image_thumb_label.configure(image=photo)
+        self.image_thumb_label.image = photo
         self.update_idletasks()
 
     def _get_alist(self, iid, iid_parent):
@@ -807,7 +824,7 @@ class Main(tk.Frame):
                             alist[annotation_index] = entry_dict
                         else:
                             alist = [entry_dict]
-                            
+
                         sql = "UPDATE image SET annotation='{}', status='30', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, related_image_id)
                         self.app.db.exec_sql(sql)
                         #print ('update annotation (image_seq):', sql)
@@ -819,6 +836,23 @@ class Main(tk.Frame):
             a[1].set('')
 
         self.from_source(self.source_id)
+
+    def handle_clone_row(self, row_key, clone_iid):
+        #print ('clone', row_key, clone_iid)
+        iid_list = row_key[4:].split('-')
+        row = iid_list[0]
+        item = self.data_helper.get_item(int(row))
+        image_id = item['image_id']
+        alist = self.data_helper.annotation_data[row]
+        #print ('clone', adata)
+        if len(alist) == 0:
+            alist = [{}, {}]
+        else:
+            alist.append({})
+
+        json_alist = json.dumps(alist)
+        sql = f"UPDATE image SET annotation='{json_alist}' WHERE image_id={image_id}"
+        self.app.db.exec_sql(sql, True)
 
     def clone_row(self):
         source_iid = ''
