@@ -2,6 +2,7 @@ import logging
 #import copy
 
 import tkinter as tk
+from tkinter import ttk
 from .main_table import MainTable
 
 from .other_classes import (
@@ -45,9 +46,13 @@ class DataGrid(tk.Frame):
             'column_width_list': [], # count by update_columns()
             'num_rows': 0, # count by refresh()
             'num_cols': 0, # count by update_columns()
-            'after_click': None,
-            'after_arrow_key': None,
-            'after_set_data_value': None,
+            'custom_actions': {
+                'mouse_click_left': None,
+                'arrow_key': None,
+                'set_data_value': None,
+                'clone_row': None,
+                'remove_row': None,
+            }
         }
         # other not default
         # cell_image_x_pad
@@ -66,8 +71,12 @@ class DataGrid(tk.Frame):
         self.scrollbar_y.grid(row=1, column=2, rowspan=1, sticky='news',pady=0, ipady=0)
         self.scrollbar_x = AutoScrollbar(self, orient=tk.HORIZONTAL, command=self.set_xviews)
         self.scrollbar_x.grid(row=2, column=1, columnspan=1, sticky='news')
-        #self['xscrollcommand'] = self.Xscrollbar.set
-        #self['yscrollcommand'] = self.Yscrollbar.set
+        self.main_table.config(
+            xscrollcommand=self.scrollbar_x.set,
+            yscrollcommand=self.scrollbar_y.set)
+        self.row_index.config(
+            xscrollcommand=self.scrollbar_x.set,
+            yscrollcommand=self.scrollbar_y.set)
 
         self.column_header.grid(row=0, column=1, rowspan=1, sticky='news', pady=0, ipady=0)
         self.row_index.grid(row=1, column=0, rowspan=1, sticky='news', pady=0, ipady=0)
@@ -87,7 +96,8 @@ class DataGrid(tk.Frame):
         self.state.update({
             'data': new_data_iid,
             'num_rows': len(new_data_iid),
-            'row_keys': row_keys
+            'row_keys': row_keys,
+            'height': len(new_data_iid) * self.state['cell_height']
         })
 
         self.main_table.render()
@@ -130,6 +140,7 @@ class DataGrid(tk.Frame):
         })
 
     def set_yviews(self, *args):
+        #print ('yviews', *args)
         self.main_table.yview(*args)
         self.row_index.yview(*args)
 

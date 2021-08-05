@@ -30,7 +30,7 @@ from config import Config
 
 # colors
 # 2d3142 # deep blue
-# 4f5d75
+# 4f5d75 # blue
 # bfc0c0 # gray
 # ffffff
 # ef8354
@@ -89,6 +89,7 @@ class Application(tk.Tk):
             'h1': tk.font.Font(family='Yu Gotic', size=16, weight="bold"),
             'h2': tk.font.Font(family='Yu Gotic', size=14),
             'h3': tk.font.Font(family='Yu Gotic', size=12),
+            'h4': tk.font.Font(family='Yu Gotic', size=10),
         }
 
         self.grid_rowconfigure(2, weight=1)
@@ -121,7 +122,7 @@ class Application(tk.Tk):
         #self.message = tk.Label(self, text="Hello, world!")
         #self.message.grid(row=1, column=0, columnspan=2)
 
-        self.toolbar.grid(row=0, column=0, columnspan=2, sticky='nsew')
+        #self.toolbar.grid(row=0, column=0, columnspan=2, sticky='nsew')
         self.sidebar.grid(row=2, column=0, sticky='nsew')
         #self.image_viewer.grid(row=2, column=1, sticky='nsew')
         self.main.grid(row=2, column=1, sticky='nsew')

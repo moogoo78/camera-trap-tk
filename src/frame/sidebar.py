@@ -21,8 +21,24 @@ class Sidebar(tk.Frame):
             command=self.add_folder)
         add_button.grid(pady=4)
 
+        #add_button = ttk.Button(
+        #    self,
+        #    text='看大圖',
+        #    command=self.add_folder)
+        #add_button.grid(pady=4)
+
         separator = ttk.Separator(self, orient='horizontal')
         separator.grid(sticky='ew', pady=2)
+
+        title = tk.Label(
+            self,
+            text='資料夾',
+            font=tk.font.Font(family='Microsoft JhengHei', size=12),
+            bg='#4f5d75')
+        title.grid(padx=4, pady=4, sticky='nw')
+
+        self.source_list_frame = tk.Frame(self, bg='#4f5d75')
+        self.source_list_frame.grid(pady=4)
 
         self.refresh_source_list()
 
@@ -42,12 +58,26 @@ class Sidebar(tk.Frame):
         style.configure('my.TButton', font=('Verdana', 9))
 
         for i in res:
+            #print (i)
+            '''
+            folder_frame = tk.Frame(self.source_list_frame)
+            folder_frame.grid(padx=4, pady=2, sticky='nw')
+
+            title = ttk.Label(folder_frame, text=i[3], font=tk.font.Font(family='Microsoft JhengHei', size=13, weight='bold'))
+            title.grid(row=0, column=0, sticky='nw')
+            path = ttk.Label(folder_frame, text=i[2], font=tk.font.Font(family='Microsoft JhengHei', size=8))
+            path.grid(row=1, column=0, sticky='nw')
+
+            num = ttk.Label(folder_frame, text=f'{i[4]} 張照片', font=tk.font.Font(family='Microsoft JhengHei', size=10))
+            num.grid(row=2, column=0, sticky='nw')
+            '''
             source_button = ttk.Button(
-                self,
-                text=i[3],
+                self.source_list_frame,
+                text=f'{i[3]} ({i[4]})',
                 style='my.TButton',
                 command=lambda x=i[0]: self.parent.main.from_source(x))
-            source_button.grid(pady=2)
+            source_button.grid(padx=4, pady=2, sticky='nw')
+
             self.source_list.append(source_button)
 
 

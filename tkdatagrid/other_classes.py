@@ -1,4 +1,6 @@
 import tkinter as tk
+from tkinter import ttk
+
 
 class ColumnHeader(tk.Canvas):
 
@@ -8,8 +10,7 @@ class ColumnHeader(tk.Canvas):
         self.config(width=self.ps['width'])
 
     def render(self):
-        #self.configure(scrollregion=(0,0, self.table.tablewidth+self.table.x_start, self.height))
-        #self.delete('gridline','text')
+        self.configure(scrollregion=(0,0, self.ps['width'], self.ps['height']+30))
         self.delete('header-text')
 
         pad = 0
@@ -43,6 +44,7 @@ class RowIndex(tk.Canvas):
         self.ps = parent.state
 
     def render(self):
+        self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
         self.delete('header-border')
         self.delete('header-text')
 
@@ -56,22 +58,25 @@ class RowIndex(tk.Canvas):
                               tag='header-border')
 
             self.create_text(x, i*self.ps['cell_height'] + self.ps['cell_height']/2,
-                             text='{}({})'.format(i+1, v[0]),
+                             text=f'{i+1}',#'{}({})'.format(i+1, v[0]),
                              fill='white',
                              #font=self.table.thefont,
                              tag='header-text', anchor='e')
 
-class AutoScrollbar(tk.Scrollbar):
+class AutoScrollbar(ttk.Scrollbar):
     """a scrollbar that hides itself if it's not needed.  only
        works if you use the grid geometry manager."""
 
     def set(self, lo, hi):
+        #print (lo, hi)
+        '''
         if float(lo) <= 0.0 and float(hi) >= 1.0:
             # grid_remove is currently missing from Tkinter!
             self.tk.call("grid", "remove", self)
         else:
             self.grid()
-        tk.Scrollbar.set(self, lo, hi)
+        '''
+        ttk.Scrollbar.set(self, lo, hi)
     #def pack(self, **kw):
     #    raise TclError, "cannot use pack with this widget"
     #def place(self, **kw):

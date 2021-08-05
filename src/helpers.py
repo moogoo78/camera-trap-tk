@@ -45,7 +45,7 @@ HEADER = {
         'width': 80
     },
     'annotation_remark': {
-        'label': '性別',
+        'label': '備註',
         'width': 80
     },
     'annotation_animal_id': {

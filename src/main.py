@@ -95,14 +95,18 @@ class Main(tk.Frame):
 
         # top_paned
         self.top_paned_frame.grid_rowconfigure(0, weight=0)
-        self.top_paned_frame.grid_rowconfigure(1, weight=1)
+        #self.top_paned_frame.grid_rowconfigure(1, weight=1)
         self.top_paned_frame.grid_columnconfigure(0, weight=0)
+        self.top_paned_frame.grid_columnconfigure(1, weight=1)
+
+        self.image_thumb_frame = tk.Frame(self.top_paned_frame, bg='gray')
+        self.image_thumb_frame.grid(row=0, column=0, sticky='nswe')
+        self.image_thumb_label = ttk.Label(self.image_thumb_frame, border=2, relief='raised')
+        self.image_thumb_label.grid(row=0, column=0, sticky='ns', padx=4, pady=4)
+
+
         self.ctrl_frame = tk.Frame(self.top_paned_frame)
-        self.ctrl_frame.grid(row=0, column=0, sticky='we')
-        self.image_thumb_frame = tk.Frame(self.top_paned_frame, bg='#ef8354')
-        self.image_thumb_frame.grid(row=1, column=0, sticky='nswe')
-        self.image_thumb_label = ttk.Label(self.image_thumb_frame, border=8, relief='raised')
-        self.image_thumb_label.grid(row=0, column=0, sticky='nw', padx=10, pady=10)
+        self.ctrl_frame.grid(row=0, column=1, sticky='nw')
 
         self.config_ctrl_frame()
 
@@ -114,190 +118,6 @@ class Main(tk.Frame):
 
         self.config_table_frame()
 
-
-    def layout_x(self):
-        '''
-           left_frame        right_frame
-        +================================+
-        |  ctrl_frame     | +----------+ |
-        +-----------------+ |thumbnail | |
-        |                 | |          | |
-        |  table_frame    | +----------+ |
-        |                 |  annotation  |
-        |                 |              |
-        +=================|==============+
-        '''
-        self.grid_rowconfigure(0, weight=0) # fix
-        self.grid_columnconfigure(0, weight=1)
-
-        #panedwindow_style = ttk.Style()
-        self.panedwindow = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
-        #panedwindow_style = configure('PanedWindow', sashpad=5)
-        self.panedwindow.pack(fill=tk.BOTH, expand=True)
-        self.panedwindow.grid_rowconfigure(0, weight=1)
-        self.panedwindow.grid_columnconfigure(0, weight=1)
-        self.panedwindow.bind("<ButtonRelease-1>", self.handle_panedwindow_release)
-        self.right_frame = tk.Frame(self.panedwindow, bg='#2d3142')
-        self.left_frame = tk.Frame(self.panedwindow)
-        #self.right_frame = tk.Frame(self.panedwindow, bg='brown')
-
-        self.panedwindow.add(self.left_frame)
-        self.panedwindow.add(self.right_frame)
-
-        # layout: left frame
-        self.left_frame.grid_rowconfigure(0, weight=0) # fix
-        self.left_frame.grid_rowconfigure(1, weight=1) # expand vertical
-        self.left_frame.grid_columnconfigure(0, weight=1)
-
-        self.ctrl_frame = tk.Frame(self.left_frame)
-        self.table_frame = tk.Frame(self.left_frame, bg='gray')
-
-        self.ctrl_frame.grid(row=0, column=0, sticky='we')
-        self.table_frame.grid(row=1, column=0, sticky='news')
-
-        self.config_ctrl_frame()
-        self.config_table_frame()
-
-        # layout: right frame
-        self.right_frame.grid_rowconfigure(0, weight=0)
-        self.right_frame.grid_rowconfigure(1, weight=0)
-        self.right_frame.grid_columnconfigure(0, weight=1)
-
-        # thumb
-        self.image_thumb_frame = tk.Frame(self.right_frame, bg='#ef8354')
-        self.image_thumb_frame.grid(row=0, column=0, sticky='nswe')
-
-        self.image_thumb = ttk.Label(self.image_thumb_frame, border=8, relief='raised')
-        self.image_thumb.grid(row=0, column=0, sticky='nw', padx=10, pady=10)
-
-        ### annotation
-        self.annotation_label_frame = ttk.LabelFrame(self.right_frame, text="影像標注")
-        self.annotation_label_frame.grid(row=1, column=0, sticky='nw', padx=10, pady=10)
-
-        self.annotation_label_frame.grid_rowconfigure(0, weight=0)
-        self.annotation_label_frame.grid_rowconfigure(1, weight=0)
-        self.annotation_label_frame.grid_columnconfigure(0, weight=0)
-        self.annotation_label_frame.grid_columnconfigure(1, weight=0)
-        self.annotation_label_frame.grid_columnconfigure(2, weight=0)
-
-        species_label = ttk.Label(
-            self.annotation_label_frame,
-            text='物種')
-        species_label.grid(row=0, column=0, sticky='we', pady=(6, 0))
-        self.species_value = tk.StringVar()
-        #self.species_entry = ttk.Entry(
-        #    self.annotation_label_frame,
-        #    textvariable=self.species_value
-        #)
-        sp_choices = self.app.config.get('AnnotationFieldSpecies', 'choices').split(',')
-        self.species_free = FreeSolo(
-            self.annotation_label_frame,
-            sp_choices,
-            value=self.species_value,
-        )
-        self.species_free.grid(row=1, column=0, padx=4)
-        self.annotation_entry_list.append((self.species_free, self.species_value))
-
-        lifestage_label = ttk.Label(
-            self.annotation_label_frame,
-            text='年齡')
-        lifestage_label.grid(row=0, column=1, sticky='we', pady=(6, 0))
-        self.lifestage_value = tk.StringVar()
-        ls_choices = self.app.config.get('AnnotationFieldLifeStage', 'choices').split(',')
-        self.lifestage_free = FreeSolo(
-            self.annotation_label_frame,
-            ls_choices,
-            value=self.lifestage_value,
-        )
-        self.lifestage_free.grid(row=1, column=1, padx=4)
-        self.annotation_entry_list.append((self.lifestage_free, self.lifestage_value))
-
-        sex_label = ttk.Label(
-            self.annotation_label_frame,
-            text='性別')
-        sex_label.grid(row=0, column=2, sticky='we', pady=(6, 0))
-        self.sex_value = tk.StringVar()
-        sx_choices = self.app.config.get('AnnotationFieldSex', 'choices').split(',')
-        self.sex_free = FreeSolo(
-            self.annotation_label_frame,
-            sx_choices,
-            value=self.sex_value,
-        )
-        self.sex_free.grid(row=1, column=2, padx=4)
-        self.annotation_entry_list.append((self.sex_free, self.sex_value))
-
-        antler_label = ttk.Label(
-            self.annotation_label_frame,
-            text='角況')
-        antler_label.grid(row=2, column=0, sticky='we', pady=(6, 0))
-        self.antler_value = tk.StringVar()
-        an_choices = self.app.config.get('AnnotationFieldAntler', 'choices').split(',')
-        self.antler_free = FreeSolo(
-            self.annotation_label_frame,
-            an_choices,
-            value=self.antler_value,
-        )
-        self.antler_free.grid(row=3, column=0, padx=4)
-        self.annotation_entry_list.append((self.antler_free, self.antler_value))
-
-        remark_label = ttk.Label(
-            self.annotation_label_frame,
-            text='備註')
-        remark_label.grid(row=2, column=1, sticky='we', pady=(6, 0))
-        self.remark_value = tk.StringVar()
-        self.remark_entry = ttk.Entry(
-            self.annotation_label_frame,
-            textvariable=self.remark_value
-        )
-        self.remark_entry.grid(row=3, column=1, padx=4)
-        self.annotation_entry_list.append((self.remark_entry, self.remark_value))
-
-        animal_id_label = ttk.Label(
-            self.annotation_label_frame,
-            text='個體 ID')
-        animal_id_label.grid(row=2, column=2, sticky='we', pady=(6, 0))
-        self.animal_id_value = tk.StringVar()
-        self.animal_id_entry = ttk.Entry(
-            self.annotation_label_frame,
-            textvariable=self.animal_id_value
-        )
-        self.animal_id_entry.grid(row=3, column=2, padx=4)
-        self.annotation_entry_list.append((self.animal_id_entry, self.animal_id_value))
-
-        # append keyboard navigation
-        self.species_free.bind('<Up>', self.move_key)
-        self.species_free.bind('<Down>', self.move_key)
-        self.lifestage_free.bind('<Up>', self.move_key)
-        self.lifestage_free.bind('<Down>', self.move_key)
-        self.sex_free.bind('<Up>', self.move_key)
-        self.sex_free.bind('<Down>', self.move_key)
-        self.antler_free.bind('<Up>', self.move_key)
-        self.antler_free.bind('<Down>', self.move_key)
-        self.species_free.bind('<FocusOut>', self.fo_species)
-        self.lifestage_free.bind('<FocusOut>', self.fo_lifestage)
-        self.sex_free.bind('<FocusOut>', self.fo_sex)
-        self.antler_free.bind('<FocusOut>', self.fo_antler)
-        annotation_update_button = ttk.Button(
-            self.annotation_label_frame,
-            text='存檔',
-            command=self.update_annotation,
-        )
-        annotation_update_button.grid(row=4, column=0, padx=16, pady=16)
-        #annotation_clone_button = ttk.Button(
-        #    self.annotation_label_frame,
-        #    text='複製一列',
-        #    command=self.clone_row
-        #)
-        #annotation_clone_button.grid(row=4, column=1, padx=12, pady=12)
-        #self._show_thumb()
-
-        # self.image_viewer_button = ttk.Button(
-        #     self.table_frame,
-        #     text='看大圖',
-        #     command=lambda: self.app.main.show_frame('image-viewer')
-        # )
-
-        #self.image_viewer_button.grid(row=1, column=1, sticky='n')
 
     def fo_species(self, event):
         #print (self.species_free.listbox, event)
@@ -318,93 +138,95 @@ class Main(tk.Frame):
 
     def config_ctrl_frame(self):
         self.ctrl_frame.grid_rowconfigure(0, weight=0)
-        self.ctrl_frame.grid_rowconfigure(1, weight=0)
         self.ctrl_frame.grid_columnconfigure(0, weight=0)
-        self.ctrl_frame.grid_columnconfigure(1, weight=0)
-        self.ctrl_frame.grid_columnconfigure(2, weight=0)
-        self.ctrl_frame.grid_columnconfigure(3, weight=0)
-        self.ctrl_frame.grid_columnconfigure(4, weight=0)
-        self.ctrl_frame.grid_columnconfigure(5, weight=0)
-        self.ctrl_frame.grid_columnconfigure(6, weight=0)
-        self.ctrl_frame.grid_columnconfigure(7, weight=0)
-        self.ctrl_frame.grid_columnconfigure(8, weight=0)
 
-        self.ctrl_frame2 = tk.Frame(self.ctrl_frame)
-        self.ctrl_frame2.grid_rowconfigure(0, weight=0)
-        self.ctrl_frame2.grid_columnconfigure(0, weight=0)
-        self.ctrl_frame2.grid(row=1, column=0, sticky='we', columnspan=6)
-        # folder
+
         self.label_folder = ttk.Label(
             self.ctrl_frame,
             text='',
-            font=self.app.nice_font['h1'])
-        self.label_folder.grid(row=0, column=0, padx=(0, 36))
+            font=self.app.nice_font['h2'])
+
+        self.label_folder.grid(row=0, column=0, padx=4, pady=10, sticky='nw')
+        image_viewer_button = ttk.Button(
+            self.ctrl_frame,
+            text='看大圖',
+            command=self.handle_image_viewer
+        )
+        image_viewer_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
+
+        sep = ttk.Separator(self.ctrl_frame, orient='horizontal')
+        sep.grid(row=1, column=0, pady=(0, 8), sticky='ew')
+
+        self.ctrl_frame2 = tk.Frame(self.ctrl_frame)
+        self.ctrl_frame2.grid_rowconfigure(0, weight=0)
+        self.ctrl_frame2.grid_rowconfigure(1, weight=0)
+        self.ctrl_frame2.grid_rowconfigure(2, weight=0)
+        self.ctrl_frame2.grid_columnconfigure(0, weight=0)
+        self.ctrl_frame2.grid_columnconfigure(1, weight=1)
+        self.ctrl_frame2.grid(row=2, column=0, sticky='ew')
 
         # project menu
-        self.label_project = ttk.Label(self.ctrl_frame,  text='計畫', font=self.app.nice_font['h2'])
-        self.label_project.grid(row=0, column=1)
+        self.label_project = ttk.Label(self.ctrl_frame2, text='計畫')
+        self.label_project.grid(row=0, column=0)
         self.project_options = [x['name'] for x in self.projects]
         self.project_var = tk.StringVar(self)
         self.project_menu = tk.OptionMenu(
-            self.ctrl_frame,
+            self.ctrl_frame2,
             self.project_var,
             '-- 選擇計畫 --',
             *self.project_options,
             command=self.project_option_changed)
-        self.project_menu.grid(row=0, column=2, sticky=tk.W, padx=(6, 16))
+        self.project_menu.grid(row=0, column=1, sticky=tk.W, padx=(6, 16))
 
         # studyarea menu
-        self.label_studyarea = ttk.Label(self.ctrl_frame,  text='樣區')
-        self.label_studyarea.grid(row=0, column=3)
+        self.label_studyarea = ttk.Label(self.ctrl_frame2,  text='樣區')
+        self.label_studyarea.grid(row=1, column=0)
         self.studyarea_var = tk.StringVar()
         self.studyarea_options = []
         self.studyarea_menu = tk.OptionMenu(
-            self.ctrl_frame,
+            self.ctrl_frame2,
             self.studyarea_var,
             '')
         self.studyarea_var.trace('w', self.studyarea_option_changed)
-        self.studyarea_menu.grid(row=0, column=4, sticky=tk.W,padx=(6, 20))
+        self.studyarea_menu.grid(row=1, column=1, sticky=tk.W,padx=(6, 20))
 
         # deployment menu
-        self.label_deployment = ttk.Label(self.ctrl_frame,  text='相機位置')
-        self.label_deployment.grid(row=0, column=5)
+        self.label_deployment = ttk.Label(self.ctrl_frame2,  text='相機位置')
+        self.label_deployment.grid(row=2, column=0)
         self.deployment_options = []
         self.deployment_var = tk.StringVar(self.ctrl_frame)
         self.deployment_var.trace('w', self.deployment_option_changed)
         self.deployment_menu = tk.OptionMenu(
-            self.ctrl_frame,
+            self.ctrl_frame2,
             self.deployment_var,
             '')
-        self.deployment_menu.grid(row=0, column=6, sticky=tk.W, padx=(6, 20))
+        self.deployment_menu.grid(row=2, column=1, sticky=tk.W, padx=(6, 20))
 
-        # upload button
-        self.upload_button = ttk.Button(
-            self.ctrl_frame,
-            text='上傳',
-            command=self.handle_upload)
-        self.upload_button.grid(row=0, column=7, padx=20, sticky='w')
+        sep2 = ttk.Separator(self.ctrl_frame, orient='horizontal')
+        sep2.grid(row=3, column=0, pady=6, sticky='ew')
 
-        self.delete_button = ttk.Button(
-            self.ctrl_frame,
-            text='刪除資料夾',
-            command=self.handle_delete)
-        self.delete_button.grid(row=0, column=8, padx=5, sticky='e')
+        self.ctrl_frame3 = tk.Frame(self.ctrl_frame)
+        self.ctrl_frame3.grid_rowconfigure(0, weight=0)
+        self.ctrl_frame3.grid_columnconfigure(0, weight=0)
+        self.ctrl_frame3.grid_columnconfigure(1, weight=0)
+        self.ctrl_frame3.grid_columnconfigure(2, weight=0)
+        self.ctrl_frame3.grid(row=4, column=0, sticky='nw', pady=10)
 
         # image sequence
         self.seq_checkbox_val = tk.StringVar(self)
         self.seq_checkbox = ttk.Checkbutton(
-            self.ctrl_frame2,
+            self.ctrl_frame3,
             text='連拍分組',
 	    command=self.refresh,
             variable=self.seq_checkbox_val,
 	    onvalue='Y',
             offvalue='N')
-        self.seq_checkbox.grid(row=0, column=0, padx=(4, 10))
+        self.seq_checkbox.grid(row=0, column=0, padx=(4, 10), sticky='w')
 
         self.seq_interval_val = tk.StringVar(self)
         #self.seq_interval_val.trace('w', self.on_seq_interval_changed)
         self.seq_interval_entry = ttk.Entry(
-            self.ctrl_frame2,
+            self.ctrl_frame3,
             textvariable=self.seq_interval_val,
             width=4,
             #validate='focusout',
@@ -412,10 +234,34 @@ class Main(tk.Frame):
         )
         self.seq_interval_entry.bind(
             "<KeyRelease>", lambda _: self.refresh())
-        self.seq_interval_entry.grid(row=0, column=1)
+        self.seq_interval_entry.grid(row=0, column=1, sticky='w')
 
-        self.seq_unit = ttk.Label(self.ctrl_frame2,  text='分鐘 (相鄰照片間隔__分鐘，顯示分組)')
-        self.seq_unit.grid(row=0, column=2)
+        self.seq_unit = ttk.Label(self.ctrl_frame3,  text='分鐘 (相鄰照片間隔__分鐘，顯示分組)')
+        self.seq_unit.grid(row=0, column=2, sticky='we')
+
+
+        sep = ttk.Separator(self.ctrl_frame, orient='horizontal')
+        sep.grid(row=5, column=0, pady=6, sticky='ew')
+
+        self.ctrl_frame4 = tk.Frame(self.ctrl_frame)
+        self.ctrl_frame4.grid_rowconfigure(0, weight=0)
+        self.ctrl_frame4.grid_rowconfigure(1, weight=0)
+        self.ctrl_frame4.grid_columnconfigure(0, weight=0)
+        self.ctrl_frame4.grid(row=6, column=0, sticky='w')
+
+        # upload button
+        self.upload_button = ttk.Button(
+            self.ctrl_frame4,
+            text='上傳',
+            command=self.handle_upload)
+        self.upload_button.grid(row=0, column=0, padx=20, pady=4, sticky='w')
+
+        self.delete_button = ttk.Button(
+            self.ctrl_frame4,
+            text='刪除資料夾',
+            command=self.handle_delete)
+        self.delete_button.grid(row=1, column=0, padx=20, pady=4, sticky='w')
+
 
     def config_table_frame(self):
         self.table_frame.grid_columnconfigure(0, weight=0)
@@ -427,49 +273,16 @@ class Main(tk.Frame):
             'cell_height': 35,
             'cell_image_x_pad': 3,
             'cell_image_y_pad': 1,
-            'after_click': self.handle_after_arrow_key,
-            'after_arrow_key': self.handle_after_arrow_key,
-            'after_set_data_value': self.handle_after_set_data_value,
-            'after_clone_row': self.handle_clone_row,
+            'custom_actions': {
+                'remove_row': self.custom_remove_row,
+                'clone_row': self.custom_clone_row,
+                'mouse_click': self.custom_mouse_click,
+                'arrow_key': self.custom_arrow_key,
+                'set_data': self.custom_set_data,
+            },
         })
         self.data_grid.grid(row=0, column=0, sticky='nsew')
 
-        '''
-        self.tree = ttk.Treeview(
-            self.table_frame,
-            columns=[x[0] for x in self.tree_helper.heading],
-            show='tree headings')
-
-        self.tree.column('#0', width=40, stretch=False)
-        for i in self.tree_helper.heading:
-            self.tree.heading(i[0], text=i[1])
-            self.tree.column(i[0], **i[2])
-
-        self.tree.bind('<<TreeviewSelect>>', self.handle_select)
-        #self.tree.bind('<<TreeviewOpen>>', self.select_open)
-        #self.tree.bind('<<TreeviewClose>>', self.select_close)
-        #self.tree.bind('<ButtonRelease-1>', self.on_click)
-
-        self.tree.grid(row=0, column=0, sticky='nsew')
-
-        scrollbar_x = ttk.Scrollbar(self.table_frame, orient=tk.HORIZONTAL, command=self.tree.xview)
-        scrollbar_y = ttk.Scrollbar(self.table_frame, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(
-            xscroll=scrollbar_x.set,
-            yscroll=scrollbar_y.set
-        )
-        scrollbar_x.grid(row=1, column=0, sticky='ew')
-        scrollbar_y.grid(row=0, column=1, sticky='ns')
-
-        # tree style
-        tree_style = ttk.Style()
-        tree_style.configure("Treeview", font=("微軟正黑體", 10))
-        #style_value.configure("Treeview", rowheight=30, font=("微軟正黑體", 10))
-        tree_style.map(
-            "Treeview",
-            foreground=self.tree_helper.fixed_map(tree_style, "foreground"),
-            background=self.tree_helper.fixed_map(tree_style, "background"))
-        '''
 
     def from_source(self, source_id=None):
         self.app.begin_from_source()
@@ -489,10 +302,6 @@ class Main(tk.Frame):
             pass
         self.refresh()
 
-        # default show first image
-        '''
-        self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
-        '''
 
     def refresh(self):
         # get source_data
@@ -507,6 +316,9 @@ class Main(tk.Frame):
             if seq_int := self.seq_interval_val.get():
                 self.seq_info = self.data_helper.group_image_sequence(seq_int)
 
+
+        init_data = data['0']
+        self.show_image(init_data['thumb'], init_data['path'], 'm')
 
         self.data_grid.main_table.delete('row-img-seq')
         self.data_grid.refresh(data)
@@ -661,21 +473,6 @@ class Main(tk.Frame):
     # DEPRICATED
     def save_tree_to_db(self):
         print ('save to db')
-        a_conf = self.tree_helper.get_conf('annotation')
-        ts_now = int(time.time())
-        for iid in self.tree.get_children():
-            record = self.tree.item(iid, 'values')
-            d = {x[1][0]: record[x[0]] for x in a_conf}
-
-            row = int(iid[3:])
-            item = self.tree_helper.data[row]
-            image_id = item['image_id']
-            print (iid, image_id, item)
-            if image_id:
-                sql = "UPDATE image SET annotation='[{}]', changed={} WHERE image_id={}".format(json.dumps(d), ts_now, image_id)
-                #print (sql)
-                #self.app.db.exec_sql(sql)
-
         #self.app.db.commit()
         #tk.messagebox.showinfo('info', '儲存成功')
 
@@ -690,7 +487,7 @@ class Main(tk.Frame):
         }
         return status_map.get(code, '-')
 
-    def handle_after_set_data_value(self, row_key, col_key, value):
+    def custom_set_data(self, row_key, col_key, value):
         iid = row_key[4:]
         if self.seq_info:
             # has seq_info need re-render
@@ -700,46 +497,30 @@ class Main(tk.Frame):
         else:
             self.data_helper.save_annotation(iid, col_key, value)
 
-    def handle_after_arrow_key(self, rc):
+    def select_item(self, rc):
+        if rc == None:
+            return
+
+        item = self.data_helper.get_item(rc[0])
+        if item and item['status'] == '10':
+            image_id = item['image_id']
+            sql = f"UPDATE image SET status='20' WHERE image_id={image_id}"
+            self.app.db.exec_sql(sql, True)
+            row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
+            #self.data_grid.main_table.set_data_value(row_key, col_key, 'vv')
+            self.data_grid.state['data'][row_key]['status'] = self.get_status_display('20')
+            self.data_grid.main_table.render()
+
+        self.show_image(item['thumb'], item['path'], 'm')
+
+    def custom_arrow_key(self, rc):
         #print ('arrow', rc)
-        item = self.data_helper.get_item(rc[0])
-        self.show_image(item['thumb'], item['path'], 'm')
+        self.select_item(rc)
 
-    def handle_after_mouse_click(self, rc):
+    def custom_mouse_click(self, rc):
         #print ('handle click', rc)
-        item = self.data_helper.get_item(rc[0])
-        self.show_image(item['thumb'], item['path'], 'm')
+        self.select_item(rc)
 
-    def handle_select_x(self, event):
-        iid = ''
-        record = None
-        for selected_item in self.tree.selection():
-            #print ('select first: ', selected_item)
-            #values = self.tree.item(selected_item, 'values')
-            iid = selected_item
-            record = self.tree.item(selected_item, 'values')
-            #self.current_row = int(text)
-
-            break
-        #print ('select)', iid)
-        if iid:
-            row = self.tree_helper.get_data(iid)
-            self.show_image(row['thumb'], row['path'])
-
-            # set viewed
-            if st := row.get('status', 0):
-                if int(st) < 20:
-                    sql = "UPDATE image SET status='20' where image_id={}".format(row['image_id'])
-                    self.app.db.exec_sql(sql, True)
-                    values = list(record)
-                    values[0] = values[0].replace('new', 'viewed')
-                    self.tree.item(iid, values=values)
-                    # refresh cause blink and slow
-                    #self.from_source(self.source_id)
-                    #self.tree.focus(iid)
-                    #self.tree.selection_set(iid)
-
-            self.begin_edit_annotation(iid)
 
     def begin_edit_annotation(self, iid):
         record = self.tree.item(iid, 'values')
@@ -837,7 +618,7 @@ class Main(tk.Frame):
 
         self.from_source(self.source_id)
 
-    def handle_clone_row(self, row_key, clone_iid):
+    def custom_clone_row(self, row_key, clone_iid):
         #print ('clone', row_key, clone_iid)
         iid_list = row_key[4:].split('-')
         row = iid_list[0]
@@ -854,62 +635,32 @@ class Main(tk.Frame):
         sql = f"UPDATE image SET annotation='{json_alist}' WHERE image_id={image_id}"
         self.app.db.exec_sql(sql, True)
 
-    def clone_row(self):
-        source_iid = ''
-        for iid in self.tree.selection():
-            record = self.tree.item(iid, 'values')
-            source_iid = iid # clone only get first
-            break
+    def custom_remove_row(self, row_key):
+        print ('rm row_key', row_key)
+        row = row_key[4:]
+        #item = self.data_helper.get_item(row)
+        item = self.data_helper.data[row]
+        image_id = item['image_id']
+        sql = f"DELETE FROM image WHERE image_id={image_id}"
+        print (sql)
+        #self.app.db.exec_sql(sql, True)
 
-        row = self.tree_helper.get_data(source_iid)
-        alist = self._get_alist(source_iid, row['iid_parent'])
-        a_index = int(iid.split(':')[2])
-        cloned_annotation = {}
-        if len(alist) > 0:
-            alist.append(alist[a_index])
+    def handle_image_viewer(self):
+        image_viewer = self.app.image_viewer
+        sidebar = self.app.sidebar
+        if image_viewer.winfo_viewable():
+            image_viewer.grid_remove()
+            # unbind key event
+            self.app.unbind('<Left>')
+            self.app.unbind('<Up>')
+            self.app.unbind('<Right>')
+            self.app.unbind('<Down>')
         else:
-            alist = [{},{}]
+            image_viewer.grid(row=2, column=1, sticky='nsew')
+            image_viewer.refresh()
 
-        ts_now = int(time.time())
-        sql = "UPDATE image SET annotation='{}', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
-        #print ('clone annotation:', sql)
-        #_i('sql:%s'%sql)
-        self.app.db.exec_sql(sql, True)
-        #self.refresh()
-        self.from_source(self.source_id)
-
-    def move_key(self, event):
-        #print ('move_key', event)
-        if event.keysym == 'Down':
-            self.move_selection('next')
-        elif event.keysym == 'Up':
-            self.move_selection('prev')
-
-    def move_selection(self, action):
-        for selected_item in self.tree.selection():
-            iid = selected_item
-
-            row = self.tree_helper.get_data(iid)
-            data = self.tree_helper.data
-            break
-
-        if not row or len(data) <= 0:
-            return False
-
-        if current := row['counter']:
-            #print ('from', iid, current)
-            move_to = None
-            if action == 'next':
-                if current < len(data):
-                    move_to = data[current]['iid']
-                    #move_to = main.tree.next(next_iid)
-            elif action == 'prev':
-                if current > 0:
-                    move_to = data[current-2]['iid']
-                    #move_to = main.tree.prev(iid)
-            #print ('to', move_to)
-            # tk.treeview next & prev need to consider children
-            if move_to:
-                self.tree.focus(move_to)
-                #main.tree.focus_set() # cause double action
-                self.tree.selection_set(move_to)
+        # sidebar
+        if sidebar.winfo_viewable():
+            sidebar.grid_remove()
+        else:
+            sidebar.grid()

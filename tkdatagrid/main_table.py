@@ -1,10 +1,15 @@
 import logging
 from pathlib import Path
+import functools
+
 import tkinter as tk
 from tkinter import ttk
 
 from PIL import ImageTk, Image
 
+#from .other_classes import (
+#    AutoScrollbar,
+#)
 """
 mist: #90AFC5
 stone: #336B87
@@ -12,6 +17,28 @@ shadow: #2A3132
 automn leaf: #763626
 #https://www.canva.com/design/DADfC5CQ0W4/remix?action2=create&mediaId=DADfC5CQ0W4&signupReferrer=blog&utm_source=blog&utm_medium=content&utm_campaign=100-color-combinations&_branch_match_id=812929534608293691
 """
+
+def custom_action(_func=None, *, name=''):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            ret = func(*args, **kwargs)
+            if f := args[0].ps['custom_actions'].get(name, None):
+                if not None:
+                    #print ('ret:', ret)
+                    if isinstance(ret, tuple):
+                        value = f(*ret)
+                    else:
+                        value = f(ret)
+                return ret
+            return
+        return wrapper
+
+    if _func is None: # called with argument
+        return decorator
+    else: # without argument
+        return decorator(_func)
+
 
 class MainTable(tk.Canvas):
 
@@ -34,14 +61,14 @@ class MainTable(tk.Canvas):
             bd=2,
             relief='groove',
             height=self.height,
-            scrollregion=(0,0,100,2000)
+            scrollregion=(0,0,560,915)
         )
-
         # set default
         self.x_start = 0
         self.y_start = 0
 
         self.width = self.ps['width']
+        self.height = self.ps['height']
 
         self.entry_queue = {}
         self.current_rc = [None, None]
@@ -65,7 +92,8 @@ class MainTable(tk.Canvas):
 
 
     def render(self):
-        #self.configure(scrollregion=(0,0, self.table.tablewidth+self.table.x_start, self.height))
+        #print ('render', self.height, self.width, self.ps['height'])
+        self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
         self.render_grid()
         self.render_data()
 
@@ -265,14 +293,15 @@ class MainTable(tk.Canvas):
         col_key = self.ps['col_keys'][col]
         return (iid, col_key)
 
+    @custom_action(name='set_data')
     def set_data_value(self, row_key, col_key, value):
         self.ps['data'][row_key][col_key] = value
         logging.debug('MainTable.save_data_value: {}, {}: {}'.format(row_key, col_key, value))
         self.render()
 
-        if func := self.ps.get('after_set_data_value', ''):
-            return func(row_key, col_key, value)
-        return
+        #if func := self.ps.get('after_set_data_value', ''):
+        #    return func(row_key, col_key, value)
+        return row_key, col_key, value
 
     def get_rc(self, event_x, event_y):
         result = {
@@ -399,7 +428,7 @@ class MainTable(tk.Canvas):
         self.popup_menu.post(event.x_root, event.y_root)
         #print (y1, y2, int((y1+y2)/2), event.y_root)
 
-
+    @custom_action(name='mouse_click')
     def handle_mouse_click_left(self, event):
         # flush entry_queue
         if len(self.entry_queue):
@@ -441,11 +470,15 @@ class MainTable(tk.Canvas):
         else:
             self.remove_entry()
 
-        if func := self.ps.get('after_click', ''):
-            return func(self.current_rc)
+        return self.current_rc
+        #if func := self.ps.get('after_click', ''):
+        #    return func(self.current_rc)
 
+    @custom_action(name='arrow_key')
     def handle_arrow_key(self, event):
-        #print ('handle_arrow:', event)
+        #print ('handle_arrow:', event, self.current_rc)
+        if self.current_rc[0] == None:
+            return
         if event.keysym == 'Up':
             self.remove_entry()
             if self.current_rc[0] == 0:
@@ -460,9 +493,11 @@ class MainTable(tk.Canvas):
                 self.current_rc[0] = self.current_rc[0] + 1
 
         self.render_selected(self.current_rc[0], self.current_rc[1])
-        if func := self.ps.get('after_arrow_key', ''):
-            return func(self.current_rc)
+        #if func := self.ps.get('after_arrow_key', ''):
+        #    return func(self.current_rc)
+        return self.current_rc
 
+    @custom_action(name='clone_row')
     def clone_row(self, row_key):
         #print (row, 'clone')
         new_data = {}
@@ -495,10 +530,20 @@ class MainTable(tk.Canvas):
 
         logging.debug(f'clone row: {row_key} -> {clone_iid}, insert to {insert_to}')
         self.parent.refresh(new_data)
-        if func := self.ps.get('after_clone_row', ''):
-            return func(row_key, clone_iid)
 
+        #if func := self.ps.get('after_clone_row', ''):
+        #    return func(row_key, clone_iid)
+        return row_key, clone_iid
+
+    @custom_action(name='remove_row')
     def remove_row(self, row_key=''):
-        #print (row, 'remove')
+        logging.debug('remove_row: {row_key}')
+        counter = 0
+        for i, v in enumerate(self.ps['data'].keys()):
+            #self.ps['data'][row_key]
+            if v == row_key:
+                break
+
         del self.ps['data'][row_key]
         self.parent.refresh(self.ps['data'])
+        return row_key
