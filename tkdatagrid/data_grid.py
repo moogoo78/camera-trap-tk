@@ -91,7 +91,13 @@ class DataGrid(tk.Frame):
         self.clear()
 
         # use iid:{original_key} as data dict key
-        new_data_iid = {f'iid:{k}': v for k, v in new_data.items()}
+        # add iid:{key} if has no "iid:" prefix
+        new_data_iid = {}
+        for k, v in new_data.items():
+            key = str(k)
+            iid = k if 'iid:' in key else f'iid:{key}'
+            new_data_iid[iid] = v
+
         row_keys = list(new_data_iid.keys())
         self.state.update({
             'data': new_data_iid,

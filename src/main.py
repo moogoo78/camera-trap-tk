@@ -288,6 +288,12 @@ class Main(tk.Frame):
         self.app.begin_from_source()
 
         self.source_id = source_id
+        self.refresh()
+
+
+    def refresh(self):
+        logging.debug('refresh: {}'.format(self.source_id))
+
         self.source_data = self.app.source.get_source(self.source_id)
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
@@ -295,30 +301,22 @@ class Main(tk.Frame):
             self.project_var.set(d.get('project_name', ''))
             self.studyarea_var.set(d.get('studyarea_name', ''))
             self.deployment_var.set(d.get('deployment_name', ''))
-        else:
+        #else:
             #self.project_var.set('')
             #self.studyarea_var.set('')
             #self.deployment_var.set('')
-            pass
-        self.refresh()
-
-
-    def refresh(self):
-        # get source_data
-        #print ('refresh, main: get source', self.source_id, from_source)
-        #if self.source_id and from_source == True:
-        #    self.from_source(source_id)
 
         data = self.data_helper.read_image_list(self.source_data['image_list'])
         #print (data)
         self.seq_info = None
-        if self.seq_checkbox_val.get() == 'Y':
-            if seq_int := self.seq_interval_val.get():
-                self.seq_info = self.data_helper.group_image_sequence(seq_int)
+        seq_int = self.seq_interval_val.get()
+        if self.seq_checkbox_val.get() == 'Y' and seq_int:
+            self.seq_info = self.data_helper.group_image_sequence(seq_int)
 
-
-        init_data = data['0']
-        self.show_image(init_data['thumb'], init_data['path'], 'm')
+        # show first image if no select
+        first_key = next(iter(data))
+        first_item = data[first_key]
+        self.show_image(first_item['thumb'], first_item['path'], 'm')
 
         self.data_grid.main_table.delete('row-img-seq')
         self.data_grid.refresh(data)
@@ -470,12 +468,6 @@ class Main(tk.Frame):
         self.app.sidebar.refresh_source_list()
         self.app.show_landing()
 
-    # DEPRICATED
-    def save_tree_to_db(self):
-        print ('save to db')
-        #self.app.db.commit()
-        #tk.messagebox.showinfo('info', '儲存成功')
-
     def get_status_display(self, code):
         status_map = {
             '10': 'new',
@@ -488,14 +480,10 @@ class Main(tk.Frame):
         return status_map.get(code, '-')
 
     def custom_set_data(self, row_key, col_key, value):
-        iid = row_key[4:]
+        self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
         if self.seq_info:
             # has seq_info need re-render
-            self.data_helper.save_annotation(iid, col_key, value, self.seq_info)
-            #self.refresh()
-            self.from_source(self.source_id)
-        else:
-            self.data_helper.save_annotation(iid, col_key, value)
+            self.refresh()
 
     def select_item(self, rc):
         if rc == None:
@@ -559,91 +547,45 @@ class Main(tk.Frame):
         row = self.tree_helper.get_data(annotation_iid)
         return row.get('alist', [])
 
-    def update_annotation(self):
-        '''update to tree and save'''
-        is_selected_parent = False
-        a_conf = self.tree_helper.get_conf('annotation')
-        ts_now = int(time.time())
-        entry_dict = self.tree_helper.get_annotation_dict(self.annotation_entry_list)
-
-        for iid in self.tree.selection():
-            seq_name = ''
-            if tag_list := self.tree.item(iid, 'tag'):
-                seq_tag_list= [x for x in tag_list if 'tag' in x]
-                if seq_tag_list:
-                    seq_name = seq_tag_list[0]
-
-            row = self.tree_helper.get_data(iid)
-            if row['iid_parent'] == '':
-                is_selected_parent = True
-            alist = self._get_alist(iid, row['iid_parent'])
-            annotation_index = int(iid.split(':')[2])
-            if len(alist) > 0:
-                alist[annotation_index] = entry_dict
-            else:
-                alist = [entry_dict]
-
-            # update selected
-            sql = "UPDATE image SET annotation='{}', status='30', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, row['image_id'])
-            #print ('update annotation:', sql)
-            self.app.db.exec_sql(sql)
-
-            index_list = []
-            # only work while select parent and enable seq_info
-            if is_selected_parent == True and self.seq_info and seq_name != '':
-                index_list = self.seq_info['map'][seq_name]['rows']
-            for x in index_list:
-                has_parent = self.tree_helper.data[x]['iid_parent']
-                if not has_parent:
-                    related_image_id = self.tree_helper.data[x]['image_id']
-                    if related_image_id != row['image_id']:
-                        # set alist
-                        foo_iid = self.tree_helper.data[x]['iid']
-                        alist = self._get_alist(foo_iid, self.tree_helper.data[x]['iid_parent'])
-                        annotation_index = int(foo_iid.split(':')[2])
-                        if len(alist) > 0:
-                            alist[annotation_index] = entry_dict
-                        else:
-                            alist = [entry_dict]
-
-                        sql = "UPDATE image SET annotation='{}', status='30', changed={} WHERE image_id={}".format(json.dumps(alist), ts_now, related_image_id)
-                        self.app.db.exec_sql(sql)
-                        #print ('update annotation (image_seq):', sql)
-
-            self.app.db.commit()
-
-
-        for a in self.annotation_entry_list:
-            a[1].set('')
-
-        self.from_source(self.source_id)
-
     def custom_clone_row(self, row_key, clone_iid):
         #print ('clone', row_key, clone_iid)
         iid_list = row_key[4:].split('-')
-        row = iid_list[0]
-        item = self.data_helper.get_item(int(row))
+        row_key_root = 'iid:{}-{}'.format(iid_list[0], iid_list[1])
+        item = self.data_helper.data[row_key_root]
         image_id = item['image_id']
-        alist = self.data_helper.annotation_data[row]
-        #print ('clone', adata)
-        if len(alist) == 0:
-            alist = [{}, {}]
-        else:
-            alist.append({})
-
+        alist = self.data_helper.annotation_data[image_id]
+        # no need to copy annotation, clone has different annotation
+        alist.append({})
         json_alist = json.dumps(alist)
         sql = f"UPDATE image SET annotation='{json_alist}' WHERE image_id={image_id}"
         self.app.db.exec_sql(sql, True)
+        self.refresh()
 
     def custom_remove_row(self, row_key):
-        print ('rm row_key', row_key)
-        row = row_key[4:]
-        #item = self.data_helper.get_item(row)
-        item = self.data_helper.data[row]
+        #print ('rm row_key', row_key)
+
+        item = self.data_helper.data[row_key]
         image_id = item['image_id']
-        sql = f"DELETE FROM image WHERE image_id={image_id}"
-        print (sql)
-        #self.app.db.exec_sql(sql, True)
+        adata = self.data_helper.annotation_data[image_id]
+        annotation_index = int(row_key.split('-')[1])
+        adata_item = adata[annotation_index]
+        sql = ''
+        if annotation_index == 0:
+            if len(adata) > 1:
+                # remove root item
+                ans = tk.messagebox.askquestion('注意', '刪除此列會將複製出來的資料一併刪除?')
+                if ans == 'yes':
+                    sql = f"DELETE FROM image WHERE image_id={image_id}"
+            else:
+                # no clone, just delete
+                sql = f"DELETE FROM image WHERE image_id={image_id}"
+        else:
+            adata.remove(adata_item)
+            json_data = json.dumps(adata)
+            sql = f"UPDATE image SET annotation='{json_data}' WHERE image_id={image_id}"
+        if sql:
+            self.app.db.exec_sql(sql, True)
+        self.refresh()
 
     def handle_image_viewer(self):
         image_viewer = self.app.image_viewer

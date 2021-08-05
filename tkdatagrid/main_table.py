@@ -537,12 +537,7 @@ class MainTable(tk.Canvas):
 
     @custom_action(name='remove_row')
     def remove_row(self, row_key=''):
-        logging.debug('remove_row: {row_key}')
-        counter = 0
-        for i, v in enumerate(self.ps['data'].keys()):
-            #self.ps['data'][row_key]
-            if v == row_key:
-                break
+        logging.debug(f'remove_row: {row_key}')
 
         del self.ps['data'][row_key]
         self.parent.refresh(self.ps['data'])

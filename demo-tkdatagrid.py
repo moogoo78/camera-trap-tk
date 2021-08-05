@@ -30,9 +30,18 @@ HEADER = {
 }
 
 
-from src.tkintertable.Testing import sampledata
-DATA=sampledata()
+#from src.tkintertable.Testing import sampledata
+#DATA=sampledata()
 #DATA = {f'iid:{k}': v for k, v in DATA.items()}
+import random
+DATA = {}
+for i in range(10):
+    x = random.random()
+    DATA[i] = {}
+    for j in range(5):
+        h = chr(97+j)
+        DATA[i][h] = str(round(x * random.random() * 10, 2))
+
 DATA3 = {
     0: {
         'a': 'a',
@@ -69,7 +78,15 @@ class DemoApp(tk.Tk):
         #self.data_grid.refresh(DATA3)
 
         # remove row
-        #self.data_grid.main_table.remove_row(3)
+        #row_key = 'iid:3'
+        #self.data_grid.main_table.remove_row(row_key)
+
+        # reindex, after remove row
+        #new_data = {}
+        #for counter, (iid, item) in enumerate(self.data_grid.state['data'].items()):
+        #    new_iid = f'iid:{counter}'
+        #    new_data[new_iid] = item
+        #self.data_grid.refresh(new_data)
 
         self.frame.grid(row = 0, column = 0, sticky = "nswe")
         self.data_grid.grid(row = 0, column = 0, sticky = "nswe")

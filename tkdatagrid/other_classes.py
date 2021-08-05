@@ -58,7 +58,7 @@ class RowIndex(tk.Canvas):
                               tag='header-border')
 
             self.create_text(x, i*self.ps['cell_height'] + self.ps['cell_height']/2,
-                             text=f'{i+1}',#'{}({})'.format(i+1, v[0]),
+                             text=f'{i+1}({v[0]})', #f'{i+1}'
                              fill='white',
                              #font=self.table.thefont,
                              tag='header-text', anchor='e')
