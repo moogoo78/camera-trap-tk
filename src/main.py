@@ -279,6 +279,7 @@ class Main(tk.Frame):
                 'mouse_click': self.custom_mouse_click,
                 'arrow_key': self.custom_arrow_key,
                 'set_data': self.custom_set_data,
+                'apply_pattern': self.custom_apply_pattern,
             },
         })
         self.data_grid.grid(row=0, column=0, sticky='nsew')
@@ -509,7 +510,6 @@ class Main(tk.Frame):
         #print ('handle click', rc)
         self.select_item(rc)
 
-
     def begin_edit_annotation(self, iid):
         record = self.tree.item(iid, 'values')
         a_conf = self.tree_helper.get_conf('annotation')
@@ -606,3 +606,15 @@ class Main(tk.Frame):
             sidebar.grid_remove()
         else:
             sidebar.grid()
+
+    def custom_apply_pattern(self, pattern_copy, selected):
+        #print (pattern_copy, selected)
+        num_pattern = len(pattern_copy)
+        for counter, row in enumerate(selected['row_list']):
+            pat_index = counter%num_pattern
+            rc_key = self.data_helper.get_rc_key(row, selected['col_list'][0])
+            self.custom_set_data(rc_key[0], rc_key[1], pattern_copy[pat_index])
+
+        self.data_grid.main_table.pattern_copy = []
+        self.refresh()
+

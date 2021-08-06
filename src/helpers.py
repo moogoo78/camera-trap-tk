@@ -191,6 +191,19 @@ class DataHelper(object):
             if row == counter:
                 return item
 
+    def get_rc_key(self, row, col):
+        get_row_key = ''
+        for counter, (row_key, item) in enumerate(self.data.items()):
+            if row == counter:
+                get_row_key = row_key
+                break
+
+        for counter, col_key in enumerate(self.columns.keys()):
+            if col == counter:
+                get_col_key = col_key
+
+        return get_row_key, get_col_key
+
     def group_image_sequence(self, time_interval, seq_tag=''):
         seq_info = {
             'group_prev': False,

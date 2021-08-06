@@ -38,6 +38,7 @@ class DataGrid(tk.Frame):
                     'cell-highlight-border': '#6699ff',
                     'row-highlight': '#ddeeff',
                     'box-highlight': '#fff2cc',
+                    'box-highlight-pattern': '#776485',
                     'box-border': '#ffcc33',
                 }
             },

@@ -81,7 +81,7 @@ class MainTable(tk.Canvas):
             'row_list': [],
         }
         self.has_box = False
-
+        self.pattern_copy = []
 
         # binding
         self.bind('<Button-1>', self.handle_mouse_click_left)
@@ -262,12 +262,16 @@ class MainTable(tk.Canvas):
 
         xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['row_start'], selected['col_start'])
         xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['row_end'], selected['col_end'])
+        box_fill_color = self.ps['style']['color']['box-highlight']
+        if len(self.pattern_copy):
+            box_fill_color = self.ps['style']['color']['box-highlight-pattern']
+
         self.create_rectangle(
             xs1,
             ys1,
             xe2+self.x_start,
             ye2,
-            fill=self.ps['style']['color']['box-highlight'],
+            fill=box_fill_color,
             outline=self.ps['style']['color']['box-border'],
             width=2,
             tags=('box', 'box-highlight',))
@@ -424,6 +428,10 @@ class MainTable(tk.Canvas):
         self.popup_menu = tk.Menu(self)
         self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
         self.popup_menu.add_command(label='刪除一列', command=lambda: self.remove_row(res_rc['row_key']))
+        self.popup_menu.add_separator()
+        self.popup_menu.add_command(label='複製內容 pattern', command=self.copy_pattern)
+        self.popup_menu.add_command(label='套用 pattern', command=self.apply_pattern)
+        self.popup_menu.add_command(label='清除 pattern', command=self.clear_pattern)
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         self.popup_menu.post(event.x_root, event.y_root)
         #print (y1, y2, int((y1+y2)/2), event.y_root)
@@ -464,6 +472,9 @@ class MainTable(tk.Canvas):
         self.render_selected(row, col)
 
         # draw entry if not readonly
+        if not row_key or not col_key:
+            return
+
         text = self.ps['data'][row_key][col_key]
         if self.ps['columns'][col_key].get('type', 'entry') == 'entry':
             self.render_text_editor(row, col, text)
@@ -542,3 +553,25 @@ class MainTable(tk.Canvas):
         del self.ps['data'][row_key]
         self.parent.refresh(self.ps['data'])
         return row_key
+
+    def copy_pattern(self):
+        print ('copy', self.selected)
+        selected = self.selected
+        pattern = []
+        for i in selected['row_list']:
+            # only take first column
+            rc_key = self.get_rc_key(i, selected['col_start'])
+            v = self.ps['data'][rc_key[0]][rc_key[1]]
+            if v not in pattern:
+                pattern.append(v)
+        #self.pattern_copy = list(set(pattern))
+        self.pattern_copy = pattern
+
+    @custom_action(name='apply_pattern')
+    def apply_pattern(self):
+        #print ('apply', self.selected, self.pattern_copy)
+        return self.pattern_copy, self.selected
+
+    def clear_pattern(self):
+        self.pattern_copy = []
+
