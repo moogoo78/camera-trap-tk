@@ -8,7 +8,8 @@ import logging
 
 from PIL import ImageTk, Image
 
-#import threading
+import threading
+import queue
 
 from helpers import (
     FreeSolo,
@@ -20,6 +21,13 @@ from image import check_thumb
 sys.path.insert(0, '') # TODO: pip install -e . 
 from tkdatagrid import DataGrid
 
+class ThreadedTask(threading.Thread):
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.queue = queue
+    def run(self):
+        time.sleep(5)  # Simulate long running process
+        self.queue.put("Task finished")
 
 class Worker:
     finished = False
@@ -61,6 +69,9 @@ class Main(tk.Frame):
         self.layout()
         #self.config_ctrl_frame()
         #self.config_table_frame()
+
+        threading.Thread.__init__(self)
+        
 
     def handle_panedwindow_release(self, event):
         w = self.right_frame.winfo_width()
@@ -253,7 +264,9 @@ class Main(tk.Frame):
         self.upload_button = ttk.Button(
             self.ctrl_frame4,
             text='上傳',
-            command=self.handle_upload)
+            #command=self.handle_upload
+            command=lambda: self.foo_worker.do_work()
+        )
         self.upload_button.grid(row=0, column=0, padx=20, pady=4, sticky='w')
 
         self.delete_button = ttk.Button(

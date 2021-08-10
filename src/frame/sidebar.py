@@ -4,7 +4,9 @@ from tkinter import (
 )
 
 from tkinter import filedialog as fd
+from tkinter.messagebox import showinfo
 
+import threading
 
 class Sidebar(tk.Frame):
 
@@ -39,6 +41,8 @@ class Sidebar(tk.Frame):
 
         self.source_list_frame = tk.Frame(self, bg='#4f5d75')
         self.source_list_frame.grid(pady=4)
+
+        #self.image_sql_list = []
 
         self.refresh_source_list()
 
@@ -81,9 +85,31 @@ class Sidebar(tk.Frame):
             self.source_list.append(source_button)
 
 
+    def insert_image_to_db(self, image_sql_list):
+        for i in image_sql_list:
+            self.app.db.exec_sql(i)
+        self.app.db.commit()
+
+        self.refresh_source_list()
+        showinfo(message='完成匯入資料夾')
+
+    def add_folder_worker(self, src, source_id, image_list, folder_path):
+        progress_bar = self.parent.statusbar.progress_bar
+        image_sql_list = []
+        for i, v in enumerate(src.gen_import_image(source_id, image_list, folder_path)):
+            #self.app.db.exec_sql(v[1])
+            image_sql_list.append(v[1])
+            progress_bar['value'] = i+1
+            self.update_idletasks()
+
+        #self.app.db.commit()
+        progress_bar['value'] = 0
+        self.update_idletasks()
+
+        self.app.after(100, lambda: self.insert_image_to_db(image_sql_list))
+
     def add_folder(self):
         directory = fd.askdirectory()
-
         if not directory:
             return False
 
@@ -100,12 +126,15 @@ class Sidebar(tk.Frame):
         progress_bar['maximum'] = len(image_list)
         self.update_idletasks()
 
-        for i, v in enumerate(src.gen_import_image(image_list, folder_path)):
-            progress_bar['value'] = i+1
-            self.update_idletasks()
+        source_id = src.create_import_directory(image_list, folder_path)
+        threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
+        #for i, v in enumerate(src.gen_import_image(source_id, image_list, folder_path)):
+        #    self.app.db.exec_sql(v[1])
+        #    progress_bar['value'] = i+1
+        #    self.update_idletasks()
 
-        progress_bar['value'] = 0
-        self.update_idletasks()
+        #progress_bar['value'] = 0
+        #self.update_idletasks()
 
-        self.refresh_source_list()
+        #self.refresh_source_list()
 

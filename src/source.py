@@ -42,13 +42,18 @@ class Source(object):
 
         return image_list
 
-    def gen_import_image(self, image_list, folder_path):
+    def create_import_directory(self, image_list, folder_path):
         db = self.db
         ts_now = int(time.time())
         dir_name = folder_path.stem # final path component
+
+        sql_jobs = []
         sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '10')".format(folder_path, dir_name, len(image_list), ts_now)
         source_id = db.exec_sql(sql, True)
+        return source_id
 
+    def gen_import_image(self, source_id, image_list, folder_path):
+        ts_now = int(time.time())
         # mkdir thumbnails dir
         thumb_conf = 'thumbnails' # TODO config
         thumb_path = Path(thumb_conf)
@@ -65,8 +70,9 @@ class Source(object):
                 'name': i.name,
                 'img': ImageManager(i),
             }
-            self._insert_image_db(data, ts_now, source_id, thumb_source_path)
-            yield data
+            sql = self._insert_image_db(data, ts_now, source_id, thumb_source_path)
+
+            yield data, sql
 
     def _insert_image_db(self, i, ts_now, source_id, thumb_source_path):
         db = self.db
@@ -98,10 +104,10 @@ class Source(object):
             '{}',
         )
 
-        db.exec_sql(sql, True)
+        #db.exec_sql(sql, True)
 
         make_thumb(i['path'], thumb_source_path)
-
+        return sql
 
     @staticmethod
     def _check_image_filename(dirent):
