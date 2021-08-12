@@ -15,24 +15,24 @@ class Server(object):
         if config.get('no_network', '') == 'yes':
             return None
 
-        has_network = self.ping()
-        if has_network:
+        #has_network = self.ping()
+        #if has_network:
             # ICMP not allowed in default AWS EC2
             #self.has_server = self.ping(config['host'][7:])
             #if self.has_server:
             #    self.projects = self.get_projects()
             #else:
             #    tk.messagebox.showwarning('注意', '伺服器連線失敗')
-            self.projects = self.get_projects()
-        else:
-            tk.messagebox.showwarning('注意', '無網路連線')
+        #    self.projects = self.get_projects()
+        #else:
+        #    tk.messagebox.showwarning('注意', '無網路連線')
 
     def get_projects(self, source_id=0):
         config = self.config
         project_api_prefix = f"{config['host']}{config['project_api']}"
         try:
             if source_id:
-                r = requests.get(f'{project_api_prefix}{source_id}')
+                r = requests.get(f'{project_api_prefix}{source_id}/')
                 return r.json()
             else:
                 r = requests.get(project_api_prefix)

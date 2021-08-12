@@ -12,11 +12,11 @@ from boto3.exceptions import S3UploadFailedError
 from image import ImageManager, make_thumb, get_thumb
 from upload import UploadThread
 
-
 IGNORE_FILES = ['Thumbs.db', '']
 IMAGE_EXTENSIONS = ['.JPG', '.JPEG', '.PNG']
 
 class Source(object):
+    '''much like a helper'''
 
     def __init__(self, app):
         self.db = app.db
@@ -252,3 +252,9 @@ class Source(object):
         self.db.exec_sql(sql, True)
 
         shutil.rmtree(Path(f'./thumbnails/{source_id}'), ignore_errors=True)
+
+############
+    def finish_upload_task(self, source_id):
+        #source_id = source_data['source'][0]
+        sql = f"UPDATE source SET status='30' WHERE source_id={source_id}"
+        self.db.exec_sql(sql, True)

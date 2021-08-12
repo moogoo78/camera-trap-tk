@@ -17,11 +17,42 @@ class Sidebar(tk.Frame):
 
         self.source_list = []
 
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_rowconfigure(3, weight=0)
+        #self.grid_rowconfigure(4, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+
         add_button = ttk.Button(
             self,
             text='加入資料夾',
             command=self.add_folder)
-        add_button.grid(pady=4)
+        add_button.grid(row=0, column=0, pady=4, sticky='n')
+
+        separator = ttk.Separator(self, orient='horizontal')
+        separator.grid(row=1, column=0, sticky='ew', pady=2)
+
+        title = tk.Label(
+            self,
+            text='資料夾',
+            font=tk.font.Font(family='Microsoft JhengHei', size=12),
+            bg='#4f5d75')
+        title.grid(row=2, column=0, padx=4, pady=4, sticky='nw')
+
+        self.source_list_frame = tk.Frame(self, bg='#4f5d75')
+        self.source_list_frame.grid(row=2, column=0, pady=4, sticky='n')
+
+
+        #separator = ttk.Separator(self, orient='horizontal')
+        #separator.grid(row=3, column=0, sticky='ew', pady=2)
+
+        #upload_progress_button = ttk.Button(
+        #    self,
+        #    text='上傳進度',
+        #    command=self.toggle_upload_progress)
+        #upload_progress_button.grid(row=4, column=0, pady=4, sticky='s')
+
 
         #add_button = ttk.Button(
         #    self,
@@ -29,22 +60,19 @@ class Sidebar(tk.Frame):
         #    command=self.add_folder)
         #add_button.grid(pady=4)
 
-        separator = ttk.Separator(self, orient='horizontal')
-        separator.grid(sticky='ew', pady=2)
-
-        title = tk.Label(
-            self,
-            text='資料夾',
-            font=tk.font.Font(family='Microsoft JhengHei', size=12),
-            bg='#4f5d75')
-        title.grid(padx=4, pady=4, sticky='nw')
-
-        self.source_list_frame = tk.Frame(self, bg='#4f5d75')
-        self.source_list_frame.grid(pady=4)
-
         #self.image_sql_list = []
 
         self.refresh_source_list()
+
+    # def toggle_upload_progress(self):
+    #     main = self.app.main
+    #     upload_progress = self.app.upload_progress
+    #     if main.winfo_viewable():
+    #         main.grid_remove()
+    #         upload_progress.grid(row=2, column=1, sticky='nsew')
+    #     else:
+    #         upload_progress.grid_remove()
+    #         main.grid(row=2, column=1, sticky='nsew')
 
     def refresh_source_list(self):
         db = self.parent.db

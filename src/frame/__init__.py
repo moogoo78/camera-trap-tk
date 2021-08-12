@@ -7,3 +7,4 @@ from .statusbar import Statusbar
 #from .datatable_ import Datatable
 from .landing import Landing
 from .imageviewer import ImageViewer
+from .upload_progress import UploadProgress

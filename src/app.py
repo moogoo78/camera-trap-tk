@@ -1,4 +1,3 @@
-
 import os
 import argparse
 import tkinter as tk
@@ -20,6 +19,7 @@ from frame import (
     #Datatable,
     Landing,
     ImageViewer,
+    #UploadProgress,
 )
 from main import Main
 
@@ -105,6 +105,7 @@ class Application(tk.Tk):
         )
         self.landing = Landing(self)
         self.image_viewer = ImageViewer(self)
+
         self.sidebar = Sidebar(
             self,
             background='#4f5d75',
@@ -124,7 +125,6 @@ class Application(tk.Tk):
 
         #self.toolbar.grid(row=0, column=0, columnspan=2, sticky='nsew')
         self.sidebar.grid(row=2, column=0, sticky='nsew')
-        #self.image_viewer.grid(row=2, column=1, sticky='nsew')
         self.main.grid(row=2, column=1, sticky='nsew')
         self.landing.grid(row=2, column=1, sticky='nsew')
         self.statusbar.grid(row=3, column=0, columnspan=2)

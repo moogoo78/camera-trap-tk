@@ -8,53 +8,36 @@ import logging
 
 from PIL import ImageTk, Image
 
-import threading
-import queue
-
 from helpers import (
     FreeSolo,
     TreeHelper,
     DataHelper,
 )
+from frame import UploadProgress
 from image import check_thumb
 
-sys.path.insert(0, '') # TODO: pip install -e . 
+sys.path.insert(0, '') # TODO: pip install -e .
 from tkdatagrid import DataGrid
-
-class ThreadedTask(threading.Thread):
-    def __init__(self, queue):
-        threading.Thread.__init__(self)
-        self.queue = queue
-    def run(self):
-        time.sleep(5)  # Simulate long running process
-        self.queue.put("Task finished")
-
-class Worker:
-    finished = False
-    def do_work(self):
-        time.sleep(10)
-        self.finished=True
-    def start(self):
-        self.th = threading.Thread(target=self.do_work)
-        self.th.start()
 
 
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
 
-        #self.parent = parent
+        self.parent = parent
         self.app = parent
 
         self.source_data = {}
-        self.projects = self.app.server.projects
-        self.id_map = {
-            'project': {},
-            'studyarea': {},
-            'deployment': {},
-            'sa_to_d': {}
-        }
-        self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
+        # self.projects = self.app.server.projects
+        # self.id_map = {
+        #     'project': {},
+        #     'studyarea': {},
+        #     'deployment': {},
+        #     'sa_to_d': {}
+        # }
+        # self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
+        self.projects = []
+        self.update_project_options()
 
         self.source_id = None
         self.current_row = 0
@@ -70,8 +53,10 @@ class Main(tk.Frame):
         #self.config_ctrl_frame()
         #self.config_table_frame()
 
-        threading.Thread.__init__(self)
-        
+        #self.queue = queue.Queue()
+        self.upload_status = 0 # 0: stop, 1: start, 2: pause
+        #self.thread = threading.Thread(target=self.worker)
+        #self.polling()
 
     def handle_panedwindow_release(self, event):
         w = self.right_frame.winfo_width()
@@ -87,12 +72,18 @@ class Main(tk.Frame):
             self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
         '''
 
+    def layout2(self):
+        pass
+
     def layout(self):
         self.grid_rowconfigure(0, weight=0)
         self.grid_columnconfigure(0, weight=0)
 
+        self.notebook = ttk.Notebook(self)
+        self.notebook.grid(row=0, column=0)
+
         #panedwindow_style = ttk.Style()
-        self.panedwindow = ttk.PanedWindow(self, orient=tk.VERTICAL)
+        self.panedwindow = ttk.PanedWindow(self.notebook, orient=tk.VERTICAL)
         #panedwindow_style = configure('PanedWindow', sashpad=5)
         self.panedwindow.pack(fill=tk.BOTH, expand=True)
         self.panedwindow.grid_rowconfigure(0, weight=1)
@@ -129,6 +120,10 @@ class Main(tk.Frame):
 
         self.config_table_frame()
 
+        self.upload_progress = UploadProgress(self)
+        self.upload_progress.grid(row=0,column=0)
+        self.notebook.add(self.panedwindow, text='輸入資料')
+        self.notebook.add(self.upload_progress, text='上傳進度')
 
     def fo_species(self, event):
         #print (self.species_free.listbox, event)
@@ -250,7 +245,6 @@ class Main(tk.Frame):
         self.seq_unit = ttk.Label(self.ctrl_frame3,  text='分鐘 (相鄰照片間隔__分鐘，顯示分組)')
         self.seq_unit.grid(row=0, column=2, sticky='we')
 
-
         sep = ttk.Separator(self.ctrl_frame, orient='horizontal')
         sep.grid(row=5, column=0, pady=6, sticky='ew')
 
@@ -265,7 +259,8 @@ class Main(tk.Frame):
             self.ctrl_frame4,
             text='上傳',
             #command=self.handle_upload
-            command=lambda: self.foo_worker.do_work()
+            #command=lambda: self.foo_worker.do_work()
+            command=self.handle_upload2
         )
         self.upload_button.grid(row=0, column=0, padx=20, pady=4, sticky='w')
 
@@ -298,9 +293,21 @@ class Main(tk.Frame):
         self.data_grid.grid(row=0, column=0, sticky='nsew')
 
 
+    def update_project_options(self):
+        if len(self.projects) <= 0:
+            self.projects = self.app.server.get_projects()
+            self.id_map = {
+                'project': {},
+                'studyarea': {},
+                'deployment': {},
+                'sa_to_d': {}
+            }
+            self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
+            logging.info('server: get project options')
+
     def from_source(self, source_id=None):
         self.app.begin_from_source()
-
+        self.update_project_options()
         self.source_id = source_id
         self.refresh()
 
@@ -315,11 +322,26 @@ class Main(tk.Frame):
             self.project_var.set(d.get('project_name', ''))
             self.studyarea_var.set(d.get('studyarea_name', ''))
             self.deployment_var.set(d.get('deployment_name', ''))
-        #else:
-            #self.project_var.set('')
-            #self.studyarea_var.set('')
-            #self.deployment_var.set('')
+        else:
+            self.project_var.set('')
+            self.studyarea_var.set('')
+            self.deployment_var.set('')
 
+        # update upload_button
+        source_status = self.source_data['source'][6]
+        if source_status == '20':
+            self.upload_button['text'] = '上傳中'
+        elif source_status == '40':
+            self.upload_button['text'] = '已上傳'
+        else:
+            self.upload_button['text'] = '上傳'
+
+        if source_status != '10':
+            self.upload_button['state'] = 'disabled'
+        else:
+            self.upload_button['state'] = 'normal'
+
+        # data list
         data = self.data_helper.read_image_list(self.source_data['image_list'])
         #print (data)
         self.seq_info = None
@@ -350,6 +372,7 @@ class Main(tk.Frame):
 
         # folder name
         self.label_folder['text'] = self.source_data['source'][3]
+
 
     def project_option_changed(self, *args):
         name = self.project_var.get()
@@ -407,16 +430,57 @@ class Main(tk.Frame):
                 'project_name': p_name,
             }
             #print (descr)
-
-            # save to db
-            sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(descr), self.source_id)
-            _i('change deployment) %s'%sql)
-            self.app.db.exec_sql(sql, True)
+            update_db = False
+            if db_descr := self.source_data['source'][7]:
+                d = json.loads(db_descr)
+                if deployment_id != d['deployment_id']:
+                    update_db = True
+            else:
+                # new
+                update_db = True
+            if update_db:
+                # save to db
+                sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(descr), self.source_id)
+                self.app.db.exec_sql(sql, True)
 
             # update source_data (for upload: first time import folder, get no deployment_id even if selected)
             self.source_data = self.app.source.get_source(self.source_id)
             # TODO
             #tk.messagebox.showinfo('info', '已設定相機位置')
+
+    def handle_upload2(self):
+        # check deployment
+        deployment_id = ''
+        if descr := self.source_data['source'][7]:
+            d = json.loads(descr)
+            deployment_id = d.get('deployment_id', '')
+
+        if deployment_id == '':
+            tk.messagebox.showinfo('info', '末設定相機位置，無法上傳')
+            return False
+
+        data = {
+            'source': self.source_data['source'],
+            'image_list': self.source_data['image_list'],
+            'deployment_id': deployment_id
+        }
+
+        # 1. post annotation to server
+        res = self.app.source.upload_annotation(
+            self.source_data['image_list'],
+            self.source_data['source'][0],
+            deployment_id)
+
+        if res['error']:
+            tk.messagebox.showerror('上傳失敗', f"{res['error']}")
+            return False
+
+        server_image_map = res['data']
+        #print (server_image_map)
+        #self.upload_progress.create_upload_progress(data)
+
+        self.upload_button['text'] = '上傳中'
+        self.upload_button['state'] = 'disabled'
 
     def handle_upload(self):
         #self.app.source.do_upload(self.source_data)
