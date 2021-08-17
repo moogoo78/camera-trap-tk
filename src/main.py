@@ -477,7 +477,15 @@ class Main(tk.Frame):
 
         server_image_map = res['data']
         #print (server_image_map)
-        #self.upload_progress.create_upload_progress(data)
+
+        if self.source_data['source'][6] == '10':
+            sql = f"UPDATE source SET status='20' WHERE source_id={source_id}"
+            self.app.db.exec_sql(sql, True)
+
+            sql = f"UPDATE image SET upload_status='100' WHERE source_id={source_id}"
+            self.app.db.exec_sql(sql, True)
+
+        self.upload_progress.create_upload_progress(data)
 
         self.upload_button['text'] = '上傳中'
         self.upload_button['state'] = 'disabled'
