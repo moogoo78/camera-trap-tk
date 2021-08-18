@@ -126,7 +126,7 @@ class Application(tk.Tk):
         #self.toolbar.grid(row=0, column=0, columnspan=2, sticky='nsew')
         self.sidebar.grid(row=2, column=0, sticky='nsew')
         self.main.grid(row=2, column=1, sticky='nsew')
-        self.landing.grid(row=2, column=1, sticky='nsew')
+        #self.landing.grid(row=2, column=1, sticky='nsew')
         self.statusbar.grid(row=3, column=0, columnspan=2)
 
     def begin_from_source(self):

@@ -58,23 +58,25 @@ class Server(object):
 
     def post_annotation(self, payload):
         url = f"{self.config['host']}{self.config['image_annotation_api']}"
-        resp = requests.post(url, json=payload)
-
         ret = {
             'data': {},
             'error': ''
         }
-
-        if resp.status_code != 200:
-            print ('server: post_annotation error: ', resp.text)
-            ret['error'] = 'server.post_annotation: post error'
-        else:
+        try:
+            resp = requests.post(url, json=payload)
+            if resp.status_code != 200:
+                #print ('server: post_annotation error: ', resp.text)
+                #logging.debug(resp.text)
+                ret['error'] = 'server.post_annotation: post error'
+                return ret
             try:
                 d = resp.json()
                 ret['data'] = d['saved_image_ids']
             except:
-                print ('source: load json error')
+                #print ('source: load json error')
                 ret['error'] = 'server.post_annotation: load json error'
+        except requests.exceptions.RequestException as e:
+            ret['error'] = str(e)
 
         return ret
 

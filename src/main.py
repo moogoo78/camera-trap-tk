@@ -50,6 +50,9 @@ class Main(tk.Frame):
         # layout
         #self.grid_propagate(False)
         self.layout()
+
+        self.layout_landing()
+
         #self.config_ctrl_frame()
         #self.config_table_frame()
 
@@ -72,8 +75,11 @@ class Main(tk.Frame):
             self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
         '''
 
-    def layout2(self):
-        pass
+    def layout_landing(self):
+        self.landing_frame = tk.Frame(self.parent, background='#2d3142')
+        self.message = ttk.Label(self.landing_frame, text="Welcome !!")
+        self.message.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
+        self.landing_frame.grid(row=2, column=1, sticky='nsew')
 
     def layout(self):
         self.grid_rowconfigure(0, weight=0)
@@ -306,6 +312,9 @@ class Main(tk.Frame):
             logging.info('server: get project options')
 
     def from_source(self, source_id=None):
+        # no need landing
+        self.landing_frame.destroy()
+
         self.app.begin_from_source()
         self.update_project_options()
         self.source_id = source_id
@@ -459,33 +468,41 @@ class Main(tk.Frame):
             tk.messagebox.showinfo('info', '末設定相機位置，無法上傳')
             return False
 
+        image_list = self.source_data['image_list']
+        source_id = self.source_id
         data = {
             'source': self.source_data['source'],
-            'image_list': self.source_data['image_list'],
+            'image_list': image_list,
             'deployment_id': deployment_id
         }
 
         # 1. post annotation to server
-        res = self.app.source.upload_annotation(
-            self.source_data['image_list'],
-            self.source_data['source'][0],
-            deployment_id)
+        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
+        self.app.db.exec_sql(sql, True)
 
+        account_id = self.app.config.get('Installation', 'account_id')
+        # post to server
+        payload = {
+            'image_list': image_list,
+            'key': f'{account_id}-{source_id}',
+            'deployment_id': deployment_id,
+        }
+        res = self.app.server.post_annotation(payload)
         if res['error']:
-            tk.messagebox.showerror('上傳失敗', f"{res['error']}")
-            return False
+            tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
+            return
 
         server_image_map = res['data']
-        #print (server_image_map)
-
         if self.source_data['source'][6] == '10':
             sql = f"UPDATE source SET status='20' WHERE source_id={source_id}"
             self.app.db.exec_sql(sql, True)
 
-            sql = f"UPDATE image SET upload_status='100' WHERE source_id={source_id}"
-            self.app.db.exec_sql(sql, True)
+        for image_id, server_image_id in server_image_map.items():
+            sql = f"UPDATE image SET upload_status='100', server_image_id={server_image_id} WHERE image_id={image_id}"
+            self.app.db.exec_sql(sql)
+        self.app.db.commit()
 
-        self.upload_progress.create_upload_progress(data)
+        self.upload_progress.create_upload_process(data)
 
         self.upload_button['text'] = '上傳中'
         self.upload_button['state'] = 'disabled'
@@ -522,7 +539,7 @@ class Main(tk.Frame):
 
         saved_image_ids = res['data']
         for i, v in enumerate(self.app.source.gen_upload_file(image_list, source_id, deployment_id, saved_image_ids)):
-            print ('uploaded', i, v)
+            #print ('uploaded', i, v)
             if v:
                 # update progress bar
                 pb['value'] = i+1

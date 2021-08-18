@@ -28,25 +28,33 @@ class UploadProgress(tk.Frame):
             text='start',
             command=self.start_upload
         )
-        self.start_button.grid()
+        self.start_button.grid(row=0, column=1, padx=10, pady=10, sticky='we')
 
         self.stop_button = ttk.Button(
             self,
             text='stop',
             command=self.stop_upload
         )
-        self.stop_button.grid()
+        self.stop_button.grid(row=0, column=2, padx=10, pady=10, sticky='we')
 
-        self.task_limit = 2 # conf
-        self.queue = queue.Queue()
-        self.uploaded_queue = queue.Queue()
+        self.refresh_button = ttk.Button(
+            self,
+            text='refresh',
+            command=self.handle_refresh
+        )
+        self.refresh_button.grid(row=0, column=3, padx=10, pady=10 ,sticky='we')
+
+        self.TASK_LIMIT = 2 # conf
+        self.NUM_UPLOADED_SAVE = 10 # conf
+        #self.queue = queue.Queue()
+        #self.uploaded_queue = queue.Queue()
         self.state = {
             'status': 'stop',
             'upload_map': {},
             'task_end': -1,
             'task_counter': -1,
             'done_list': [],
-            'thread_uploading': False,
+            'is_thread_running': False,
             'num_queue_process': 0,
         }
         #self.async_loop = asyncio.get_event_loop()
@@ -55,9 +63,12 @@ class UploadProgress(tk.Frame):
 
         self.counter1 = 0 # num of process_upload
         self.counter2 = 0 # num of each process_upload tick
-        self.refresh(is_init=True)
+        self.refresh()
 
-    def refresh(self, is_init=False):
+    def handle_refresh(self):
+        self.refresh()
+
+    def refresh(self):
         # fetch sql source status and add to upload queue
 
         # reset list
@@ -142,11 +153,9 @@ class UploadProgress(tk.Frame):
                         'status': '',
                     })
         '''
-    def create_upload_progress(self, data):
-        #source_id = data['source'][0]
-        #source_status = data['source'][6]
-        self.queue.put(data)
-
+    def create_upload_process(self, data):
+        self.refresh()
+        self.start_upload()
 
     async def task_upload_source(self, name, queue):
         logging.info(f'task upload source: {name}, start')
@@ -208,10 +217,10 @@ class UploadProgress(tk.Frame):
 
 
     def stop_upload(self):
-        if self.state['status'] == 'start':
-            self.state['status'] = 'stop'
-        else:
-            self.state['status'] = 'stop'
+        self.state.update({
+            'status': 'stop',
+            'is_thread_running': False
+        })
 
     def _asyncio_thread(self, item):
         print ('thread source:', item)
@@ -245,7 +254,7 @@ class UploadProgress(tk.Frame):
         process_counter = 0
         process_map = {}
         for source_id, item in self.state['upload_map'].items():
-            if process_counter < self.task_limit:
+            if process_counter < self.TASK_LIMIT:
                 if item['status'] in ['20', '30']:
                     process_counter += 1
                     process_map[source_id] = item
@@ -260,6 +269,7 @@ class UploadProgress(tk.Frame):
         self.state.update({
             'task_end': process_counter,
             'task_counter': 0,
+            'is_thread_running': True,
         })
         #print (process_map, process_counter)
         for source_id, item in process_map.items():
@@ -276,19 +286,16 @@ class UploadProgress(tk.Frame):
                 item,
                 image_list,
                 self.state,
+                self.app.source.upload_to_s3,
             )
             task.start()
 
             # will block
             #task.join()
             #print ('tasks ok', task)
-        self.state['thread_uploading'] = True
 
     def update_progressbar(self, data):
         for k, v in data.items():
-            #if self.counter % 5 == 0:
-            #    print ('polling', k, v['uploaded'])
-            #print ('up', k, v)
             count = v['count']
             total = v['total']
             value = round((count/total) * 100.0)
@@ -306,13 +313,22 @@ class UploadProgress(tk.Frame):
 
         self.counter2 += 1
 
-        print (f'polling {self.counter1}-{self.counter2}', self.state['done_list'])
+        print (f'polling {self.counter1}-{self.counter2}', self.state['done_list'], self.state['num_queue_process'])
 
-        if self.state['num_queue_process'] > 0:
-            #uploading = {}
-            #for k,v in self.state['upload_map'].items():
-            #    uploading[k] = v
-            #self.update_progressbar(uploading)
+        if self.state['num_queue_process'] == 0:
+            self.state['status'] = 'stop'
+            return False
+        else:
+            # save status, if accumulated some uploaded
+            for k,v in self.state['upload_map'].items():
+                if num_uploaded := len(v['uploaded']):
+                    if num_uploaded % self.NUM_UPLOADED_SAVE == 0:
+                        image_ids = ','.join([str(x) for x in v['uploaded']])
+                        sql = f"UPDATE image SET upload_status='200' WHERE image_id IN ({image_ids})"
+                        self.app.db.exec_sql(sql, True)
+                        # clear
+                        v['uploaded'] = []
+
             self.update_progressbar(self.state['upload_map'])
 
             # control process

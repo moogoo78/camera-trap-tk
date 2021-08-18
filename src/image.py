@@ -37,10 +37,19 @@ def check_thumb(thumb_path, image_path):
 def get_thumb(source_id, filename, image_path, size='l'):
     stem = Path(filename).stem
     thumb_source_path = Path(f'./thumbnails/{source_id}')
-    thumb_path = thumb_source_path.joinpath(f'{stem}-{size}.jpg')
-    if not thumb_path.exists():
-        make_thumb(image_path, thumb_source_path)
-    return thumb_path
+    if size == 'all':
+        ret = {}
+        for i in THUMB_MAP:
+            code = i[0]
+            thumb_path = thumb_source_path.joinpath(f'{stem}-{code}.jpg')
+            ret[code] = thumb_path
+
+        return ret
+    else:
+        thumb_path = thumb_source_path.joinpath(f'{stem}-{size}.jpg')
+        if not thumb_path.exists():
+            make_thumb(image_path, thumb_source_path)
+        return thumb_path
 
 
 class ImageManager(object):

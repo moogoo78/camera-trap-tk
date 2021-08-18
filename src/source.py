@@ -126,6 +126,7 @@ class Source(object):
             'source': source,
         }
 
+    # depricated
     def upload_annotation(self, image_list, source_id, deployment_id):
         '''set upload_status in local database and post data to server'''
         sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
@@ -173,6 +174,7 @@ class Source(object):
 
         return ret
 
+    # depricated
     def gen_upload_file(self, image_list, source_id, deployment_id, server_image_map):
         for i in image_list:
             file_path = i[1]
