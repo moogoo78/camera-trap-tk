@@ -171,6 +171,7 @@ class DataHelper(object):
                 'seq': 0,
                 'sys_note': json.loads(i[13]),
                 'thumb': thumb,
+                'image_index': i_index,
             }
 
             has_cloned = True if len(alist) > 1 else False
@@ -203,6 +204,12 @@ class DataHelper(object):
                 get_col_key = col_key
 
         return get_row_key, get_col_key
+
+    def get_image_index(self, row):
+        for counter, (row_key, item) in enumerate(self.data.items()):
+            if row == counter:
+                return item['image_index']
+        return 0
 
     def group_image_sequence(self, time_interval, seq_tag=''):
         seq_info = {

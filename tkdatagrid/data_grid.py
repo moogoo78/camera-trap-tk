@@ -17,12 +17,14 @@ class DataGrid(tk.Frame):
                  data,
                  columns,
                  width=None,
-                 height=None
+                 height=None,
+                 row_index_display='',
     ):
         """include MainTable, ColumnHeader, RowIndex"""
         super().__init__(parent, width=width, height=height)
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
+        self.row_index_display = row_index_display # TODO: display style
         self.state = {
             'data': data,
             'data_keys': {},
@@ -66,7 +68,9 @@ class DataGrid(tk.Frame):
 
         self.main_table = MainTable(self)
         self.column_header = ColumnHeader(self)
-        self.row_index = RowIndex(self)
+
+        if self.row_index_display:
+            self.row_index = RowIndex(self)
 
         self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.set_yviews)
         self.scrollbar_y.grid(row=1, column=2, rowspan=1, sticky='news',pady=0, ipady=0)
@@ -75,12 +79,15 @@ class DataGrid(tk.Frame):
         self.main_table.config(
             xscrollcommand=self.scrollbar_x.set,
             yscrollcommand=self.scrollbar_y.set)
-        self.row_index.config(
-            xscrollcommand=self.scrollbar_x.set,
-            yscrollcommand=self.scrollbar_y.set)
+
+        if self.row_index_display:
+            self.row_index.config(
+                xscrollcommand=self.scrollbar_x.set,
+                yscrollcommand=self.scrollbar_y.set)
 
         self.column_header.grid(row=0, column=1, rowspan=1, sticky='news', pady=0, ipady=0)
-        self.row_index.grid(row=1, column=0, rowspan=1, sticky='news', pady=0, ipady=0)
+        if self.row_index_display:
+            self.row_index.grid(row=1, column=0, rowspan=1, sticky='news', pady=0, ipady=0)
         self.main_table.grid(row=1, column=1, sticky='news', rowspan=1, pady=0, ipady=0)
 
 
@@ -108,7 +115,8 @@ class DataGrid(tk.Frame):
         })
 
         self.main_table.render()
-        self.row_index.render()
+        if self.row_index_display:
+            self.row_index.render()
         self.column_header.render()
 
 
@@ -149,7 +157,8 @@ class DataGrid(tk.Frame):
     def set_yviews(self, *args):
         #print ('yviews', *args)
         self.main_table.yview(*args)
-        self.row_index.yview(*args)
+        if self.row_index_display:
+            self.row_index.yview(*args)
 
     def set_xviews(self, *args):
         self.main_table.xview(*args)

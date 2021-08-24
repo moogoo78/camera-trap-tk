@@ -28,21 +28,21 @@ class UploadProgress(tk.Frame):
             text='start',
             command=self.start_upload
         )
-        self.start_button.grid(row=0, column=1, padx=10, pady=10, sticky='we')
+        self.start_button.grid(row=0, column=0, padx=10, pady=10, sticky='we')
 
         self.stop_button = ttk.Button(
             self,
             text='stop',
             command=self.stop_upload
         )
-        self.stop_button.grid(row=0, column=2, padx=10, pady=10, sticky='we')
+        self.stop_button.grid(row=0, column=1, padx=10, pady=10, sticky='we')
 
-        self.refresh_button = ttk.Button(
-            self,
-            text='refresh',
-            command=self.handle_refresh
-        )
-        self.refresh_button.grid(row=0, column=3, padx=10, pady=10 ,sticky='we')
+        #self.refresh_button = ttk.Button(
+        #    self,
+        #    text='refresh',
+        #    command=self.handle_refresh
+        #)
+        #self.refresh_button.grid(row=0, column=3, padx=10, pady=10 ,sticky='we')
 
         self.TASK_LIMIT = 2 # conf
         self.NUM_UPLOADED_SAVE = 10 # conf

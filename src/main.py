@@ -41,6 +41,7 @@ class Main(tk.Frame):
 
         self.source_id = None
         self.current_row = 0
+        self.current_image_index = 0
         self.thumb_basewidth = 500
 
         self.tree_helper = TreeHelper()
@@ -130,7 +131,7 @@ class Main(tk.Frame):
         self.upload_progress.grid(row=0,column=0)
         self.notebook.add(self.panedwindow, text='輸入資料')
         self.notebook.add(self.upload_progress, text='上傳進度')
-
+        self.notebook.bind('<<NotebookTabChanged>>', self.handle_notebook_change)
     def fo_species(self, event):
         #print (self.species_free.listbox, event)
         if self.species_free.listbox:
@@ -282,7 +283,8 @@ class Main(tk.Frame):
         self.table_frame.grid_rowconfigure(0, weight=1)
         #print (self.table_frame.grid_info(), self.table_frame.grid_bbox())
 
-        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-200)
+        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='')
+        # TODO: 400 是湊出來的
         self.data_grid.state.update({
             'cell_height': 35,
             'cell_image_x_pad': 3,
@@ -323,6 +325,8 @@ class Main(tk.Frame):
 
     def refresh(self):
         logging.debug('refresh: {}'.format(self.source_id))
+
+        self.notebook.select(self.panedwindow)
 
         self.source_data = self.app.source.get_source(self.source_id)
         if descr := self.source_data['source'][7]:
@@ -507,6 +511,11 @@ class Main(tk.Frame):
         self.upload_button['text'] = '上傳中'
         self.upload_button['state'] = 'disabled'
 
+    def handle_notebook_change(self, event):
+        tab = event.widget.tab('current')['text']
+        if tab == '輸入資料':
+            self.refresh()
+
     def handle_upload(self):
         #self.app.source.do_upload(self.source_data)
         ans = tk.messagebox.askquestion('上傳確認', '確定要上傳?')
@@ -593,6 +602,8 @@ class Main(tk.Frame):
             return
 
         item = self.data_helper.get_item(rc[0])
+        #self.current_image_index = self.data_helper.get_image_index(rc[0])
+        self.current_row = rc[0]
         if item and item['status'] == '10':
             image_id = item['image_id']
             sql = f"UPDATE image SET status='20' WHERE image_id={image_id}"
