@@ -326,6 +326,9 @@ class Main(tk.Frame):
     def refresh(self):
         logging.debug('refresh: {}'.format(self.source_id))
 
+        if not self.source_id:
+            return
+
         self.notebook.select(self.panedwindow)
 
         self.source_data = self.app.source.get_source(self.source_id)

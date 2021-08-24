@@ -72,9 +72,9 @@ class DataGrid(tk.Frame):
         if self.row_index_display:
             self.row_index = RowIndex(self)
 
-        self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.set_yviews)
+        self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.handle_yviews)
         self.scrollbar_y.grid(row=1, column=2, rowspan=1, sticky='news',pady=0, ipady=0)
-        self.scrollbar_x = AutoScrollbar(self, orient=tk.HORIZONTAL, command=self.set_xviews)
+        self.scrollbar_x = AutoScrollbar(self, orient=tk.HORIZONTAL, command=self.handle_xviews)
         self.scrollbar_x.grid(row=2, column=1, columnspan=1, sticky='news')
         self.main_table.config(
             xscrollcommand=self.scrollbar_x.set,
@@ -89,7 +89,6 @@ class DataGrid(tk.Frame):
         if self.row_index_display:
             self.row_index.grid(row=1, column=0, rowspan=1, sticky='news', pady=0, ipady=0)
         self.main_table.grid(row=1, column=1, sticky='news', rowspan=1, pady=0, ipady=0)
-
 
         if len(self.state['data']):
             self.refresh(data)
@@ -154,12 +153,12 @@ class DataGrid(tk.Frame):
             'col_keys': col_keys
         })
 
-    def set_yviews(self, *args):
+    def handle_yviews(self, *args):
         #print ('yviews', *args)
         self.main_table.yview(*args)
         if self.row_index_display:
             self.row_index.yview(*args)
 
-    def set_xviews(self, *args):
+    def handle_xviews(self, *args):
         self.main_table.xview(*args)
         self.row_index.xview(*args)

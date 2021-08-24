@@ -87,8 +87,20 @@ class MainTable(tk.Canvas):
         self.bind('<Button-1>', self.handle_mouse_click_left)
         self.bind('<Button-3>', self.handle_mouse_click_right)
         self.bind('<B1-Motion>', self.handle_mouse_drag)
+        self.bind('<MouseWheel>', self.handle_mouse_wheel)
+        #self.bind('<Button-4>', self.mouse_wheel)
+        #self.bind('<Button-5>', self.mouse_wheel)
         self.parent.master.bind_all('<Up>', self.handle_arrow_key)
         self.parent.master.bind_all('<Down>', self.handle_arrow_key)
+
+    def handle_mouse_wheel(self, event):
+        #print (event, event.num, event.delta)
+        if event.num == 5 or event.delta == -120:
+            self.yview_scroll(1, 'units')
+        if event.num == 4 or event.delta == 120:
+            if self.canvasy(0) < 0: # ?
+                return
+            self.yview_scroll(-1, 'units')
 
 
     def render(self):
