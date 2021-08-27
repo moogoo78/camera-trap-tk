@@ -581,7 +581,7 @@ class Main(tk.Frame):
 
         self.app.source.delete_folder(self.source_id)
         self.app.sidebar.refresh_source_list()
-        self.app.show_landing()
+        self.layout_landing()
 
     def get_status_display(self, code):
         status_map = {

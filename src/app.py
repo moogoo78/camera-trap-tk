@@ -136,6 +136,7 @@ class Application(tk.Tk):
         if self.image_viewer.winfo_viewable():
             self.image_viewer.grid_remove()
 
+    # DEPRICATED
     def show_landing(self):
         self.landing.grid()
 
