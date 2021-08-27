@@ -90,6 +90,7 @@ class MainTable(tk.Canvas):
         self.bind('<MouseWheel>', self.handle_mouse_wheel)
         self.bind('<Button-4>', self.handle_mouse_wheel)
         self.bind('<Button-5>', self.handle_mouse_wheel)
+        self.bind('<Control-Button-1>', self.handle_ctrl_button1)
         self.parent.master.bind_all('<Up>', self.handle_arrow_key)
         self.parent.master.bind_all('<Down>', self.handle_arrow_key)
         self.parent.master.bind_all('<Left>', self.handle_arrow_key)
@@ -246,40 +247,57 @@ class MainTable(tk.Canvas):
     def handle_enter_drag(self, event):
         print (event, 'entry drag')
 
-    def render_selected(self, row, col):
-        '''render current_row by mouse selected'''
+    def render_row_highlight(self, row=None):
+        '''use border only & raise over other components
+        if args row = None, use self.selected['row_list']
+        '''
+        self.delete('row-highlight')
+
+        highlight_rows = []
+        if row:
+            highlight_rows = [row]
+        else:
+            highlight_rows = self.selected['row_list']
+
+        for row in highlight_rows:
+            _1, row_y1, _2, row_y2 = self.get_cell_coords(row, 0)
+            self.create_rectangle(
+                0, row_y1, self.width + self.x_start, row_y2,
+                fill=self.ps['style']['color']['row-highlight'],
+                width=2,
+                outline=self.ps['style']['color']['cell-highlight-border'],
+                stipple="gray50",
+                tags=('row-highlight'))
+
+        #self.lower('row-highlight')
+        self.tag_raise('row-highlight')
+
+    def render_selected(self, row, col, is_multi=False):
+        '''render current_row by mouse selected
+        if no args, render multi row by self.selected
+        '''
         self.current_rc = [row, col]
 
         self.delete('cell-highlight')
         self.delete('cell-highlight-border')
         self.delete('cell-highlight-drag')
-        self.delete('row-highlight')
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
-        # cell highlight
-        self.create_rectangle(
-            x1,
-            y1,
-            x2+self.x_start,
-            y2,
-            outline=self.ps['style']['color']['cell-highlight-border'],
-            width=4,
-            tag=('cell-highlight',))
-        self.lower('cell-highlight')
+        highlight_rows = None
+        if not is_multi:
+            # cell highlight
+            self.create_rectangle(
+                x1,
+                y1,
+                x2+self.x_start,
+                y2,
+                outline=self.ps['style']['color']['cell-highlight-border'],
+                width=4,
+                tag=('cell-highlight',))
 
+            self.lower('cell-highlight')
 
-        # render row highlight
-        # use border only & raise over other components
-        self.create_rectangle(
-            0, y1, self.width + self.x_start, y2,
-            #fill=self.ps['style']['color']['row-highlight'],
-            width=2,
-            outline=self.ps['style']['color']['cell-highlight-border'],
-            #stipple="gray50",
-            tags=('row-highlight'))
-
-        #self.lower('row-highlight')
-        self.tag_raise('row-highlight')
+            self.render_row_highlight(row)
 
         self.parent.row_index.render(row)
         self.parent.column_header.render(col)
@@ -512,6 +530,44 @@ class MainTable(tk.Canvas):
         return self.current_rc
         #if func := self.ps.get('after_click', ''):
         #    return func(self.current_rc)
+
+    def handle_ctrl_button1(self, event):
+        #print ('ctrl_b1', event)
+
+        # clear
+        self.delete('entry_win')
+
+        res_rc = self.get_rc(event.x, event.y)
+        if not res_rc['is_available']:
+            return
+
+        row = res_rc['row']
+        col = res_rc['col']
+        #row_key = res_rc['row_key']
+        #col_key = res_rc['col_key']
+        #print (row, col, row_key, col_key)
+        # reset selected
+
+        row_selected = self.selected['row_list']
+        if row_selected == None:
+            row_selected = []
+
+        if len(row_selected) == 0:
+            row_selected.append(row)
+        elif row not in row_selected:
+            row_selected.append(row)
+        else:
+            row_selected.remove(row)
+
+        self.selected.update({
+            'row_start': None,
+            'row_end': None,
+            'col_start': None,
+            'col_end': None,
+            'row_list': row_selected,
+        })
+
+        self.render_row_highlight()
 
     @custom_action(name='arrow_key')
     def handle_arrow_key(self, event):

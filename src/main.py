@@ -385,6 +385,7 @@ class Main(tk.Frame):
                     tags=('row-img-seq', 'row-img-seq_{}'.format(tag_name)))
 
         self.data_grid.main_table.lower('row-img-seq')
+        self.data_grid.main_table.render_row_highlight()
 
         # folder name
         self.label_folder['text'] = self.source_data['source'][3]
