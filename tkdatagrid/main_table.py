@@ -269,12 +269,17 @@ class MainTable(tk.Canvas):
 
 
         # render row highlight
+        # use border only & raise over other components
         self.create_rectangle(
             0, y1, self.width + self.x_start, y2,
-            fill=self.ps['style']['color']['row-highlight'],
+            #fill=self.ps['style']['color']['row-highlight'],
+            width=2,
+            outline=self.ps['style']['color']['cell-highlight-border'],
+            #stipple="gray50",
             tags=('row-highlight'))
 
-        self.lower('row-highlight')
+        #self.lower('row-highlight')
+        self.tag_raise('row-highlight')
 
         self.parent.row_index.render(row)
         self.parent.column_header.render(col)
