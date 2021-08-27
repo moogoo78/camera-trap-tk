@@ -4,22 +4,38 @@ from tkinter import ttk
 
 class ColumnHeader(tk.Canvas):
 
-    def __init__(self, parent):
-        super().__init__(parent, bg='#336B87', width=500, height=20, bd=0)
+    def __init__(self, parent, bg):
+        self.height = 20
+        super().__init__(parent, bg=bg, width=500, height=self.height, bd=0)
         self.ps = parent.state
         self.config(width=self.ps['width'])
 
-    def render(self):
+    def render(self, current_col=''):
         self.configure(scrollregion=(0,0, self.ps['width'], self.ps['height']+30))
+        self.delete('header-border')
         self.delete('header-text')
 
         pad = 0
-        for counter, (col_key, col) in enumerate(self.ps['columns'].items()):
+        #print (self.ps['column_width_list'], len(self.ps['columns']))
+        for i, (col_key, col) in enumerate(self.ps['columns'].items()):
+            x1 = self.ps['column_width_list'][i] + pad
+            x2 = self.ps['column_width_list'][i+1] + pad
 
-            x = self.ps['column_width_list'][counter] + col['width'] / 2
+            x_center = x1 + 4 #col['width'] / 2
+            if i == current_col:
+                self.create_rectangle(x1, 0, x2, self.height,
+                                      outline='white',
+                                      fill='#aaaaaa',
+                                      width=1,
+                                      tag='header-border')
+            else:
+                self.create_rectangle(x1, 0, x2, self.height,
+                                      outline='white',
+                                      width=1,
+                                      tag='header-border')
 
             self.create_text(
-                x + pad, self.ps['column_header_height']/2,
+                x_center + pad, self.ps['column_header_height']/2,
                 text=col['label'],
                 anchor='w',
                 fill='white',
@@ -34,16 +50,17 @@ class ColumnHeader(tk.Canvas):
 
 class RowIndex(tk.Canvas):
 
-    def __init__(self, parent, width=None):
+    def __init__(self, parent, width=None, bg=''):
         if not width:
             self.width = 60
         else:
             self.width = width
-        super().__init__(parent, bg='#2A3132', width=self.width, bd=0, relief='flat')
+        super().__init__(parent, bg=bg, width=self.width, bd=0, relief='flat')
 
+        self.parent = parent
         self.ps = parent.state
 
-    def render(self):
+    def render(self, current_row=''):
         self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
         self.delete('header-border')
         self.delete('header-text')
@@ -52,13 +69,25 @@ class RowIndex(tk.Canvas):
             x = self.width - 10
             y1 = i * self.ps['cell_height']
             y2 = (i+1) * self.ps['cell_height']
-            self.create_rectangle(0, y1, self.width-1, y2,
-                              outline='white',
-                              width=1,
-                              tag='header-border')
 
+            if i == current_row:
+                self.create_rectangle(0, y1, self.width-1, y2,
+                                      outline='white',
+                                      fill='#aaaaaa',
+                                      width=1,
+                                      tag='header-border')
+            else:
+                self.create_rectangle(0, y1, self.width-1, y2,
+                                      outline='white',
+                                      width=1,
+                                      tag='header-border')
+
+            text = f'{i+1}({v[0]})', #f'{i+1}'
+            row_index_display = self.ps['row_index_display']
+            if row_index_display:
+                text = v[1][row_index_display]
             self.create_text(x, i*self.ps['cell_height'] + self.ps['cell_height']/2,
-                             text=f'{i+1}({v[0]})', #f'{i+1}'
+                             text=text,
                              fill='white',
                              #font=self.table.thefont,
                              tag='header-text', anchor='e')

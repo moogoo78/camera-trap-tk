@@ -6,13 +6,12 @@ import json
 from datetime import datetime
 import random
 import colorsys
-
+#    'sn': {
+#        'label': '編號',
+#        'width': 50,
+#        'type': 'text',
+#    },
 HEADER = {
-    'sn': {
-        'label': '編號',
-        'width': 50,
-        'type': 'text',
-    },
     'status_display': {
         'label': '標注/上傳狀態',
         'width': 100,

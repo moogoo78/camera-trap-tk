@@ -283,7 +283,7 @@ class Main(tk.Frame):
         self.table_frame.grid_rowconfigure(0, weight=1)
         #print (self.table_frame.grid_info(), self.table_frame.grid_bbox())
 
-        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='')
+        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn')
         # TODO: 400 是湊出來的
         self.data_grid.state.update({
             'cell_height': 35,
@@ -595,6 +595,7 @@ class Main(tk.Frame):
         return status_map.get(code, '-')
 
     def custom_set_data(self, row_key, col_key, value):
+        #print ('custom_set_data', value)
         self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
         if self.seq_info:
             # has seq_info need re-render

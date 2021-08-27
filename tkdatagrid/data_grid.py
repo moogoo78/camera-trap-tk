@@ -24,7 +24,6 @@ class DataGrid(tk.Frame):
         super().__init__(parent, width=width, height=height)
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
-        self.row_index_display = row_index_display # TODO: display style
         self.state = {
             'data': data,
             'data_keys': {},
@@ -36,6 +35,8 @@ class DataGrid(tk.Frame):
             'style': {
                 'color': {
                     'bg': '#f7f7fa',
+                    'row_index_bg': '#2a3132', #'#2A3132'
+                    'column_header_bg': '#336b87', #'#2c3e50', #'#336B87'
                     'cell-border': '#d3d3d3',
                     'cell-highlight-border': '#6699ff',
                     'row-highlight': '#ddeeff',
@@ -55,7 +56,8 @@ class DataGrid(tk.Frame):
                 'set_data_value': None,
                 'clone_row': None,
                 'remove_row': None,
-            }
+            },
+            'row_index_display': row_index_display,
         }
         # other not default
         # cell_image_x_pad
@@ -67,10 +69,10 @@ class DataGrid(tk.Frame):
         self.grid_rowconfigure(1, weight=1)
 
         self.main_table = MainTable(self)
-        self.column_header = ColumnHeader(self)
+        self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'])
 
-        if self.row_index_display:
-            self.row_index = RowIndex(self)
+        if self.state['row_index_display']:
+            self.row_index = RowIndex(self, bg=self.state['style']['color']['row_index_bg'])
 
         self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.handle_yviews)
         self.scrollbar_y.grid(row=1, column=2, rowspan=1, sticky='news',pady=0, ipady=0)
@@ -80,15 +82,16 @@ class DataGrid(tk.Frame):
             xscrollcommand=self.scrollbar_x.set,
             yscrollcommand=self.scrollbar_y.set)
 
-        if self.row_index_display:
+        if self.state['row_index_display']:
             self.row_index.config(
                 xscrollcommand=self.scrollbar_x.set,
-                yscrollcommand=self.scrollbar_y.set)
+                yscrollcommand=self.scrollbar_y.set
+            )
 
-        self.column_header.grid(row=0, column=1, rowspan=1, sticky='news', pady=0, ipady=0)
-        if self.row_index_display:
-            self.row_index.grid(row=1, column=0, rowspan=1, sticky='news', pady=0, ipady=0)
-        self.main_table.grid(row=1, column=1, sticky='news', rowspan=1, pady=0, ipady=0)
+        self.column_header.grid(row=0, column=1, rowspan=1, sticky='news', padx=2, pady=0, ipady=0)
+        if self.state['row_index_display']:
+            self.row_index.grid(row=1, column=0, rowspan=1, sticky='news', pady=2)
+        self.main_table.grid(row=1, column=1, sticky='news', rowspan=1, pady=0)
 
         if len(self.state['data']):
             self.refresh(data)
@@ -114,7 +117,7 @@ class DataGrid(tk.Frame):
         })
 
         self.main_table.render()
-        if self.row_index_display:
+        if self.state['row_index_display']:
             self.row_index.render()
         self.column_header.render()
 
@@ -154,10 +157,12 @@ class DataGrid(tk.Frame):
         })
 
     def handle_yviews(self, *args):
-        #print ('yviews', *args)
+        #print ('yviews', *args, args)
         self.main_table.yview(*args)
-        if self.row_index_display:
+        if self.state['row_index_display']:
             self.row_index.yview(*args)
+        #print (self.main_table.canvasy(0))
+        #print (self.row_index.canvasy(0))
 
     def handle_xviews(self, *args):
         self.main_table.xview(*args)

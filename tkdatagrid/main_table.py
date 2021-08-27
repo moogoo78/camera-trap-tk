@@ -88,19 +88,26 @@ class MainTable(tk.Canvas):
         self.bind('<Button-3>', self.handle_mouse_click_right)
         self.bind('<B1-Motion>', self.handle_mouse_drag)
         self.bind('<MouseWheel>', self.handle_mouse_wheel)
-        #self.bind('<Button-4>', self.mouse_wheel)
-        #self.bind('<Button-5>', self.mouse_wheel)
+        self.bind('<Button-4>', self.handle_mouse_wheel)
+        self.bind('<Button-5>', self.handle_mouse_wheel)
         self.parent.master.bind_all('<Up>', self.handle_arrow_key)
         self.parent.master.bind_all('<Down>', self.handle_arrow_key)
+        self.parent.master.bind_all('<Left>', self.handle_arrow_key)
+        self.parent.master.bind_all('<Right>', self.handle_arrow_key)
 
     def handle_mouse_wheel(self, event):
-        #print (event, event.num, event.delta)
+        #print (event.num, event.delta, self.canvasy(0), self.winfo_height(), self.parent.row_index.winfo_height())
+        # event.num exists in linux or mac ?
         if event.num == 5 or event.delta == -120:
             self.yview_scroll(1, 'units')
-        if event.num == 4 or event.delta == 120:
+            #if self.ps['row_index_display']:
+            self.parent.row_index.yview_scroll(1, 'units')
+        elif event.num == 4 or event.delta == 120:
             if self.canvasy(0) < 0: # ?
                 return
             self.yview_scroll(-1, 'units')
+            #if self.ps['row_index_display']:
+            self.parent.row_index.yview_scroll(-1, 'units')
 
 
     def render(self):
@@ -240,6 +247,7 @@ class MainTable(tk.Canvas):
         print (event, 'entry drag')
 
     def render_selected(self, row, col):
+        '''render current_row by mouse selected'''
         self.current_rc = [row, col]
 
         self.delete('cell-highlight')
@@ -268,8 +276,11 @@ class MainTable(tk.Canvas):
 
         self.lower('row-highlight')
 
+        self.parent.row_index.render(row)
+        self.parent.column_header.render(col)
 
     def render_box(self, selected):
+        '''render rectangle box (multi-row & multi-column)'''
         self.delete('box-highlight')
 
         xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['row_start'], selected['col_start'])
@@ -500,24 +511,49 @@ class MainTable(tk.Canvas):
     @custom_action(name='arrow_key')
     def handle_arrow_key(self, event):
         #print ('handle_arrow:', event, self.current_rc)
-        if self.current_rc[0] == None:
-            return
-        if event.keysym == 'Up':
-            self.remove_entry()
-            if self.current_rc[0] == 0:
-                return
-            else:
-                self.current_rc[0] = self.current_rc[0] - 1
-        elif event.keysym == 'Down':
-            self.remove_entry()
-            if self.current_rc[0] >= self.ps['num_rows'] - 1:
-                return
-            else:
-                self.current_rc[0] = self.current_rc[0] + 1
+        row, col = self.current_rc
 
-        self.render_selected(self.current_rc[0], self.current_rc[1])
-        #if func := self.ps.get('after_arrow_key', ''):
-        #    return func(self.current_rc)
+        if row == None:
+            return
+
+        if event.keysym in ('Up', 'Down', 'Left', 'Right'):
+            self.remove_entry()
+
+        if event.keysym == 'Up':
+            if row == 0:
+                return
+            else:
+                row -= 1
+        elif event.keysym == 'Down':
+            if row >= self.ps['num_rows'] - 1:
+                return
+            else:
+                row += 1
+
+        elif event.keysym == 'Left':
+            #text = self.ps['data'][row_key][col_key]
+            if col == 0:
+                return
+            else:
+                col -= 1
+
+        elif event.keysym == 'Right':
+            if col >= self.ps['num_cols'] - 1:
+                return
+            else:
+                col += 1
+
+        #if event.keysym in ('Up', 'Down'):
+        self.render_selected(row, col)
+        #elif event.keysym in ('Left', 'Right'):
+        # create text_editor
+            #row_key, col_key = self.get_rc_key(row, col)
+            #if self.ps['columns'][col_key].get('type', 'entry') == 'entry':
+                #text = self.ps['data'][row_key][col_key]
+                #self.render_text_editor(row, col, text)
+
+        self.current_rc[0] = row
+        self.current_rc[1] = col
         return self.current_rc
 
     @custom_action(name='clone_row')
@@ -586,4 +622,3 @@ class MainTable(tk.Canvas):
 
     def clear_pattern(self):
         self.pattern_copy = []
-
