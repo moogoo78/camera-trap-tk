@@ -665,19 +665,21 @@ class Main(tk.Frame):
         row = self.tree_helper.get_data(annotation_iid)
         return row.get('alist', [])
 
-    def custom_clone_row(self, row_key, clone_iid):
+    #def custom_clone_row(self, row_key, clone_iid):
+    def custom_clone_row(self, res):
         #print ('clone', row_key, clone_iid)
-        iid_list = row_key[4:].split('-')
-        row_key_root = 'iid:{}-{}'.format(iid_list[0], iid_list[1])
-        item = self.data_helper.data[row_key_root]
-        image_id = item['image_id']
-        alist = self.data_helper.annotation_data[image_id]
-        # no need to copy annotation, clone has different annotation
-        alist.append({})
-        json_alist = json.dumps(alist)
-        sql = f"UPDATE image SET annotation='{json_alist}' WHERE image_id={image_id}"
-        self.app.db.exec_sql(sql, True)
-        self.refresh()
+        for (row_key, clone_iid) in res:
+            iid_list = row_key[4:].split('-')
+            row_key_root = 'iid:{}-{}'.format(iid_list[0], iid_list[1])
+            item = self.data_helper.data[row_key_root]
+            image_id = item['image_id']
+            alist = self.data_helper.annotation_data[image_id]
+            # no need to copy annotation, clone has different annotation
+            alist.append({})
+            json_alist = json.dumps(alist)
+            sql = f"UPDATE image SET annotation='{json_alist}' WHERE image_id={image_id}"
+            self.app.db.exec_sql(sql, True)
+            self.refresh()
 
     def custom_remove_row(self, row_key):
         #print ('rm row_key', row_key)

@@ -101,14 +101,14 @@ class MainTable(tk.Canvas):
         # event.num exists in linux or mac ?
         if event.num == 5 or event.delta == -120:
             self.yview_scroll(1, 'units')
-            #if self.ps['row_index_display']:
-            self.parent.row_index.yview_scroll(1, 'units')
+            if self.ps['row_index_display']:
+                self.parent.row_index.yview_scroll(1, 'units')
         elif event.num == 4 or event.delta == 120:
             if self.canvasy(0) < 0: # ?
                 return
             self.yview_scroll(-1, 'units')
-            #if self.ps['row_index_display']:
-            self.parent.row_index.yview_scroll(-1, 'units')
+            if self.ps['row_index_display']:
+                self.parent.row_index.yview_scroll(-1, 'units')
 
 
     def render(self):
@@ -244,8 +244,8 @@ class MainTable(tk.Canvas):
             anchor='nw',
             tag='entry_win')
 
-    def handle_enter_drag(self, event):
-        print (event, 'entry drag')
+    #def handle_enter_drag(self, event):
+    #    print (event, 'entry drag')
 
     def render_row_highlight(self, row=None):
         '''use border only & raise over other components
@@ -272,7 +272,7 @@ class MainTable(tk.Canvas):
         #self.lower('row-highlight')
         self.tag_raise('row-highlight')
 
-    def render_selected(self, row, col, is_multi=False):
+    def render_selected(self, row, col):
         '''render current_row by mouse selected
         if no args, render multi row by self.selected
         '''
@@ -283,23 +283,22 @@ class MainTable(tk.Canvas):
         self.delete('cell-highlight-drag')
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
-        highlight_rows = None
-        if not is_multi:
-            # cell highlight
-            self.create_rectangle(
-                x1,
-                y1,
-                x2+self.x_start,
-                y2,
-                outline=self.ps['style']['color']['cell-highlight-border'],
-                width=4,
-                tag=('cell-highlight',))
+        # cell highlight
+        self.create_rectangle(
+            x1,
+            y1,
+            x2+self.x_start,
+            y2,
+            outline=self.ps['style']['color']['cell-highlight-border'],
+            width=4,
+            tag=('cell-highlight',))
 
-            self.lower('cell-highlight')
+        self.lower('cell-highlight')
 
-            self.render_row_highlight(row)
+        self.render_row_highlight(row)
 
-        self.parent.row_index.render(row)
+        if self.ps['row_index_display']:
+            self.parent.row_index.render(row)
         self.parent.column_header.render(col)
 
     def render_box(self, selected):
@@ -446,7 +445,8 @@ class MainTable(tk.Canvas):
             self.delete('row-highlight')
             self.delete('entry_win')
             self.delete('cell-highlight')
-            self.render_box(self.selected)
+            #self.render_box(self.selected)
+            self.render_row_highlight()
 
     def remove_entry(self):
         if hasattr(self, 'text_editor'):
@@ -469,10 +469,12 @@ class MainTable(tk.Canvas):
         self.current_rc = [row, col]
 
         self.remove_entry()
-        self.render_selected(row, col)
+
+        #self.render_selected(row, col)
 
         self.popup_menu = tk.Menu(self)
-        self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
+        #self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
+        self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_rows(self.selected['row_list']))
         self.popup_menu.add_command(label='刪除一列', command=lambda: self.remove_row(res_rc['row_key']))
         self.popup_menu.add_separator()
         self.popup_menu.add_command(label='複製內容 pattern', command=self.copy_pattern)
@@ -618,42 +620,50 @@ class MainTable(tk.Canvas):
         return self.current_rc
 
     @custom_action(name='clone_row')
-    def clone_row(self, row_key):
-        #print (row, 'clone')
+    def clone_rows(self, rows):
+        #print (rows, 'clone')
+        if len(rows) == 0:
+            return
+
         new_data = {}
-        is_cloned = False
-        clone_data = dict(self.ps['data'][row_key])
+        res = []
+        insert_map = {}
         keys = list(self.ps['data'].keys())
-        iid_key = row_key[4:] # remove "iid:"
-        prefix = f'iid:{iid_key}-'
-        clone_iid = f'iid:{iid_key}-0' # default add new branch
+        for row in rows:
+            row_key, col_key = self.get_rc_key(row, 0)
+            clone_data = dict(self.ps['data'][row_key])
+            iid_key = row_key[4:] # remove "iid:"
+            prefix = f'iid:{iid_key}-'
+            clone_iid = f'iid:{iid_key}-0' # default add new branch
 
-        sibling_counter = 0
-        insert_to = 0
-        for counter, k in enumerate(keys):
-            if prefix in k:
-                sibling_counter += 1
-                insert_to = counter+1
+            sibling_counter = 0
+            insert_to = 0
+            for counter, k in enumerate(keys):
+                if prefix in k:
+                    sibling_counter += 1
+                    insert_to = counter + 1
 
-        if sibling_counter > 0: # already has branch, sibling
-            clone_iid = f'{prefix}{sibling_counter}'
-        else:
-            insert_to = keys.index(row_key) + 1
+            if sibling_counter > 0: # already has branch, sibling
+                clone_iid = f'{prefix}{sibling_counter}'
+            else:
+                insert_to = keys.index(row_key)
 
-        #print (sibling_counter, insert_to)
-        for counter, (iid, row_data) in enumerate(self.ps['data'].items()):
-            if not is_cloned and counter == insert_to:
-                trimed_clone_iid = clone_iid[4:]
-                new_data[trimed_clone_iid] = clone_data
-            trimed_iid = iid[4:]
-            new_data[trimed_iid] = row_data
+            insert_map[insert_to] = (clone_iid, clone_data)
+            res.append((row_key, clone_iid))
+        #print (insert_map)
+        #new_data = self.ps['data']
 
-        logging.debug(f'clone row: {row_key} -> {clone_iid}, insert to {insert_to}')
+        for _, (iid, clone_data) in insert_map.items():
+            self.ps['data'][iid] = clone_data
+        for d in sorted(self.ps['data'].items(), key=lambda x: x):
+            new_data[d[0]] = d[1]
+
         self.parent.refresh(new_data)
 
         #if func := self.ps.get('after_clone_row', ''):
         #    return func(row_key, clone_iid)
-        return row_key, clone_iid
+        #return row_key, clone_iid
+        return res
 
     @custom_action(name='remove_row')
     def remove_row(self, row_key=''):

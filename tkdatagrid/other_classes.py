@@ -82,10 +82,13 @@ class RowIndex(tk.Canvas):
                                       width=1,
                                       tag='header-border')
 
-            text = f'{i+1}({v[0]})', #f'{i+1}'
-            row_index_display = self.ps['row_index_display']
-            if row_index_display:
-                text = v[1][row_index_display]
+
+            disp = self.ps.get('row_index_display', '')
+            text = ''
+            if disp == 'iid':
+                text = f'{i+1}({v[0]})', #f'{i+1}'
+            else:
+                text = v[1][disp]
             self.create_text(x, i*self.ps['cell_height'] + self.ps['cell_height']/2,
                              text=text,
                              fill='white',

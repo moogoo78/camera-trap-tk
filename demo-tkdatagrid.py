@@ -41,6 +41,7 @@ for i in range(10):
     for j in range(5):
         h = chr(97+j)
         DATA[i][h] = str(round(x * random.random() * 10, 2))
+    DATA[i]['index'] = i+1
 
 DATA3 = {
     0: {
@@ -65,7 +66,7 @@ class DemoApp(tk.Tk):
         self.grid_rowconfigure(0, weight=1)
         self.frame = tk.Frame(self)
 
-        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=600)
+        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=600, row_index_display='iid')
 
         # redraw another
         #data2=sampledata()
