@@ -19,6 +19,7 @@ from image import check_thumb
 sys.path.insert(0, '') # TODO: pip install -e .
 from tkdatagrid import DataGrid
 
+SPECIES_COL_POS = 4 # species annotation column position
 
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -283,16 +284,31 @@ class Main(tk.Frame):
         self.table_frame.grid_columnconfigure(0, weight=0)
         self.table_frame.grid_rowconfigure(0, weight=1)
         #print (self.table_frame.grid_info(), self.table_frame.grid_bbox())
-
+        species_choices = self.app.config.get('AnnotationFieldSpecies', 'choices')
+        species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         menus = [
             {
+                'type': 'normal',
                 'label': '複製物種',
                 'command': self.copy_cloned_species,
             },
             {
+                'type': 'normal',
                 'label': '貼上物種',
                 'command': self.paste_cloned_species,
-            }
+            },
+            {
+                'type': 'menu',
+                'label': '物種清單',
+                'choices': species_choices.split(','),
+                'command': self.handle_click_menu_species,
+            },
+            {
+                'type': 'menu',
+                'label': '地棲性鳥類清單',
+                'choices': species_extra_birds.split(','),
+                'command': self.handle_click_menu_species,
+            },
         ]
         self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus)
         # TODO: 400 是湊出來的
@@ -761,7 +777,7 @@ class Main(tk.Frame):
         selected = self.data_grid.main_table.selected
         num_species_copy = len(self.species_copy)
         for row in selected['row_list']:
-            row_key, col_key = self.data_helper.get_rc_key(row, 4) # 4 is fixed to annotation_species
+            row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
             #print self.data_helper.update_annotation(row_key, 'annotation_species', value)
 
         for counter, row in enumerate(selected['row_list']):
@@ -770,4 +786,15 @@ class Main(tk.Frame):
             self.data_helper.update_annotation(rc_key[0], 'annotation_species', self.species_copy[index])
 
         self.species_copy = []
+        self.refresh()
+
+    def handle_click_menu_species(self, species=''):
+        #print ('click', species, self.current_row)
+        #if self.current_row < 0:
+        #    return
+
+        selected = self.data_grid.main_table.selected
+        for row in selected['row_list']:
+            row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
+            self.data_helper.update_annotation(row_key, col_key, species)
         self.refresh()
