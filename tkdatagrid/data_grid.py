@@ -19,6 +19,7 @@ class DataGrid(tk.Frame):
                  width=None,
                  height=None,
                  row_index_display='',
+                 custom_menus=[],
     ):
         """include MainTable, ColumnHeader, RowIndex"""
         super().__init__(parent, width=width, height=height)
@@ -57,6 +58,7 @@ class DataGrid(tk.Frame):
                 'clone_row': None,
                 'remove_row': None,
             },
+            'custom_menus': custom_menus,
             'row_index_display': row_index_display,
         }
         # other not default

@@ -47,6 +47,7 @@ class Main(tk.Frame):
         self.tree_helper = TreeHelper()
         self.data_helper = DataHelper(self.app.db)
         self.annotation_entry_list = []
+        self.species_copy = []
 
         # layout
         #self.grid_propagate(False)
@@ -283,7 +284,17 @@ class Main(tk.Frame):
         self.table_frame.grid_rowconfigure(0, weight=1)
         #print (self.table_frame.grid_info(), self.table_frame.grid_bbox())
 
-        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn')
+        menus = [
+            {
+                'label': '複製物種',
+                'command': self.copy_cloned_species,
+            },
+            {
+                'label': '貼上物種',
+                'command': self.paste_cloned_species,
+            }
+        ]
+        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus)
         # TODO: 400 是湊出來的
         self.data_grid.state.update({
             'cell_height': 35,
@@ -738,3 +749,25 @@ class Main(tk.Frame):
         self.data_grid.main_table.pattern_copy = []
         self.refresh()
 
+
+    def copy_cloned_species(self):
+        selected = self.data_grid.main_table.selected
+        for row in selected['row_list']:
+            item = self.data_helper.get_item(row)
+            species = item['annotation_species']
+            self.species_copy.append(species)
+
+    def paste_cloned_species(self):
+        selected = self.data_grid.main_table.selected
+        num_species_copy = len(self.species_copy)
+        for row in selected['row_list']:
+            row_key, col_key = self.data_helper.get_rc_key(row, 4) # 4 is fixed to annotation_species
+            #print self.data_helper.update_annotation(row_key, 'annotation_species', value)
+
+        for counter, row in enumerate(selected['row_list']):
+            index = counter % num_species_copy
+            rc_key = self.data_helper.get_rc_key(row, selected['col_list'][0])
+            self.data_helper.update_annotation(rc_key[0], 'annotation_species', self.species_copy[index])
+
+        self.species_copy = []
+        self.refresh()

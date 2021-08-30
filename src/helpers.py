@@ -96,6 +96,7 @@ class DataHelper(object):
 
         item = self.data[row_key]
         image_id = item['image_id']
+
         #print (row_key, image_id, self.annotation_data[image_id], row_key.split('-')[1])
         annotation_col = col_key.replace('annotation_', '')
         annotation_index = int(row_key.split('-')[1])

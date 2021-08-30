@@ -476,9 +476,15 @@ class MainTable(tk.Canvas):
         #self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
         self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_rows(self.selected['row_list']))
         self.popup_menu.add_command(label='刪除一列', command=lambda: self.remove_row(res_rc['row_key']))
+
+        # custom menus
+        self.popup_menu.add_separator()
+        for m in self.ps['custom_menus']:
+            self.popup_menu.add_command(label=m['label'], command=m['command'])
+
         self.popup_menu.add_separator()
         self.popup_menu.add_command(label='複製內容 pattern', command=self.copy_pattern)
-        self.popup_menu.add_command(label='套用 pattern', command=self.apply_pattern)
+        self.popup_menu.add_command(label='貼上 pattern', command=self.apply_pattern)
         self.popup_menu.add_command(label='清除 pattern', command=self.clear_pattern)
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         self.popup_menu.post(event.x_root, event.y_root)
