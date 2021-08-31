@@ -91,6 +91,12 @@ class MainTable(tk.Canvas):
         self.bind('<Button-4>', self.handle_mouse_wheel)
         self.bind('<Button-5>', self.handle_mouse_wheel)
         self.bind('<Control-Button-1>', self.handle_ctrl_button1)
+
+        # custom bindind
+        if custom_binding := self.ps['custom_binding']:
+            for bind_key in custom_binding['bind_list']:
+                self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
+        #self.parent.master.bind_all('<Control-a>', self.handle_sh)
         self.parent.master.bind_all('<Up>', self.handle_arrow_key)
         self.parent.master.bind_all('<Down>', self.handle_arrow_key)
         self.parent.master.bind_all('<Left>', self.handle_arrow_key)
@@ -687,7 +693,7 @@ class MainTable(tk.Canvas):
         return row_key
 
     def copy_pattern(self):
-        print ('copy', self.selected)
+        #print ('copy', self.selected)
         selected = self.selected
         pattern = []
         for i in selected['row_list']:
@@ -706,6 +712,3 @@ class MainTable(tk.Canvas):
 
     def clear_pattern(self):
         self.pattern_copy = []
-
-    def handle_submenu_click(self, choice):
-        print ('hand', choice)

@@ -49,6 +49,7 @@ class Main(tk.Frame):
         self.data_helper = DataHelper(self.app.db)
         self.annotation_entry_list = []
         self.species_copy = []
+        self.keyboard_shortcuts = {}
 
         # layout
         #self.grid_propagate(False)
@@ -310,7 +311,17 @@ class Main(tk.Frame):
                 'command': self.handle_click_menu_species,
             },
         ]
-        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus)
+        species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
+        custom_binding = {
+            'bind_list': [],
+            'command': self.handle_keyboard_shortcut,
+        }
+        for n in range(1, 6):
+            self.keyboard_shortcuts[str(n)] = self.app.config.get('KeyboardShortcut', f'Control-Key-{n}')
+
+            custom_binding['bind_list'].append(f'Control-Key-{n}')
+
+        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus, custom_binding=custom_binding)
         # TODO: 400 是湊出來的
         self.data_grid.state.update({
             'cell_height': 35,
@@ -797,4 +808,14 @@ class Main(tk.Frame):
         for row in selected['row_list']:
             row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
             self.data_helper.update_annotation(row_key, col_key, species)
+        self.refresh()
+
+    def handle_keyboard_shortcut(self, event):
+        #print ('key', event)
+        if value := self.keyboard_shortcuts.get(event.keysym, ''):
+            row_key, col_key = self.data_helper.get_rc_key(
+                self.current_row,
+                SPECIES_COL_POS)
+            self.data_helper.update_annotation(row_key, col_key, value)
+
         self.refresh()
