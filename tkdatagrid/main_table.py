@@ -263,7 +263,7 @@ class MainTable(tk.Canvas):
         if row:
             highlight_rows = [row]
         else:
-            highlight_rows = self.selected['row_list']
+            highlight_rows = self.selected.get('row_list', [])
 
         for row in highlight_rows:
             _1, row_y1, _2, row_y2 = self.get_cell_coords(row, 0)
@@ -531,7 +531,7 @@ class MainTable(tk.Canvas):
             'row_list': [row],
             'col_list': [col],
         }
-        self.render_box(self.selected)
+        #self.render_box(self.selected)
 
         if col == -1:
             col = 0 # 預設如點第一格
@@ -625,6 +625,14 @@ class MainTable(tk.Canvas):
             else:
                 col += 1
 
+        self.selected.update({
+            'row_start': None,
+            'row_end': None,
+            'col_start': None,
+            'col_end': None,
+            'row_list': [row],
+            'col_list': [col],
+        })
         #if event.keysym in ('Up', 'Down'):
         self.render_selected(row, col)
         #elif event.keysym in ('Left', 'Right'):
@@ -697,18 +705,29 @@ class MainTable(tk.Canvas):
         selected = self.selected
         pattern = []
         for i in selected['row_list']:
-            # only take first column
-            rc_key = self.get_rc_key(i, selected['col_start'])
-            v = self.ps['data'][rc_key[0]][rc_key[1]]
-            if v not in pattern:
-                pattern.append(v)
+            row_values = []
+            for j in selected['col_list']:
+                row_key, col_key = self.get_rc_key(i, j)
+                v = self.ps['data'][row_key][col_key]
+                row_values.append(v)
+            pattern.append(row_values)
         #self.pattern_copy = list(set(pattern))
         self.pattern_copy = pattern
 
-    @custom_action(name='apply_pattern')
+    #@custom_action(name='apply_pattern')
     def apply_pattern(self):
         #print ('apply', self.selected, self.pattern_copy)
-        return self.pattern_copy, self.selected
+        num_pattern = len(pattern_copy)
+        num_cols = len(pattern_copy[0])
+        for counter, row in enumerate(selected['row_list']):
+            pat_index = counter % num_pattern
+            print (pat_index)
+            #rc_key = self.data_helper.get_rc_key(row, selected['col_list'][0])
+            #self.custom_set_data(rc_key[0], rc_key[1], pattern_copy[pat_index])
+
+            #self.data_grid.main_table.pattern_copy = []
+            #self.refresh()
+        #   return self.pattern_copy, self.selected
 
     def clear_pattern(self):
         self.pattern_copy = []

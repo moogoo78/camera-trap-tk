@@ -42,7 +42,10 @@ class Main(tk.Frame):
 
         self.source_id = None
         self.current_row = 0
-        self.current_image_index = 0
+        self.current_image_data = {
+            'image_id': 0,
+            'image_index': 0,
+        }
         self.thumb_basewidth = 500
 
         self.tree_helper = TreeHelper()
@@ -99,7 +102,7 @@ class Main(tk.Frame):
         self.panedwindow.grid_rowconfigure(0, weight=1)
         self.panedwindow.grid_columnconfigure(0, weight=1)
         #self.panedwindow.bind("<ButtonRelease-1>", self.handle_panedwindow_release)
-        self.top_paned_frame = tk.Frame(self.panedwindow, bg='#2d3142')
+        self.top_paned_frame = tk.Frame(self.panedwindow) #bg='#2d3142'
         self.bottom_paned_frame = tk.Frame(self.panedwindow, bg='gray')
 
         self.panedwindow.add(self.top_paned_frame)
@@ -117,9 +120,9 @@ class Main(tk.Frame):
         self.image_thumb_label.grid(row=0, column=0, sticky='ns', padx=4, pady=4)
 
 
-        self.ctrl_frame = tk.Frame(self.top_paned_frame)
-        self.ctrl_frame.grid(row=0, column=1, sticky='nw')
-
+        self.ctrl_frame = tk.Frame(self.top_paned_frame, width=500, height=300)
+        self.ctrl_frame.grid(row=0, column=1, sticky='nw', padx=10)
+        #self.ctrl_frame.grid_propagate(0)
         self.config_ctrl_frame()
 
         # bottom_paned
@@ -153,9 +156,9 @@ class Main(tk.Frame):
             self.antler_free.handle_update(event)
 
     def config_ctrl_frame(self):
-        self.ctrl_frame.grid_rowconfigure(0, weight=0)
-        self.ctrl_frame.grid_columnconfigure(0, weight=0)
-
+        #self.ctrl_frame.grid_rowconfigure(0, weight=0)
+        #self.ctrl_frame.grid_columnconfigure(0, weight=0)
+        #self.ctrl_frame.grid_propagate(0)
 
         self.label_folder = ttk.Label(
             self.ctrl_frame,
@@ -358,11 +361,18 @@ class Main(tk.Frame):
         self.app.begin_from_source()
         self.update_project_options()
         self.source_id = source_id
+
+        # reset current_row
+        self.current_row = 0
+        self.current_image_data = {}
+        self.data_grid.main_table.selected = {}
+
         self.refresh()
 
 
     def refresh(self):
         logging.debug('refresh: {}'.format(self.source_id))
+        #print (self.current_row, self.current_image_data, self.data_grid.main_table.selected)
 
         if not self.source_id:
             return
@@ -641,13 +651,25 @@ class Main(tk.Frame):
             self.refresh()
 
     def select_item(self, rc):
+        '''
+        current_row is already set by DataGrid
+        set current_image_data
+        '''
         if rc == None:
             return
-
+        #print ('current item', rc)
         item = self.data_helper.get_item(rc[0])
-        #self.current_image_index = self.data_helper.get_image_index(rc[0])
+        if item:
+            self.current_image_data.update({
+                'image_id': item['image_id'],
+                'image_index': item['image_index'],
+            })
+        else:
+            return
+
         self.current_row = rc[0]
-        if item and item['status'] == '10':
+
+        if item['status'] == '10':
             image_id = item['image_id']
             sql = f"UPDATE image SET status='20' WHERE image_id={image_id}"
             self.app.db.exec_sql(sql, True)
@@ -755,8 +777,13 @@ class Main(tk.Frame):
             self.app.unbind('<Up>')
             self.app.unbind('<Right>')
             self.app.unbind('<Down>')
+            #print(self.current_row)
+            #self.select_item((self.current_row, 0))
+            self.refresh()
+            #self.data_grid.main_table.render_row_highlight()
         else:
             image_viewer.grid(row=2, column=1, sticky='nsew')
+            image_viewer.init_data()
             image_viewer.refresh()
 
         # sidebar
@@ -812,10 +839,10 @@ class Main(tk.Frame):
 
     def handle_keyboard_shortcut(self, event):
         #print ('key', event)
+        selected = self.data_grid.main_table.selected
         if value := self.keyboard_shortcuts.get(event.keysym, ''):
-            row_key, col_key = self.data_helper.get_rc_key(
-                self.current_row,
-                SPECIES_COL_POS)
-            self.data_helper.update_annotation(row_key, col_key, value)
+            for row in selected['row_list']:
+                row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
+                self.data_helper.update_annotation(row_key, col_key, value)
 
         self.refresh()

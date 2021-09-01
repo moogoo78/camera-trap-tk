@@ -83,6 +83,7 @@ class DataHelper(object):
             9: 'annotation_animal_id'
         } #[4, 5, 6, 7, 8, 9] # index from sqlite
         self.data = {}
+        #self.image_list = []
         self.columns = HEADER
         self.img_seq_rand_salt = random.random()
         # annotation_data = {
@@ -91,6 +92,7 @@ class DataHelper(object):
         #     ...
         #}
         self.annotation_data = {}
+        self.exif_data = {}
 
     def update_annotation(self, row_key, col_key, value, seq_info=None):
 
@@ -146,6 +148,7 @@ class DataHelper(object):
         iid rule: `iid:{image_id}-{annotation_counter}`
         '''
         self.data = {}
+        self.annotation_data = {}
         counter = 0
         for i_index, i in enumerate(image_list):
             image_id = i[0]
@@ -158,7 +161,7 @@ class DataHelper(object):
             if len(alist) == 0:
                 alist = [{}]
             self.annotation_data[image_id] = alist
-
+            self.exif_data[image_id] = json.loads(i[9]) if i[9] else ''
             row_basic = {
                 'status_display': status_display,
                 'filename': i[2],
