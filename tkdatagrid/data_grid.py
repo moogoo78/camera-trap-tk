@@ -43,7 +43,7 @@ class DataGrid(tk.Frame):
                     'cell-highlight-border': '#6699ff',
                     'row-highlight': '#ddeeff',
                     'box-highlight': '#fff2cc',
-                    'box-highlight-pattern': '#776485',
+                    'box-highlight-buffer': '#776485',
                     'box-border': '#ffcc33',
                     'row-index-highlight': '#b90504',
                 }
@@ -53,6 +53,7 @@ class DataGrid(tk.Frame):
             'column_width_list': [], # count by update_columns()
             'num_rows': 0, # count by refresh()
             'num_cols': 0, # count by update_columns()
+            'after_row_index_selected': None,
             'custom_actions': {
                 'mouse_click_left': None,
                 'arrow_key': None,
@@ -171,4 +172,5 @@ class DataGrid(tk.Frame):
 
     def handle_xviews(self, *args):
         self.main_table.xview(*args)
-        self.row_index.xview(*args)
+        if self.state['row_index_display']:
+            self.row_index.xview(*args)

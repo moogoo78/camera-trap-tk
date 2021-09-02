@@ -76,12 +76,12 @@ class RowIndex(tk.Canvas):
         y = int(self.canvasy(event_y))
         row = int(y / self.ps['cell_height'])
         if row >= self.ps['num_rows'] or row < 0:
-            return None
+            return -1
         return row
 
     def handle_ctrl_button_1(self, event):
         row = self.get_cleaned_row(event.y)
-        if not row:
+        if row < 0:
             return None
 
         self.selected.update({
@@ -95,7 +95,7 @@ class RowIndex(tk.Canvas):
 
     def handle_mouse_button_1(self, event):
         row = self.get_cleaned_row(event.y)
-        if not row:
+        if row < 0:
             return None
 
         self.selected.update({
@@ -110,7 +110,7 @@ class RowIndex(tk.Canvas):
 
     def handle_mouse_drag(self, event):
         row = self.get_cleaned_row(event.y)
-        if not row:
+        if row < 0:
             return None
 
         # prevent drag if in ctrl-click
@@ -130,24 +130,34 @@ class RowIndex(tk.Canvas):
         self.delete('row-highlight')
 
         s = self.selected
+
         y1 = -1
         y2 = -1
-        hl_rows = []
+        y_pos_list = []
+        rows = []
         if s['mode'] == 'drag':
-            if s['row_start'] and s['row_end']:
-                diff = abs(s['row_end'] - s['row_start'])
+            if s['row_start'] >= 0 and s['row_end'] >= 0:
+                diff = s['row_end'] - s['row_start']
+                # 不給逆向 (由下往上選)
                 if diff > 0:
                     #print (self.ps['cell_height'] * s['row_start'], self.ps['cell_height'] * s['row_end'])
                     y1 = self.ps['cell_height'] * s['row_start']
                     y2 = self.ps['cell_height'] * (s['row_end'] + 1)
-                    hl_rows.append((y1, y2))
+                    y_pos_list.append((y1, y2))
+
+                    if diff > 0:
+                        rows = list(range(s['row_start'], s['row_end']+1))
+                    #elif diff < 0:
+                    #    rows = list(range(s['row_end'], s['row_start']+1))
+
         elif s['mode'] == 'ctrl-click':
             for row in s['row_list']:
                 y1 = self.ps['cell_height'] * row
                 y2 = self.ps['cell_height'] * (row + 1)
-                hl_rows.append((y1, y2))
+                y_pos_list.append((y1, y2))
+                rows.append(row)
 
-        for y_pos in hl_rows:
+        for y_pos in y_pos_list:
             self.create_rectangle(
                 0, y_pos[0], self.width, y_pos[1],
                 fill=self.ps['style']['color']['row-index-highlight'],
@@ -156,6 +166,9 @@ class RowIndex(tk.Canvas):
                 #stipple="gray50",
                 tags=('row-highlight'))
         self.lower('row-highlight')
+
+        if func := self.ps.get('after_row_index_selected', ''):
+            return func(rows)
 
     def render(self, current_row=''):
         self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))

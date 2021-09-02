@@ -80,17 +80,17 @@ class MainTable(tk.Canvas):
             'col_list': [],
             'row_list': [],
         }
-        self.has_box = False
-        self.pattern_copy = []
+        self.copy_buffer = []
+        self.ps['after_row_index_selected'] = self.handle_row_index_selected
 
         # binding
-        self.bind('<Button-1>', self.handle_mouse_click_left)
+        self.bind('<Button-1>', self.handle_mouse_button_1)
         self.bind('<Button-3>', self.handle_mouse_click_right)
         self.bind('<B1-Motion>', self.handle_mouse_drag)
         self.bind('<MouseWheel>', self.handle_mouse_wheel)
         self.bind('<Button-4>', self.handle_mouse_wheel)
         self.bind('<Button-5>', self.handle_mouse_wheel)
-        self.bind('<Control-Button-1>', self.handle_ctrl_button1)
+        #self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
 
         # custom bindind
         if custom_binding := self.ps['custom_binding']:
@@ -253,19 +253,13 @@ class MainTable(tk.Canvas):
     #def handle_enter_drag(self, event):
     #    print (event, 'entry drag')
 
-    def render_row_highlight(self, row=None):
+    def render_row_highlight(self, rows=[]):
         '''use border only & raise over other components
         if args row = None, use self.selected['row_list']
         '''
         self.delete('row-highlight')
 
-        highlight_rows = []
-        if row:
-            highlight_rows = [row]
-        else:
-            highlight_rows = self.selected.get('row_list', [])
-
-        for row in highlight_rows:
+        for row in rows:
             _1, row_y1, _2, row_y2 = self.get_cell_coords(row, 0)
             self.create_rectangle(
                 0, row_y1, self.width + self.x_start, row_y2,
@@ -301,7 +295,7 @@ class MainTable(tk.Canvas):
 
         self.lower('cell-highlight')
 
-        self.render_row_highlight(row)
+        #self.render_row_highlight(row)
 
         if self.ps['row_index_display']:
             self.parent.row_index.render(row)
@@ -314,8 +308,8 @@ class MainTable(tk.Canvas):
         xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['row_start'], selected['col_start'])
         xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['row_end'], selected['col_end'])
         box_fill_color = self.ps['style']['color']['box-highlight']
-        if len(self.pattern_copy):
-            box_fill_color = self.ps['style']['color']['box-highlight-pattern']
+        if len(self.copy_buffer):
+            box_fill_color = self.ps['style']['color']['box-highlight-buffer']
 
         self.create_rectangle(
             xs1,
@@ -371,7 +365,7 @@ class MainTable(tk.Canvas):
         y = int(self.canvasy(event_y))
 
         if x < 1 or y < 1:
-            return False
+            return result
 
         """get row, column (number) for giving mouse position: x ,y"""
         if y > self.ps['num_rows']*self.ps['cell_height']:
@@ -417,6 +411,12 @@ class MainTable(tk.Canvas):
         row = res_rc['row']
         col = res_rc['col']
 
+        self.selected.update({
+            'mode': 'drag',
+            'row_end': row,
+            'col_end': col,
+        })
+        ''' TODO
         if row >= self.ps['num_rows']:
             #or self.startrow > self.rows:
             return
@@ -446,13 +446,8 @@ class MainTable(tk.Canvas):
             self.selected['row_list'] = [self.current_rc[0]]
 
         if len(self.selected['row_list']) > 1 and len(self.selected['col_list']):
-            self.has_box = True
-            # box don't need this
-            self.delete('row-highlight')
-            self.delete('entry_win')
-            self.delete('cell-highlight')
-            #self.render_box(self.selected)
-            self.render_row_highlight()
+        '''
+        self.render_box(self.selected)
 
     def remove_entry(self):
         if hasattr(self, 'text_editor'):
@@ -496,15 +491,15 @@ class MainTable(tk.Canvas):
         # end custom menus
         self.popup_menu.add_separator()
 
-        self.popup_menu.add_command(label='複製內容 pattern', command=self.copy_pattern)
-        self.popup_menu.add_command(label='貼上 pattern', command=self.apply_pattern)
-        self.popup_menu.add_command(label='清除 pattern', command=self.clear_pattern)
+        self.popup_menu.add_command(label='複製內容', command=self.copy_to_buffer)
+        self.popup_menu.add_command(label='貼上內容', command=self.paste_from_buffer)
+        #self.popup_menu.add_command(label='清除 pattern', command=self.clear_pattern)
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         self.popup_menu.post(event.x_root, event.y_root)
         #print (y1, y2, int((y1+y2)/2), event.y_root)
 
     @custom_action(name='mouse_click')
-    def handle_mouse_click_left(self, event):
+    def handle_mouse_button_1(self, event):
         # flush entry_queue
         if len(self.entry_queue):
             self.save_entry_queue()
@@ -524,19 +519,20 @@ class MainTable(tk.Canvas):
 
         # reset selected
         self.selected = {
+            'mode': 'click',
             'row_start': row,
             'row_end': row,
             'col_start': col,
             'col_end': col,
-            'row_list': [row],
-            'col_list': [col],
+            'row_list': [],
+            'col_list': [],
         }
-        #self.render_box(self.selected)
+        self.render_box(self.selected)
 
-        if col == -1:
-            col = 0 # 預設如點第一格
+        #if col == -1:
+        #    col = 0 # 預設如點第一格
 
-        self.render_selected(row, col)
+        #self.render_selected(row, col)
 
         # draw entry if not readonly
         if not row_key or not col_key:
@@ -549,10 +545,8 @@ class MainTable(tk.Canvas):
             self.remove_entry()
 
         return self.current_rc
-        #if func := self.ps.get('after_click', ''):
-        #    return func(self.current_rc)
 
-    def handle_ctrl_button1(self, event):
+    def handle_ctrl_button_1(self, event):
         #print ('ctrl_b1', event)
 
         # clear
@@ -588,7 +582,7 @@ class MainTable(tk.Canvas):
             'row_list': row_selected,
         })
 
-        self.render_row_highlight()
+        #self.render_row_highlight()
 
     @custom_action(name='arrow_key')
     def handle_arrow_key(self, event):
@@ -700,34 +694,59 @@ class MainTable(tk.Canvas):
         self.parent.refresh(self.ps['data'])
         return row_key
 
-    def copy_pattern(self):
-        #print ('copy', self.selected)
-        selected = self.selected
-        pattern = []
-        for i in selected['row_list']:
+    def get_selected_list(self):
+        '''return rows depends on selected mode'''
+        s = self.selected
+        result = {
+            'rows': [],
+            'cols': [],
+        }
+        if s['mode'] == 'drag':
+            if s['row_end'] >= 0 or s['row_start'] >= 0:
+                diff = s['row_end'] - s['row_start']
+                result['rows'] = list(range(s['row_start'], s['row_start'] + diff + 1))
+
+            if s['col_end'] >= 0 or s['col_start'] >= 0:
+                diff = s['col_end'] - s['col_start']
+                result['cols'] = list(range(s['col_start'], s['col_start'] + diff + 1))
+
+        return result
+
+    def copy_to_buffer(self):
+        logging.debug('selected: {}'.format(self.selected))
+        buf = []
+        res = self.get_selected_list()
+
+        for row in res['rows']:
             row_values = []
-            for j in selected['col_list']:
-                row_key, col_key = self.get_rc_key(i, j)
+            for col in res['cols']:
+                row_key, col_key = self.get_rc_key(row, col)
                 v = self.ps['data'][row_key][col_key]
                 row_values.append(v)
-            pattern.append(row_values)
-        #self.pattern_copy = list(set(pattern))
-        self.pattern_copy = pattern
+            buf.append(row_values)
+
+        self.copy_buffer = buf
+        logging.debug('buf: {}'.format(buf))
 
     #@custom_action(name='apply_pattern')
-    def apply_pattern(self):
-        #print ('apply', self.selected, self.pattern_copy)
-        num_pattern = len(pattern_copy)
-        num_cols = len(pattern_copy[0])
-        for counter, row in enumerate(selected['row_list']):
-            pat_index = counter % num_pattern
-            print (pat_index)
-            #rc_key = self.data_helper.get_rc_key(row, selected['col_list'][0])
-            #self.custom_set_data(rc_key[0], rc_key[1], pattern_copy[pat_index])
+    def paste_from_buffer(self):
+        logging.debug('copy_buffer:'.format(self.copy_buffer))
+        res = self.get_selected_list()
+        buf = self.copy_buffer
+        num_buf_rows = len(buf)
+        num_buf_cols = len(buf[0])
+        for i, row in enumerate(res['rows']):
+            buf_i = i % num_buf_rows
+            for j, col in enumerate(res['cols']):
+                buf_j = j % num_buf_cols
+                row_key, col_key = self.get_rc_key(row, col)
+                value = buf[buf_i][buf_j]
+                self.set_data_value(row_key, col_key, value)
 
-            #self.data_grid.main_table.pattern_copy = []
-            #self.refresh()
-        #   return self.pattern_copy, self.selected
+        self.copy_buffer = []
 
     def clear_pattern(self):
         self.pattern_copy = []
+
+    def handle_row_index_selected(self, rows):
+        self.render_row_highlight(rows)

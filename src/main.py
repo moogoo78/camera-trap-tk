@@ -412,6 +412,8 @@ class Main(tk.Frame):
         seq_int = self.seq_interval_val.get()
         if self.seq_checkbox_val.get() == 'Y' and seq_int:
             self.seq_info = self.data_helper.group_image_sequence(seq_int)
+            # change DataGrid.main_table.render_box color
+            self.data_grid.state['style']['color']['box-highlight-pattern'] = 'green'
 
         # show first image if no select
         first_key = next(iter(data))
@@ -644,7 +646,6 @@ class Main(tk.Frame):
         return status_map.get(code, '-')
 
     def custom_set_data(self, row_key, col_key, value):
-        #print ('custom_set_data', value)
         self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
         if self.seq_info:
             # has seq_info need re-render
