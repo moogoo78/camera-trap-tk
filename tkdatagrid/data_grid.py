@@ -45,6 +45,7 @@ class DataGrid(tk.Frame):
                     'box-highlight': '#fff2cc',
                     'box-highlight-pattern': '#776485',
                     'box-border': '#ffcc33',
+                    'row-index-highlight': '#b90504',
                 }
             },
             'image_tmp': {}, # for canvas image, will deleted by garbage collect

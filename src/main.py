@@ -779,7 +779,7 @@ class Main(tk.Frame):
             self.app.unbind('<Down>')
             #print(self.current_row)
             #self.select_item((self.current_row, 0))
-            self.refresh()
+            #self.refresh()
             #self.data_grid.main_table.render_row_highlight()
         else:
             image_viewer.grid(row=2, column=1, sticky='nsew')

@@ -1,6 +1,7 @@
+import logging
+
 import tkinter as tk
 from tkinter import ttk
-
 
 class ColumnHeader(tk.Canvas):
 
@@ -59,6 +60,102 @@ class RowIndex(tk.Canvas):
 
         self.parent = parent
         self.ps = parent.state
+
+        # saved row index control action (unit: row number start from 0)
+        self.selected = {
+            'mode': '',
+            'row_list': [],
+            'row_start': None,
+            'row_end': None,
+        }
+        self.bind('<B1-Motion>', self.handle_mouse_drag)
+        self.bind('<Button-1>', self.handle_mouse_button_1)
+        self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
+
+    def get_cleaned_row(self, event_y):
+        y = int(self.canvasy(event_y))
+        row = int(y / self.ps['cell_height'])
+        if row >= self.ps['num_rows'] or row < 0:
+            return None
+        return row
+
+    def handle_ctrl_button_1(self, event):
+        row = self.get_cleaned_row(event.y)
+        if not row:
+            return None
+
+        self.selected.update({
+            'mode': 'ctrl-click',
+        })
+        self.selected['row_list'].append(row)
+
+        logging.debug('ctrl_button_1 <Control-Button-1>: {}'.format(self.selected))
+
+        self.render_row_highlight()
+
+    def handle_mouse_button_1(self, event):
+        row = self.get_cleaned_row(event.y)
+        if not row:
+            return None
+
+        self.selected.update({
+            'mode': 'click',
+            'row_start': row,
+            'row_end': row,
+            'row_list': [],
+        })
+        logging.debug('mouse_button_1 <Button-1>: {}'.format(self.selected))
+
+        self.render_row_highlight()
+
+    def handle_mouse_drag(self, event):
+        row = self.get_cleaned_row(event.y)
+        if not row:
+            return None
+
+        # prevent drag if in ctrl-click
+        if self.selected['mode'] == 'ctrl-click':
+            return None
+
+        self.selected['mode'] = 'drag'
+
+        self.selected.update({
+            'mode': 'drag',
+            'row_end': row,
+        })
+        logging.debug('mouse_drag <B1-Motion>: {}'.format(self.selected))
+        self.render_row_highlight()
+
+    def render_row_highlight(self):
+        self.delete('row-highlight')
+
+        s = self.selected
+        y1 = -1
+        y2 = -1
+        hl_rows = []
+        if s['mode'] == 'drag':
+            if s['row_start'] and s['row_end']:
+                diff = abs(s['row_end'] - s['row_start'])
+                if diff > 0:
+                    #print (self.ps['cell_height'] * s['row_start'], self.ps['cell_height'] * s['row_end'])
+                    y1 = self.ps['cell_height'] * s['row_start']
+                    y2 = self.ps['cell_height'] * (s['row_end'] + 1)
+                    hl_rows.append((y1, y2))
+        elif s['mode'] == 'ctrl-click':
+            for row in s['row_list']:
+                y1 = self.ps['cell_height'] * row
+                y2 = self.ps['cell_height'] * (row + 1)
+                hl_rows.append((y1, y2))
+
+        for y_pos in hl_rows:
+            self.create_rectangle(
+                0, y_pos[0], self.width, y_pos[1],
+                fill=self.ps['style']['color']['row-index-highlight'],
+                width=2,
+                #outline=self.ps['style']['color']['cell-highlight-border'],
+                #stipple="gray50",
+                tags=('row-highlight'))
+        self.lower('row-highlight')
 
     def render(self, current_row=''):
         self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
