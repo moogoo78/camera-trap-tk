@@ -413,7 +413,7 @@ class Main(tk.Frame):
         if self.seq_checkbox_val.get() == 'Y' and seq_int:
             self.seq_info = self.data_helper.group_image_sequence(seq_int)
             # change DataGrid.main_table.render_box color
-            self.data_grid.state['style']['color']['box-highlight-pattern'] = 'green'
+            self.data_grid.state['box_display_type'] = 'raise'
 
         # show first image if no select
         first_key = next(iter(data))

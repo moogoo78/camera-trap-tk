@@ -64,6 +64,7 @@ class DataGrid(tk.Frame):
             'custom_menus': custom_menus,
             'custom_binding': custom_binding,
             'row_index_display': row_index_display,
+            'box_display_type': 'lower',
         }
         # other not default
         # cell_image_x_pad

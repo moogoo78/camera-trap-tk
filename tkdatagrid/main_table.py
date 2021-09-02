@@ -311,16 +311,30 @@ class MainTable(tk.Canvas):
         if len(self.copy_buffer):
             box_fill_color = self.ps['style']['color']['box-highlight-buffer']
 
-        self.create_rectangle(
-            xs1,
-            ys1,
-            xe2+self.x_start,
-            ye2,
-            fill=box_fill_color,
-            outline=self.ps['style']['color']['box-border'],
-            width=2,
-            tags=('box', 'box-highlight',))
-        self.lower('box-highlight')
+        if self.ps['box_display_type'] == 'lower':
+            self.create_rectangle(
+                xs1,
+                ys1,
+                xe2+self.x_start,
+                ye2,
+                fill=box_fill_color,
+                outline=self.ps['style']['color']['box-border'],
+                width=2,
+                tags=('box', 'box-highlight',))
+            self.tag_lower('box-highlight')
+
+        if self.ps['box_display_type'] == 'raise':
+            self.create_rectangle(
+                xs1,
+                ys1,
+                xe2+self.x_start,
+                ye2,
+                fill=box_fill_color,
+                stipple="gray50",
+                outline=self.ps['style']['color']['box-border'],
+                width=2,
+                tags=('box', 'box-highlight',))
+            self.tag_raise('box-highlight')
 
     def clear(self):
         self.delete('cell')
