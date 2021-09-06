@@ -107,6 +107,7 @@ class Sidebar(tk.Frame):
                 self.source_list_frame,
                 text=f'{i[3]} ({i[4]})',
                 style='my.TButton',
+                takefocus=0,
                 command=lambda x=i[0]: self.parent.main.from_source(x))
             source_button.grid(padx=4, pady=2, sticky='nw')
 

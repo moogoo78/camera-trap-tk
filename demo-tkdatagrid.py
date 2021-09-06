@@ -20,6 +20,8 @@ HEADER = {
     },
     'c': {
         'label': 'C',
+        'type': 'listbox',
+        'choices': [('op1', 'option1'), ('op2', 'option2'), ('op3', 'option3'),('op4', 'option4'),('op5', 'option5'),],
     },
     'd': {
         'label': 'D',

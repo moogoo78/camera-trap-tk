@@ -80,6 +80,8 @@ class RowIndex(tk.Canvas):
         return row
 
     def handle_ctrl_button_1(self, event):
+        self.parent.main_table.clear_selected()
+
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -94,6 +96,8 @@ class RowIndex(tk.Canvas):
         self.render_row_highlight()
 
     def handle_mouse_button_1(self, event):
+        self.parent.main_table.clear_selected()
+
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -102,13 +106,29 @@ class RowIndex(tk.Canvas):
             'mode': 'click',
             'row_start': row,
             'row_end': row,
-            'row_list': [],
+            'row_list': [row],
         })
         logging.debug('mouse_button_1 <Button-1>: {}'.format(self.selected))
 
         self.render_row_highlight()
 
+    def get_selected_rows(self):
+        s = self.selected
+        rows = []
+        mode = s.get('mode', '')
+        if mode == 'click':
+            rows = s['row_list']
+        elif mode == 'drag':
+            if s['row_end'] >= 0 or s['row_start'] >= 0:
+                diff = s['row_end'] - s['row_start']
+                rows = list(range(s['row_start'], s['row_start'] + diff + 1))
+        elif mode == 'ctrl-click':
+            rows = s['row_list']
+        return rows
+
     def handle_mouse_drag(self, event):
+        self.parent.main_table.clear_selected()
+
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -133,9 +153,16 @@ class RowIndex(tk.Canvas):
 
         y1 = -1
         y2 = -1
-        y_pos_list = []
-        rows = []
-        if s['mode'] == 'drag':
+        y_pos_list = [] # for row_index bg color
+        rows = [] # for main_table row highlight
+        mode = s.get('mode', '')
+        if mode == 'click':
+            #rows.append(s['row_start'])
+            y1 = self.ps['cell_height'] * s['row_start']
+            y2 = self.ps['cell_height'] * (s['row_start'] + 1)
+            y_pos_list.append((y1, y2))
+            rows = s['row_list']
+        elif mode == 'drag':
             if s['row_start'] >= 0 and s['row_end'] >= 0:
                 diff = s['row_end'] - s['row_start']
                 # 不給逆向 (由下往上選)
@@ -150,7 +177,7 @@ class RowIndex(tk.Canvas):
                     #elif diff < 0:
                     #    rows = list(range(s['row_end'], s['row_start']+1))
 
-        elif s['mode'] == 'ctrl-click':
+        elif mode == 'ctrl-click':
             for row in s['row_list']:
                 y1 = self.ps['cell_height'] * row
                 y2 = self.ps['cell_height'] * (row + 1)

@@ -35,18 +35,26 @@ HEADER = {
     'annotation_species': {
         'label': '物種',
         'width': 80,
+        'type': 'listbox',
+        'choices': []
     },
     'annotation_lifestage': {
         'label': '年齡',
-        'width': 80
+        'width': 80,
+        'type': 'listbox',
+        'choices': []
     },
     'annotation_sex': {
         'label': '性別',
-        'width': 80
+        'width': 80,
+        'type': 'listbox',
+        'choices': []
     },
     'annotation_antler': {
         'label': '角況',
-        'width': 80
+        'width': 80,
+        'type': 'listbox',
+        'choices': []
     },
     'annotation_remark': {
         'label': '備註',

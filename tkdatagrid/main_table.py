@@ -71,7 +71,7 @@ class MainTable(tk.Canvas):
         self.height = self.ps['height']
 
         self.entry_queue = {}
-        self.current_rc = [None, None]
+        self.current_rc = [0, 0]
         self.selected = {
             'row_start': None,
             'row_end': None,
@@ -91,16 +91,40 @@ class MainTable(tk.Canvas):
         self.bind('<Button-4>', self.handle_mouse_wheel)
         self.bind('<Button-5>', self.handle_mouse_wheel)
         #self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
+        self.bind_all('<Escape>', self.remove_widgets)
+        self.bind_all('<space>', self.handle_space_key)
 
         # custom bindind
         if custom_binding := self.ps['custom_binding']:
             for bind_key in custom_binding['bind_list']:
-                self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
+                #self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
+                self.bind_all(f'<{bind_key}>', custom_binding['command'])
         #self.parent.master.bind_all('<Control-a>', self.handle_sh)
         self.parent.master.bind_all('<Up>', self.handle_arrow_key)
         self.parent.master.bind_all('<Down>', self.handle_arrow_key)
         self.parent.master.bind_all('<Left>', self.handle_arrow_key)
         self.parent.master.bind_all('<Right>', self.handle_arrow_key)
+
+    def handle_space_key(self, event):
+        row, col = self.current_rc
+        row_key, col_key = self.get_rc_key(row, col)
+
+        col_type = self.ps['columns'][col_key].get('type', 'entry')
+        if col_type == 'listbox':
+            # if listbox opened close that
+            if hasattr(self, 'listbox'):
+                self.remove_widgets('listbox')
+            else:
+                choices = self.ps['columns'][col_key]['choices']
+                self.render_listbox(row, col, choices)
+        elif col_type == 'entry':
+            if hasattr(self, 'text_editor'):
+                # text_editor can have space input
+                # do nothing
+                pass
+            else:
+                text = self.ps['data'][row_key][col_key]
+                self.render_entry(row, col, text)
 
     def handle_mouse_wheel(self, event):
         #print (event.num, event.delta, self.canvasy(0), self.winfo_height(), self.parent.row_index.winfo_height())
@@ -122,7 +146,6 @@ class MainTable(tk.Canvas):
         self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
         self.render_grid()
         self.render_data()
-
 
     def render_grid(self):
         self.delete('cell-border')
@@ -165,10 +188,10 @@ class MainTable(tk.Canvas):
                 x_left = col_w_list[col_counter] + self.x_start
                 x_center = x_left + col['width'] / 2
                 cell_tag = f'cell-text:{row_counter}_{col_counter}'
-                col_type = col.get('type', 'text')
+                col_type = col.get('type', 'entry')
                 y_top = row_counter * self.ps['cell_height'] + self.y_start
                 y_center = y_top + self.ps['cell_height']/2
-                if col_type == 'text':
+                if col_type in ['entry', 'text', 'listbox']:
                     rect = self.create_text(
                         x_center,
                         y_center,
@@ -197,12 +220,38 @@ class MainTable(tk.Canvas):
         self.lift('cell-image')
 
 
-    def render_text_editor(self, row, col, text):
+    def render_listbox(self, row, col, choices, default=0):
+        self.remove_widgets()
+        x1, y1, x2, y2 = self.get_cell_coords(row, col)
+        self.listbox = tk.Listbox(self.parent, background='white', selectmode=tk.SINGLE)#, **self.listbox_args)
+        #'activestyle': 'none'
+        #exportselection: False
+        self.listbox.bind('<ButtonRelease-1>', lambda event: self.handle_listbox_click(event, row, col))
+
+        #choices = filtered_choices if len(filtered_choices) else self.choices
+        for i in choices:
+            if isinstance(i, tuple):
+                self.listbox.insert(tk.END, i[0])
+            if isinstance(i, str):
+                self.listbox.insert(tk.END, i)
+        #self.listbox.grid(row=0, column=0, sticky = 'news')
+
+        self.create_window(
+            x1,
+            y1,
+            width=x2-x1+self.x_start,
+            #height=self.ps['cell_height'],
+            window=self.listbox,
+            anchor='nw',
+            tag='listbox_win')
+
+
+    def render_entry(self, row, col, text):
         cell_tag = f'cell-text:{row}_{col}'
         sv = tk.StringVar()
         sv.set(text)
 
-        self.remove_entry()
+        self.remove_widgets('entry')
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
 
@@ -290,10 +339,10 @@ class MainTable(tk.Canvas):
             x2+self.x_start,
             y2,
             outline=self.ps['style']['color']['cell-highlight-border'],
-            width=4,
+            width=3,
             tag=('cell-highlight',))
 
-        self.lower('cell-highlight')
+        self.tag_raise('cell-highlight')
 
         #self.render_row_highlight(row)
 
@@ -308,8 +357,9 @@ class MainTable(tk.Canvas):
         xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['row_start'], selected['col_start'])
         xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['row_end'], selected['col_end'])
         box_fill_color = self.ps['style']['color']['box-highlight']
-        if len(self.copy_buffer):
-            box_fill_color = self.ps['style']['color']['box-highlight-buffer']
+        # don't change color (purple)
+        #if len(self.copy_buffer):
+        #    box_fill_color = self.ps['style']['color']['box-highlight-buffer']
 
         if self.ps['box_display_type'] == 'lower':
             self.create_rectangle(
@@ -322,8 +372,7 @@ class MainTable(tk.Canvas):
                 width=2,
                 tags=('box', 'box-highlight',))
             self.tag_lower('box-highlight')
-
-        if self.ps['box_display_type'] == 'raise':
+        elif self.ps['box_display_type'] == 'raise':
             self.create_rectangle(
                 xs1,
                 ys1,
@@ -463,13 +512,19 @@ class MainTable(tk.Canvas):
         '''
         self.render_box(self.selected)
 
-    def remove_entry(self):
-        if hasattr(self, 'text_editor'):
+    def remove_widgets(self, widget='all'):
+        if widget in ['all', 'entry'] and hasattr(self, 'text_editor'):
             # save data if last entry not Enter or Escape
             if len(self.entry_queue):
                 self.save_entry_queue()
             self.text_editor.destroy()
+            del self.text_editor
         self.delete('entry_win')
+
+        if widget in ['all', 'listbox'] and hasattr(self, 'listbox'):
+            self.listbox.destroy()
+            del self.listbox
+        self.delete('listbox_win')
 
     def handle_mouse_click_right(self, event):
         if hasattr(self, 'popup_menu'):
@@ -483,13 +538,13 @@ class MainTable(tk.Canvas):
         col = res_rc['col']
         self.current_rc = [row, col]
 
-        self.remove_entry()
+        self.remove_widgets()
 
         #self.render_selected(row, col)
 
         self.popup_menu = tk.Menu(self)
         #self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
-        self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_rows(self.selected['row_list']))
+        self.popup_menu.add_command(label='複製一列', command=self.clone_rows)
         self.popup_menu.add_command(label='刪除一列', command=lambda: self.remove_row(res_rc['row_key']))
 
         # custom menus
@@ -515,12 +570,13 @@ class MainTable(tk.Canvas):
     @custom_action(name='mouse_click')
     def handle_mouse_button_1(self, event):
         # flush entry_queue
-        if len(self.entry_queue):
-            self.save_entry_queue()
-            self.render()
+        #if len(self.entry_queue):
+        #    self.save_entry_queue()
+        #    self.render()
 
         # clear
-        self.delete('entry_win')
+        #self.delete('entry_win')
+        self.remove_widgets()
 
         res_rc = self.get_rc(event.x, event.y)
         if not res_rc['is_available']:
@@ -530,6 +586,9 @@ class MainTable(tk.Canvas):
         col = res_rc['col']
         row_key = res_rc['row_key']
         col_key = res_rc['col_key']
+
+        self.current_rc[0] = row
+        self.current_rc[1] = col
 
         # reset selected
         self.selected = {
@@ -541,23 +600,24 @@ class MainTable(tk.Canvas):
             'row_list': [],
             'col_list': [],
         }
-        self.render_box(self.selected)
+        #self.render_box(self.selected)
 
-        #if col == -1:
-        #    col = 0 # 預設如點第一格
-
-        #self.render_selected(row, col)
+        self.render_selected(row, col)
 
         # draw entry if not readonly
         if not row_key or not col_key:
             return
 
-        text = self.ps['data'][row_key][col_key]
-        if self.ps['columns'][col_key].get('type', 'entry') == 'entry':
-            self.render_text_editor(row, col, text)
-        else:
-            self.remove_entry()
-
+        #text = self.ps['data'][row_key][col_key]
+        #col_type = self.ps['columns'][col_key].get('type', 'entry')
+        # if col_type == 'entry':
+        #     self.render_entry(row, col, text)
+        # elif col_type == 'listbox':
+        #     choices = self.ps['columns'][col_key].get('choices', [])
+        #     self.render_listbox(row, col, choices)
+        # else:
+        #     self.remove_widgets()
+        logging.debug('click: {}'.format(self.current_rc))
         return self.current_rc
 
     def handle_ctrl_button_1(self, event):
@@ -607,7 +667,7 @@ class MainTable(tk.Canvas):
             return
 
         if event.keysym in ('Up', 'Down', 'Left', 'Right'):
-            self.remove_entry()
+            self.remove_widgets()
 
         if event.keysym == 'Up':
             if row == 0:
@@ -655,8 +715,10 @@ class MainTable(tk.Canvas):
         return self.current_rc
 
     @custom_action(name='clone_row')
-    def clone_rows(self, rows):
-        #print (rows, 'clone')
+    def clone_rows(self):
+        rows = self.parent.row_index.get_selected_rows()
+        logging.debug('rows: {}'.format(rows))
+
         if len(rows) == 0:
             return
 
@@ -715,7 +777,9 @@ class MainTable(tk.Canvas):
             'rows': [],
             'cols': [],
         }
-        if s['mode'] == 'drag':
+
+        mode = s.get('mode', '')
+        if mode == 'drag':
             if s['row_end'] >= 0 or s['row_start'] >= 0:
                 diff = s['row_end'] - s['row_start']
                 result['rows'] = list(range(s['row_start'], s['row_start'] + diff + 1))
@@ -723,6 +787,8 @@ class MainTable(tk.Canvas):
             if s['col_end'] >= 0 or s['col_start'] >= 0:
                 diff = s['col_end'] - s['col_start']
                 result['cols'] = list(range(s['col_start'], s['col_start'] + diff + 1))
+        elif mode == 'ctrl-click':
+            result['rows'] = s['row_list']
 
         return result
 
@@ -758,9 +824,28 @@ class MainTable(tk.Canvas):
                 self.set_data_value(row_key, col_key, value)
 
         self.copy_buffer = []
+        #return (buf, res)
 
     def clear_pattern(self):
         self.pattern_copy = []
 
     def handle_row_index_selected(self, rows):
         self.render_row_highlight(rows)
+
+    def handle_listbox_click(self, event, row, col):
+        cur_sel = self.listbox.curselection()
+        if cur_sel:
+            text = self.listbox.get(cur_sel)
+            row_key, col_key = self.get_rc_key(row, col)
+            self.set_data_value(row_key, col_key, text)
+        self.remove_widgets('listbox')
+
+    def init_data(self):
+        logging.debug('init_data')
+        self.current_rc = (0, 0)
+        self.selected = {}
+        self.render_selected(0, 0)
+
+    def clear_selected(self):
+        self.selected = {}
+        self.parent.refresh(self.ps['data'])

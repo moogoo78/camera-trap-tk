@@ -54,6 +54,15 @@ class Main(tk.Frame):
         self.species_copy = []
         self.keyboard_shortcuts = {}
 
+        species_choices = self.app.config.get('AnnotationFieldSpecies', 'choices')
+        antler_choices = self.app.config.get('AnnotationFieldAntler', 'choices')
+        sex_choices = self.app.config.get('AnnotationFieldSex', 'choices')
+        lifestage_choices = self.app.config.get('AnnotationFieldLifeStage', 'choices')
+        self.data_helper.columns['annotation_species']['choices'] = species_choices.split(',')
+        self.data_helper.columns['annotation_antler']['choices'] = antler_choices.split(',')
+        self.data_helper.columns['annotation_sex']['choices'] = sex_choices.split(',')
+        self.data_helper.columns['annotation_lifestage']['choices'] = lifestage_choices.split(',')
+
         # layout
         #self.grid_propagate(False)
         self.layout()
@@ -236,7 +245,7 @@ class Main(tk.Frame):
         self.seq_checkbox = ttk.Checkbutton(
             self.ctrl_frame3,
             text='連拍分組',
-	    command=self.refresh,
+	    command=lambda: self.refresh(keep_row_highlight=True),
             variable=self.seq_checkbox_val,
 	    onvalue='Y',
             offvalue='N')
@@ -252,7 +261,7 @@ class Main(tk.Frame):
             #validatecommand=self.on_seq_interval_changed
         )
         self.seq_interval_entry.bind(
-            "<KeyRelease>", lambda _: self.refresh())
+            "<KeyRelease>", lambda _: self.refresh(keep_row_highlight=True))
         self.seq_interval_entry.grid(row=0, column=1, sticky='w')
 
         self.seq_unit = ttk.Label(self.ctrl_frame3,  text='分鐘 (相鄰照片間隔__分鐘，顯示分組)')
@@ -301,12 +310,12 @@ class Main(tk.Frame):
                 'label': '貼上物種',
                 'command': self.paste_cloned_species,
             },
-            {
-                'type': 'menu',
-                'label': '物種清單',
-                'choices': species_choices.split(','),
-                'command': self.handle_click_menu_species,
-            },
+            #{
+            #    'type': 'menu',
+            #    'label': '物種清單',
+            #    'choices': species_choices.split(','),
+            #    'command': self.handle_click_menu_species,
+            #},
             {
                 'type': 'menu',
                 'label': '地棲性鳥類清單',
@@ -336,7 +345,7 @@ class Main(tk.Frame):
                 'mouse_click': self.custom_mouse_click,
                 'arrow_key': self.custom_arrow_key,
                 'set_data': self.custom_set_data,
-                'apply_pattern': self.custom_apply_pattern,
+                #'apply_pattern': self.custom_apply_pattern,
             },
         })
         self.data_grid.grid(row=0, column=0, sticky='nsew')
@@ -355,6 +364,7 @@ class Main(tk.Frame):
             logging.info('server: get project options')
 
     def from_source(self, source_id=None):
+        logging.debug('source_id: {}'.format(source_id))
         # no need landing
         self.landing_frame.destroy()
 
@@ -365,14 +375,19 @@ class Main(tk.Frame):
         # reset current_row
         self.current_row = 0
         self.current_image_data = {}
-        self.data_grid.main_table.selected = {}
+        self.data_grid.main_table.init_data()
 
         self.refresh()
 
 
-    def refresh(self):
+    def refresh(self, keep_row_highlight=False):
         logging.debug('refresh: {}'.format(self.source_id))
         #print (self.current_row, self.current_image_data, self.data_grid.main_table.selected)
+        #print (self.data_grid.main_table.get_selected_list(), 'a', self.data_grid.main_table.selected, keep_row_highlight)
+
+        # let project image group intervel entry off focus
+        # or after key in minute then press arrow key, focus will still on entry
+        self.app.focus_set()
 
         if not self.source_id:
             return
@@ -421,7 +436,7 @@ class Main(tk.Frame):
         self.show_image(first_item['thumb'], first_item['path'], 'm')
 
         self.data_grid.main_table.delete('row-img-seq')
-        self.data_grid.refresh(data)
+        self.data_grid.refresh(data, keep_row_highlight=keep_row_highlight)
         # draw img_seq
         for i, (iid, row) in enumerate(data.items()):
             tag_name = row.get('img_seq_tag_name', '')
@@ -434,7 +449,8 @@ class Main(tk.Frame):
                     fill=color,
                     tags=('row-img-seq', 'row-img-seq_{}'.format(tag_name)))
 
-        self.data_grid.main_table.lower('row-img-seq')
+        self.data_grid.main_table.tag_lower('row-img-seq')
+        #print (self.data_grid.main_table.get_selected_list()) # TODO
         self.data_grid.main_table.render_row_highlight()
 
         # folder name
@@ -728,7 +744,9 @@ class Main(tk.Frame):
 
     #def custom_clone_row(self, row_key, clone_iid):
     def custom_clone_row(self, res):
-        #print ('clone', row_key, clone_iid)
+        if res == None:
+            return
+
         for (row_key, clone_iid) in res:
             iid_list = row_key[4:].split('-')
             row_key_root = 'iid:{}-{}'.format(iid_list[0], iid_list[1])
@@ -793,38 +811,40 @@ class Main(tk.Frame):
         else:
             sidebar.grid()
 
-    def custom_apply_pattern(self, pattern_copy, selected):
-        #print (pattern_copy, selected)
-        num_pattern = len(pattern_copy)
-        for counter, row in enumerate(selected['row_list']):
-            pat_index = counter%num_pattern
-            rc_key = self.data_helper.get_rc_key(row, selected['col_list'][0])
-            self.custom_set_data(rc_key[0], rc_key[1], pattern_copy[pat_index])
+    # def custom_apply_pattern(self, pattern_copy, selected):
+    #     print (pattern_copy, selected)
+    #     num_pattern = len(pattern_copy)
+    #     for counter, row in enumerate(selected['row_list']):
+    #         pat_index = counter%num_pattern
+    #         rc_key = self.data_helper.get_rc_key(row, selected['col_list'][0])
+    #         self.custom_set_data(rc_key[0], rc_key[1], pattern_copy[pat_index])
 
-        self.data_grid.main_table.pattern_copy = []
-        self.refresh()
+    #     self.data_grid.main_table.pattern_copy = []
+    #     self.refresh()
+
 
 
     def copy_cloned_species(self):
-        selected = self.data_grid.main_table.selected
-        for row in selected['row_list']:
+        rows = self.data_grid.row_index.get_selected_rows()
+        self.species_copy = []
+        for row in rows:
             item = self.data_helper.get_item(row)
             species = item['annotation_species']
             self.species_copy.append(species)
 
     def paste_cloned_species(self):
-        selected = self.data_grid.main_table.selected
+        rows = self.data_grid.row_index.get_selected_rows()
         num_species_copy = len(self.species_copy)
-        for row in selected['row_list']:
+        for row in rows:
             row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
             #print self.data_helper.update_annotation(row_key, 'annotation_species', value)
 
-        for counter, row in enumerate(selected['row_list']):
+        for counter, row in enumerate(rows):
             index = counter % num_species_copy
-            rc_key = self.data_helper.get_rc_key(row, selected['col_list'][0])
-            self.data_helper.update_annotation(rc_key[0], 'annotation_species', self.species_copy[index])
+            rc_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
+            self.data_helper.update_annotation(rc_key[0], rc_key[1], self.species_copy[index])
 
-        self.species_copy = []
+        #self.species_copy = []
         self.refresh()
 
     def handle_click_menu_species(self, species=''):
@@ -840,9 +860,11 @@ class Main(tk.Frame):
 
     def handle_keyboard_shortcut(self, event):
         #print ('key', event)
-        selected = self.data_grid.main_table.selected
+        #selected = self.data_grid.main_table.selected
+        rows = self.data_grid.row_index.get_selected_rows()
+        logging.debug('rows: {}'.format(rows))
         if value := self.keyboard_shortcuts.get(event.keysym, ''):
-            for row in selected['row_list']:
+            for row in rows:
                 row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
                 self.data_helper.update_annotation(row_key, col_key, value)
 

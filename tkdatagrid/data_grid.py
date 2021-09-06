@@ -103,7 +103,7 @@ class DataGrid(tk.Frame):
         if len(self.state['data']):
             self.refresh(data)
 
-    def refresh(self, new_data={}):
+    def refresh(self, new_data={}, keep_row_highlight=False):
         """now, only consider MainTable"""
         self.clear()
 
@@ -123,6 +123,7 @@ class DataGrid(tk.Frame):
             'height': len(new_data_iid) * self.state['cell_height']
         })
 
+        #self.main_table.render_selected(0, 0)
         self.main_table.render()
         if self.state['row_index_display']:
             self.row_index.render()
