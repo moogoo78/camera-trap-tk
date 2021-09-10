@@ -1,6 +1,6 @@
 import json
 import time
-import pathlib
+from pathlib import Path
 import sys
 import tkinter as tk
 from tkinter import ttk
@@ -723,6 +723,9 @@ class Main(tk.Frame):
     def show_image(self, thumb_path, image_path, size_key=''):
         if size_key:
             thumb_path = thumb_path.replace('-q.jpg', '-{}.jpg'.format(size_key))
+
+        if not Path(image_path).exists():
+            return None
 
         real_thumb_path = check_thumb(thumb_path, image_path)
         image = Image.open(real_thumb_path)

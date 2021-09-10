@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 import functools
 
 import tkinter as tk
@@ -7,6 +6,7 @@ from tkinter import ttk
 
 from PIL import ImageTk, Image
 
+from .utils import check_image
 #from .other_classes import (
 #    AutoScrollbar,
 #)
@@ -200,7 +200,7 @@ class MainTable(tk.Canvas):
                     )
                 elif col_type == 'image':
                     img_path = row.get(col_key, '')
-                    if img_path: # TODO check exist
+                    if img_path and check_image(img_path):
                         img = Image.open(img_path)
                         img = ImageTk.PhotoImage(img.resize((50, 33)))
                         x_pad = 0
