@@ -229,6 +229,7 @@ class MainTable(tk.Canvas):
         self.listbox.bind('<ButtonRelease-1>', lambda event: self.handle_listbox_click(event, row, col))
 
         #choices = filtered_choices if len(filtered_choices) else self.choices
+        self.listbox.insert(tk.END, '')
         for i in choices:
             if isinstance(i, tuple):
                 self.listbox.insert(tk.END, i[0])
@@ -329,7 +330,7 @@ class MainTable(tk.Canvas):
 
         self.delete('cell-highlight')
         self.delete('cell-highlight-border')
-        self.delete('cell-highlight-drag')
+        #self.delete('cell-highlight-drag')
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         # cell highlight
@@ -353,6 +354,8 @@ class MainTable(tk.Canvas):
     def render_box(self, selected):
         '''render rectangle box (multi-row & multi-column)'''
         self.delete('box-highlight')
+        self.delete('row-highlight')
+        self.parent.row_index.clear_selected()
 
         xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['row_start'], selected['col_start'])
         xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['row_end'], selected['col_end'])
@@ -601,6 +604,8 @@ class MainTable(tk.Canvas):
             'col_list': [],
         }
         #self.render_box(self.selected)
+        # clear box-highlight
+        self.delete('box-highlight')
 
         self.render_selected(row, col)
 
@@ -842,10 +847,12 @@ class MainTable(tk.Canvas):
 
     def init_data(self):
         logging.debug('init_data')
-        self.current_rc = (0, 0)
+        self.current_ruc = (0, 0)
         self.selected = {}
         self.render_selected(0, 0)
 
     def clear_selected(self):
+        self.delete('cell-highlight')
+        self.delete('cell-highlight-border')
         self.selected = {}
         self.parent.refresh(self.ps['data'])

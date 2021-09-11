@@ -87,14 +87,14 @@ class Server(object):
             if resp.status_code != 200:
                 #print ('server: post_annotation error: ', resp.text)
                 #logging.debug(resp.text)
-                ret['error'] = 'server.post_annotation: post error'
+                ret['error'] = 'server.post_annotation: post error => {}'.format(resp.text)
                 return ret
             try:
                 d = resp.json()
                 ret['data'] = d['saved_image_ids']
             except:
-                #print ('source: load json error')
-                ret['error'] = 'server.post_annotation: load json error'
+                #print ('source: load json error', 'xxxxx', resp.text)
+                ret['error'] = 'server.post_annotation: load json error => {}'.format(resp.text)
         except requests.exceptions.RequestException as e:
             ret['error'] = str(e)
 

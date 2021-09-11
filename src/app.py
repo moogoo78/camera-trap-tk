@@ -10,7 +10,9 @@ from tkinter import (
 # log
 import logging
 import sys
+import socket
 
+from version import __version__
 from frame import (
     Toolbar,
     Sidebar,
@@ -46,6 +48,12 @@ class Application(tk.Tk):
 
     def __init__(self, config, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
+
+        self.version = __version__
+        if hostname := socket.gethostname():
+            self.user_hostname = hostname
+        else:
+            self.user_hostname = '--'
         #print (config)
         #self.iconbitmap('trees.ico')
         self.geometry("1200x760+40+20")

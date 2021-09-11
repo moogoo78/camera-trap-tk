@@ -27,7 +27,8 @@ class Sidebar(tk.Frame):
         add_button = ttk.Button(
             self,
             text='加入資料夾',
-            command=self.add_folder)
+            command=self.add_folder,
+            takefocus=0)
         add_button.grid(row=0, column=0, pady=4, sticky='n')
 
         separator = ttk.Separator(self, orient='horizontal')

@@ -178,7 +178,8 @@ class Main(tk.Frame):
         image_viewer_button = ttk.Button(
             self.ctrl_frame,
             text='看大圖',
-            command=self.handle_image_viewer
+            command=self.handle_image_viewer,
+            takefocus=0,
         )
         image_viewer_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
 
@@ -282,14 +283,16 @@ class Main(tk.Frame):
             text='上傳',
             #command=self.handle_upload
             #command=lambda: self.foo_worker.do_work()
-            command=self.handle_upload2
+            command=self.handle_upload2,
+            takefocus=0,
         )
         self.upload_button.grid(row=0, column=0, padx=20, pady=4, sticky='w')
 
         self.delete_button = ttk.Button(
             self.ctrl_frame4,
             text='刪除資料夾',
-            command=self.handle_delete)
+            command=self.handle_delete,
+            takefocus=0)
         self.delete_button.grid(row=1, column=0, padx=20, pady=4, sticky='w')
 
 
@@ -549,6 +552,11 @@ class Main(tk.Frame):
             'image_list': image_list,
             'deployment_id': deployment_id
         }
+        # test exif
+        #for x in data['image_list']:
+        #f = open('out.txt', 'w')
+        #f.write(json.dumps(data))
+        #f.close()
 
         # 1. post annotation to server
         sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
@@ -558,7 +566,7 @@ class Main(tk.Frame):
         # post to server
         payload = {
             'image_list': image_list,
-            'key': f'{account_id}-{source_id}',
+            'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
             'deployment_id': deployment_id,
         }
         res = self.app.server.post_annotation(payload)
@@ -572,7 +580,7 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
 
         for image_id, server_image_id in server_image_map.items():
-            sql = f"UPDATE image SET upload_status='100', server_image_id={server_image_id} WHERE image_id={image_id}"
+            sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id} WHERE image_id={image_id}"
             self.app.db.exec_sql(sql)
         self.app.db.commit()
 
@@ -855,7 +863,9 @@ class Main(tk.Frame):
         #if self.current_row < 0:
         #    return
 
-        selected = self.data_grid.main_table.selected
+        #selected2 = self.data_grid.main_table.selected
+        selected = self.data_grid.row_index.selected
+        #print (selected, selected2)
         for row in selected['row_list']:
             row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
             self.data_helper.update_annotation(row_key, col_key, species)

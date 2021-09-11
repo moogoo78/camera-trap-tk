@@ -71,6 +71,7 @@ class RowIndex(tk.Canvas):
         self.bind('<B1-Motion>', self.handle_mouse_drag)
         self.bind('<Button-1>', self.handle_mouse_button_1)
         self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
+        self.bind('<Shift-Button-1>', self.handle_shift_button_1)
 
     def get_cleaned_row(self, event_y):
         y = int(self.canvasy(event_y))
@@ -78,6 +79,17 @@ class RowIndex(tk.Canvas):
         if row >= self.ps['num_rows'] or row < 0:
             return -1
         return row
+
+    def handle_shift_button_1(self, event):
+        row = self.get_cleaned_row(event.y)
+        if self.selected['mode'] == 'click':
+             if row_start := self.selected['row_start']:
+                 self.selected.update({
+                     'row_list': list(range(row_start, row+1)),
+                     'mode': 'shift',
+                 })
+                 logging.debug('shift select, {}'.format(self.selected))
+                 self.render_row_highlight()
 
     def handle_ctrl_button_1(self, event):
         self.parent.main_table.clear_selected()
@@ -183,6 +195,12 @@ class RowIndex(tk.Canvas):
                 y2 = self.ps['cell_height'] * (row + 1)
                 y_pos_list.append((y1, y2))
                 rows.append(row)
+        elif mode == 'shift':
+            for row in s['row_list']:
+                y1 = self.ps['cell_height'] * row
+                y2 = self.ps['cell_height'] * (row + 1)
+                y_pos_list.append((y1, y2))
+                rows.append(row)
 
         for y_pos in y_pos_list:
             self.create_rectangle(
@@ -196,6 +214,10 @@ class RowIndex(tk.Canvas):
 
         if func := self.ps.get('after_row_index_selected', ''):
             return func(rows)
+
+    def clear_selected(self):
+        self.delete('row-highlight')
+        self.selected = {}
 
     def render(self, current_row=''):
         self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))

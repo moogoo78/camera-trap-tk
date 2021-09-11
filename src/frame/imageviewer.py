@@ -69,7 +69,8 @@ class ImageViewer(tk.Frame):
         self.back_button = ttk.Button(
             self.right_frame,
             text='回上頁',
-            command=self.handle_back)
+            command=self.handle_back,
+            takefocus=0)
         self.back_button.grid(row=0, column=0, pady=(0, 10), sticky='nw')
 
         self.title_frame = tk.Frame(
@@ -116,7 +117,8 @@ class ImageViewer(tk.Frame):
             self.ctrl_frame,
             text='<',
             command=lambda: self.handle_key_move('left'),
-            width=4)
+            width=4,
+            takefocus=0)
         self.left_button.grid(row=0, column=0, pady=5, sticky='news')
         self.index_label = ttk.Label(
             self.ctrl_frame,
@@ -128,7 +130,8 @@ class ImageViewer(tk.Frame):
             self.ctrl_frame,
             text='>',
             command=lambda: self.handle_key_move('right'),
-            width=4)
+            width=4,
+            takefocus=0)
         self.right_button.grid(row=0, column=2, pady=5, sticky='news')
 
         '''
@@ -309,6 +312,7 @@ class ImageViewer(tk.Frame):
                     self.annotation_frame,
                     width=16,
                     textvariable=sv,
+                    state=tk.DISABLED,
                 )
                 #entry.insert(0, val)
                 assembled_row_key = f'iid:{image_id}-{i}'
