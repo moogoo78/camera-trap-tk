@@ -1,6 +1,8 @@
 from .toolbar import Toolbar
-from .sidebar import Sidebar
+from .folder_list import FolderList
 from .statusbar import Statusbar
+from .panel import Panel
+
 #from .main import Main
 
 # main frames

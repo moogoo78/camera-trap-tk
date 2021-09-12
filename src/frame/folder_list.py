@@ -8,12 +8,12 @@ from tkinter.messagebox import showinfo
 
 import threading
 
-class Sidebar(tk.Frame):
+class FolderList(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
-        self.app = self.parent
+        self.app = self.parent.parent
 
         self.source_list = []
 
@@ -76,7 +76,7 @@ class Sidebar(tk.Frame):
     #         main.grid(row=2, column=1, sticky='nsew')
 
     def refresh_source_list(self):
-        db = self.parent.db
+        db = self.app.db
 
         # reset source_list
         if a := self.source_list:
@@ -109,7 +109,7 @@ class Sidebar(tk.Frame):
                 text=f'{i[3]} ({i[4]})',
                 style='my.TButton',
                 takefocus=0,
-                command=lambda x=i[0]: self.parent.main.from_source(x))
+                command=lambda x=i[0]: self.app.main.from_source(x))
             source_button.grid(padx=4, pady=2, sticky='nw')
 
             self.source_list.append(source_button)
@@ -124,7 +124,7 @@ class Sidebar(tk.Frame):
         showinfo(message='完成匯入資料夾')
 
     def add_folder_worker(self, src, source_id, image_list, folder_path):
-        progress_bar = self.parent.statusbar.progress_bar
+        progress_bar = self.app.statusbar.progress_bar
         image_sql_list = []
         for i, v in enumerate(src.gen_import_image(source_id, image_list, folder_path)):
             #self.app.db.exec_sql(v[1])
@@ -143,8 +143,8 @@ class Sidebar(tk.Frame):
         if not directory:
             return False
 
-        src = self.parent.source
-        progress_bar = self.parent.statusbar.progress_bar
+        src = self.app.source
+        progress_bar = self.app.statusbar.progress_bar
 
         folder_path = src.get_folder_path(directory)
         if not folder_path:

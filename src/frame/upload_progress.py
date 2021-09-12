@@ -93,7 +93,7 @@ class UploadProgress(tk.Frame):
         pb_style.configure("green.Horizontal.TProgressbar", foreground='#5eba7d', background='#6fca64')
         for i in res:
             self.state['num_queue_process'] += 1
-            frame = tk.LabelFrame(self, text=i[3], width='600')
+            frame = tk.LabelFrame(self, text=i[3], width='300')
             label_text = '--'
             percent_text = '0 %'
             total = src_img_count.get(i[0], 0) #i[4]
