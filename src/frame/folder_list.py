@@ -13,7 +13,7 @@ class FolderList(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
-        self.app = self.parent.parent
+        self.app = self.parent.app
 
         self.source_list = []
 
@@ -43,7 +43,6 @@ class FolderList(tk.Frame):
 
         self.source_list_frame = tk.Frame(self, bg='#4f5d75')
         self.source_list_frame.grid(row=2, column=0, pady=4, sticky='n')
-
 
         #separator = ttk.Separator(self, orient='horizontal')
         #separator.grid(row=3, column=0, sticky='ew', pady=2)
@@ -109,7 +108,7 @@ class FolderList(tk.Frame):
                 text=f'{i[3]} ({i[4]})',
                 style='my.TButton',
                 takefocus=0,
-                command=lambda x=i[0]: self.app.main.from_source(x))
+                command=lambda x=i[0]: self.app.frames['main'].from_source(x))
             source_button.grid(padx=4, pady=2, sticky='nw')
 
             self.source_list.append(source_button)
@@ -124,19 +123,29 @@ class FolderList(tk.Frame):
         showinfo(message='完成匯入資料夾')
 
     def add_folder_worker(self, src, source_id, image_list, folder_path):
-        progress_bar = self.app.statusbar.progress_bar
+        self.app.frames['landing'].show(True)
+        total = len(image_list)
+        self.app.frames['landing'].render_progress_bar(
+            length=400,
+            title='製作縮圖中，請稍後 ...',
+            sub_title1=f'目錄: {folder_path}')
+        self.app.frames['landing'].progress_bar['maximum'] = total
         image_sql_list = []
+
         for i, v in enumerate(src.gen_import_image(source_id, image_list, folder_path)):
             #self.app.db.exec_sql(v[1])
             image_sql_list.append(v[1])
-            progress_bar['value'] = i+1
-            self.update_idletasks()
+            self.app.frames['landing'].progress_bar['value'] = i+1
+            self.app.frames['landing'].thumb_label['text'] = '{} ({}/{})'.format(image_list[i].name, i+1, total)
+            #progress_bar['value'] = i+1
+            #self.update_idletasks()
 
         #self.app.db.commit()
-        progress_bar['value'] = 0
-        self.update_idletasks()
+        #progress_bar['value'] = 0
+        #self.update_idletasks()
 
         self.app.after(100, lambda: self.insert_image_to_db(image_sql_list))
+
 
     def add_folder(self):
         directory = fd.askdirectory()
@@ -144,14 +153,22 @@ class FolderList(tk.Frame):
             return False
 
         src = self.app.source
-        progress_bar = self.app.statusbar.progress_bar
-
         folder_path = src.get_folder_path(directory)
+
         if not folder_path:
             tk.messagebox.showinfo('info', '已經加過此資料夾')
             return False
 
         image_list = src.get_image_list(folder_path)
+
+        source_id = src.create_import_directory(image_list, folder_path)
+        threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
+        #self.refresh_source_list()
+        '''
+
+        progress_bar = self.app.statusbar.progress_bar
+
+
 
         progress_bar['maximum'] = len(image_list)
         self.update_idletasks()
@@ -167,4 +184,4 @@ class FolderList(tk.Frame):
         #self.update_idletasks()
 
         #self.refresh_source_list()
-
+        '''

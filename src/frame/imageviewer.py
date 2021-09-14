@@ -10,9 +10,9 @@ class ImageViewer(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.parent = parent
-        self.app = parent
-        self.helper = self.parent.main.data_helper
+        self.parent = parent # main
+        self.app = parent.parent.app
+        self.helper = parent.data_helper
 
         self.all_annotation_data = None
         self.current_annotation_num = 0
@@ -69,7 +69,7 @@ class ImageViewer(tk.Frame):
         self.back_button = ttk.Button(
             self.right_frame,
             text='回上頁',
-            command=self.handle_back,
+            command=self.app.toggle_image_viewer,
             takefocus=0)
         self.back_button.grid(row=0, column=0, pady=(0, 10), sticky='nw')
 
@@ -173,9 +173,6 @@ class ImageViewer(tk.Frame):
         self.sx_entry.grid(row=0, column=5, padx=4, sticky='news')
         '''
 
-    def handle_back(self):
-        self.parent.main.handle_image_viewer()
-
     def init_data(self):
         '''init
         - all_annotation_data
@@ -200,13 +197,13 @@ class ImageViewer(tk.Frame):
         return
 
     def handle_key_move(self, action):
-        row = self.parent.main.current_row
+        row = self.app.frames['main'].current_row
         #print(row, self.current_annotation_num, '--->')
 
         if action in ['down', 'right']:
             row += self.current_annotation_num
         elif action in ['up', 'left']:
-            image_id = self.parent.main.current_image_data['image_id']
+            image_id = self.app.frames['main'].current_image_data['image_id']
             n = self.get_last_annotation_num_by_image_id(image_id)
             if n:
                 row -= n
@@ -219,14 +216,14 @@ class ImageViewer(tk.Frame):
 
         if row >= 0 and row < len(self.helper.data):
             #print ('to row', row)
-            self.parent.main.data_grid.main_table.selected.update({
+            self.app.frames['main'].data_grid.main_table.selected.update({
                 'row_start': row,
                 'row_end': row,
                 'col_start': 0,
                 'col_end': 0,
                 'row_list': [row],
             })
-            self.parent.main.select_item((row, 0))
+            self.app.frames['main'].select_item((row, 0))
             self.refresh()
 
     def refresh(self):
@@ -236,9 +233,9 @@ class ImageViewer(tk.Frame):
         self.app.bind('<Left>', lambda _: self.handle_key_move('left'))
         self.app.bind('<Right>', lambda _: self.handle_key_move('right'))
 
-        source = self.parent.main.source_data['source']
+        source = self.app.frames['main'].source_data['source']
 
-        row = self.parent.main.current_row
+        row = self.app.frames['main'].current_row
         #row_key, _ = self.helper.get_rc_key(row, 0)
 
         item = self.helper.get_item(row)
@@ -335,7 +332,6 @@ class ImageViewer(tk.Frame):
         self.image_label.configure(image=photo)
         self.image_label.image = photo
         #self.update_idletasks()
-
 
     def handle_entry_focus_out(self, event, x, y, row_key, col_key):
         sv = self.table[x][y+1][0]

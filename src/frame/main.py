@@ -13,7 +13,11 @@ from helpers import (
     TreeHelper,
     DataHelper,
 )
-from frame import UploadProgress
+from frame import (
+    UploadProgress,
+    Landing,
+    ImageViewer,
+)
 from image import check_thumb
 
 sys.path.insert(0, '') # TODO: pip install -e .
@@ -26,7 +30,8 @@ class Main(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
 
         self.parent = parent
-        self.app = parent
+        self.app = self.parent.app
+        self.background_color = kwargs.get('background','')
 
         self.source_data = {}
         # self.projects = self.app.server.projects
@@ -67,10 +72,11 @@ class Main(tk.Frame):
         #self.grid_propagate(False)
         self.layout()
 
-        self.layout_landing()
-
-        #self.config_ctrl_frame()
-        #self.config_table_frame()
+        self.app.frames['image_viewer'] = ImageViewer(self)
+        #self.app.frames['image_viewer'].grid(row=0, column=0, sticky='nsew')
+        self.app.frames['landing'] = Landing(self, width=400, bg=self.background_color)
+        self.app.frames['landing'].show()
+        #self.landing.grid(row=0, column=0, sticky='nsew')
 
         #self.queue = queue.Queue()
         self.upload_status = 0 # 0: stop, 1: start, 2: pause
@@ -91,23 +97,18 @@ class Main(tk.Frame):
             self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
         '''
 
-    def layout_landing(self):
-        self.landing_frame = tk.Frame(self.parent, background='#2d3142')
-        self.message = ttk.Label(self.landing_frame, text="Welcome !!")
-        self.message.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
-        self.landing_frame.grid(row=2, column=1, sticky='nsew')
-
     def layout(self):
         self.grid_rowconfigure(0, weight=0)
         self.grid_columnconfigure(0, weight=0)
 
-        self.notebook = ttk.Notebook(self)
-        self.notebook.grid(row=0, column=0)
+        #self.notebook = ttk.Notebook(self)
+        #self.notebook.grid(row=0, column=0)
 
         #panedwindow_style = ttk.Style()
-        self.panedwindow = ttk.PanedWindow(self.notebook, orient=tk.VERTICAL)
+        self.panedwindow = ttk.PanedWindow(self, orient=tk.VERTICAL)
         #panedwindow_style = configure('PanedWindow', sashpad=5)
-        self.panedwindow.pack(fill=tk.BOTH, expand=True)
+        #self.panedwindow.pack(fill=tk.BOTH, expand=True)
+        self.panedwindow.grid(row=0, column=0, sticky='nsew')
         self.panedwindow.grid_rowconfigure(0, weight=1)
         self.panedwindow.grid_columnconfigure(0, weight=1)
         #self.panedwindow.bind("<ButtonRelease-1>", self.handle_panedwindow_release)
@@ -142,11 +143,11 @@ class Main(tk.Frame):
 
         self.config_table_frame()
 
-        self.upload_progress = UploadProgress(self)
-        self.upload_progress.grid(row=0,column=0)
-        self.notebook.add(self.panedwindow, text='輸入資料')
-        self.notebook.add(self.upload_progress, text='上傳進度')
-        self.notebook.bind('<<NotebookTabChanged>>', self.handle_notebook_change)
+        #self.upload_progress = UploadProgress(self)
+        #self.upload_progress.grid(row=0,column=0)
+        #self.notebook.add(self.panedwindow, text='輸入資料')
+        #self.notebook.add(self.upload_progress, text='上傳進度')
+        #self.notebook.bind('<<NotebookTabChanged>>', self.handle_notebook_change)
     def fo_species(self, event):
         #print (self.species_free.listbox, event)
         if self.species_free.listbox:
@@ -178,7 +179,8 @@ class Main(tk.Frame):
         image_viewer_button = ttk.Button(
             self.ctrl_frame,
             text='看大圖',
-            command=self.handle_image_viewer,
+            #command=self.handle_image_viewer,
+            command=self.app.toggle_image_viewer,
             takefocus=0,
         )
         image_viewer_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
@@ -283,7 +285,7 @@ class Main(tk.Frame):
             text='上傳',
             #command=self.handle_upload
             #command=lambda: self.foo_worker.do_work()
-            command=self.handle_upload2,
+            command=self.handle_upload3,
             takefocus=0,
         )
         self.upload_button.grid(row=0, column=0, padx=20, pady=4, sticky='w')
@@ -368,10 +370,11 @@ class Main(tk.Frame):
 
     def from_source(self, source_id=None):
         logging.debug('source_id: {}'.format(source_id))
-        # no need landing
-        self.landing_frame.destroy()
 
-        self.app.begin_from_source()
+        #self.landing_frame.destroy()
+        self.app.frames['landing'].show(False)
+
+        #self.app.begin_from_source()
         self.update_project_options()
         self.source_id = source_id
 
@@ -395,7 +398,7 @@ class Main(tk.Frame):
         if not self.source_id:
             return
 
-        self.notebook.select(self.panedwindow)
+        #self.notebook.select(self.panedwindow)
 
         self.source_data = self.app.source.get_source(self.source_id)
         if descr := self.source_data['source'][7]:
@@ -534,6 +537,12 @@ class Main(tk.Frame):
             # TODO
             #tk.messagebox.showinfo('info', '已設定相機位置')
 
+    def handle_upload3(self):
+        #self.app.frames['upload_progress'].foo_start(self.source_id)
+        pass
+
+
+
     def handle_upload2(self):
         # check deployment
         deployment_id = ''
@@ -655,8 +664,8 @@ class Main(tk.Frame):
             return False
 
         self.app.source.delete_folder(self.source_id)
-        self.app.sidebar.refresh_source_list()
-        self.layout_landing()
+        self.app.frames['folder_list'].refresh_source_list()
+        self.app.frames['landing'].show(True)
 
     def get_status_display(self, code):
         status_map = {
@@ -797,30 +806,6 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
         self.refresh()
 
-    def handle_image_viewer(self):
-        image_viewer = self.app.image_viewer
-        sidebar = self.app.sidebar
-        if image_viewer.winfo_viewable():
-            image_viewer.grid_remove()
-            # unbind key event
-            self.app.unbind('<Left>')
-            self.app.unbind('<Up>')
-            self.app.unbind('<Right>')
-            self.app.unbind('<Down>')
-            #print(self.current_row)
-            #self.select_item((self.current_row, 0))
-            #self.refresh()
-            #self.data_grid.main_table.render_row_highlight()
-        else:
-            image_viewer.grid(row=2, column=1, sticky='nsew')
-            image_viewer.init_data()
-            image_viewer.refresh()
-
-        # sidebar
-        if sidebar.winfo_viewable():
-            sidebar.grid_remove()
-        else:
-            sidebar.grid()
 
     # def custom_apply_pattern(self, pattern_copy, selected):
     #     print (pattern_copy, selected)
@@ -863,10 +848,9 @@ class Main(tk.Frame):
         #if self.current_row < 0:
         #    return
 
-        #selected2 = self.data_grid.main_table.selected
-        selected = self.data_grid.row_index.selected
-        #print (selected, selected2)
-        for row in selected['row_list']:
+        #print (row_list, self.data_grid.main_table.selected, self.data_grid.row_index.selected)
+        row_list = self.data_grid.get_row_list()
+        for row in row_list:
             row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
             self.data_helper.update_annotation(row_key, col_key, species)
         self.refresh()
@@ -874,7 +858,8 @@ class Main(tk.Frame):
     def handle_keyboard_shortcut(self, event):
         #print ('key', event)
         #selected = self.data_grid.main_table.selected
-        rows = self.data_grid.row_index.get_selected_rows()
+        #rows = self.data_grid.row_index.get_selected_rows()
+        rows = self.data_grid.get_row_list()
         logging.debug('rows: {}'.format(rows))
         if value := self.keyboard_shortcuts.get(event.keysym, ''):
             for row in rows:

@@ -14,36 +14,21 @@ import socket
 
 from version import __version__
 from frame import (
-    Toolbar,
+    #Toolbar,
     FolderList,
-    #Main,
-    Statusbar,
-    #Datatable,
-    Landing,
-    ImageViewer,
+    #Statusbar,
+    #ImageViewer,
     UploadProgress,
     Panel,
+    Main,
 )
-from main import Main
+import asyncio
 
 from database import Database
 from source import Source
 from server import Server
 from config import Config
 
-# colors
-# 2d3142 # deep blue
-# 4f5d75 # blue
-# bfc0c0 # gray
-# ffffff
-# ef8354
-
-
-'''MAIN_FRAMES = {
-    'landing': Landing,
-    'datatable': Datatable,
-    #'image-viewer': ImageViewer,
-}'''
 
 class Application(tk.Tk):
 
@@ -60,7 +45,7 @@ class Application(tk.Tk):
         self.WIDTH = 1200
         self.HEIGHT = 760
         self.geometry(f'{self.WIDTH}x{self.HEIGHT}+40+20')
-        self.title('Camera Trap Desktop')
+        self.title(f'Camera Trap Desktop - v{self.version}')
         #self.maxsize(1000, 400)
 
         s = ttk.Style()
@@ -110,25 +95,12 @@ class Application(tk.Tk):
         self.panel = Panel(self, background='#DEDEDE', width=32) # background='#ef8354'
         self.panel.grid(row=0, column=0, sticky='ns')
 
+        self.frames = {}
         #self.toolbar = Toolbar(
         #    self,
         #    background='#ef8354'
         #)
 
-        #self.main = Main(
-        #    self,
-        #    background='#ffffff',
-        #)
-        #self.landing = Landing(self)
-        #self.image_viewer = ImageViewer(self)
-
-
-        #self.main = Main(
-        #    self,
-        #    frames=MAIN_FRAMES,
-        #    background='#def',
-        #    bd=1,
-        #    relief='sunken')
         #self.statusbar = Statusbar(
         #    self,
         #    background='#bfc0c0')
@@ -138,68 +110,89 @@ class Application(tk.Tk):
 
         #self.toolbar.grid(row=0, column=0, columnspan=2, sticky='nsew')
         #self.sidebar.grid(row=0, column=1, sticky='nsew')
-        #self.main.grid(row=0, column=2, sticky='nsew')
+
         #self.landing.grid(row=2, column=1, sticky='nsew')
         #self.statusbar.grid(row=2, column=0, columnspan=2)
         self.panedwindow = ttk.PanedWindow(self, orient=tk.HORIZONTAL, height=self.HEIGHT)
-        self.panedwindow.parent = self
+        self.panedwindow.app = self
+
         #self.panedwindow.pack(fill=tk.BOTH, expand=True)
         self.panedwindow.grid(row=0, column=1, sticky='nsew')
         self.panedwindow.grid_rowconfigure(0, weight=1)
         self.panedwindow.grid_columnconfigure(0, weight=1)
 
-        self.folder_list = FolderList(
+        self.frames['folder_list'] = FolderList(
             self.panedwindow,
             background='#4f5d75',
             width=300)
 
-        self.upload_progress = UploadProgress(
+        self.frames['upload_progress'] = UploadProgress(
             self.panedwindow,
             width=100)
 
-        self.mm = tk.Frame(self, bg='black')
-        self.panedwindow.add(self.folder_list)
+        self.frames['main'] = Main(
+            self.panedwindow,
+            #fbackground='#ffffff',
+            background='#2d3142'
+        )
+
+        # init layout
+        self.panedwindow.add(self.frames['folder_list'])
         #self.panedwindow.add(self.upload_progress)
-        #self.panedwindow.add(self.main)
-        self.panedwindow.add(self.mm)
+        self.panedwindow.add(self.frames['main'])
 
-    def begin_from_source(self):
-        if self.landing.winfo_viewable():
-            self.landing.grid_remove()
 
-        if self.image_viewer.winfo_viewable():
-            self.image_viewer.grid_remove()
+    # def begin_from_source(self):
+    #     if self.landing.winfo_viewable():
+    #         self.landing.grid_remove()
 
-    # DEPRICATED
-    def show_landing(self):
-        self.landing.grid()
+    #     if self.image_viewer.winfo_viewable():
+    #         self.image_viewer.grid_remove()
 
     def clear_panedwindow(self):
-        if self.folder_list.winfo_viewable():
-            self.panedwindow.remove(self.folder_list)
-        if self.upload_progress.winfo_viewable():
-            self.panedwindow.remove(self.upload_progress)
-        if self.mm.winfo_viewable():
-            self.panedwindow.remove(self.mm)
+        if self.frames['folder_list'].winfo_viewable():
+            self.panedwindow.remove(self.frames['folder_list'])
+        if self.frames['upload_progress'].winfo_viewable():
+            self.panedwindow.remove(self.frames['upload_progress'])
+        if self.frames['main'].winfo_viewable():
+            self.panedwindow.remove(self.frames['main'])
 
     def toggle_folder_list(self):
-        if self.folder_list.winfo_viewable():
+        if self.frames['folder_list'].winfo_viewable():
             self.clear_panedwindow()
-            self.panedwindow.add(self.mm)
+            self.panedwindow.add(self.frames['main'])
         else:
             self.clear_panedwindow()
-            self.panedwindow.add(self.folder_list)
-            self.panedwindow.add(self.mm)
+            self.panedwindow.add(self.frames['folder_list'])
+            self.panedwindow.add(self.frames['main'])
 
     def toggle_upload_progress(self):
-        if self.upload_progress.winfo_viewable():
+        if self.frames['upload_progress'].winfo_viewable():
             self.clear_panedwindow()
-            self.panedwindow.add(self.mm)
+            self.panedwindow.add(self.frames['main'])
         else:
             self.clear_panedwindow()
-            self.panedwindow.add(self.upload_progress)
-            self.panedwindow.add(self.mm)
+            self.panedwindow.add(self.frames['upload_progress'])
+            self.panedwindow.add(self.frames['main'])
 
+    def toggle_image_viewer(self):
+        '''image_viewer & main'''
+        if self.frames['main'].winfo_viewable():
+            self.frames['main'].grid_remove()
+        else:
+            self.frames['main'].grid(row=0, column=0, sticky='nsew')
+
+        if self.frames['image_viewer'].winfo_viewable():
+            self.frames['image_viewer'].grid_remove()
+            # TODO
+            self.unbind('<Left>')
+            self.unbind('<Up>')
+            self.unbind('<Right>')
+            self.unbind('<Down>')
+        else:
+            self.frames['image_viewer'].grid(row=0, column=0, sticky='nsew')
+            self.frames['image_viewer'].init_data()
+            self.frames['image_viewer'].refresh()
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(
@@ -208,8 +201,13 @@ parser.add_argument(
     help='ini file path')
 args = parser.parse_args()
 
-if __name__ == '__main__':
+def main(async_loop):
     conf = Config(args.ini_file) if args.ini_file else Config()
     app = Application(conf)
-
+    app.async_loop = async_loop
     app.mainloop()
+
+
+if __name__ == '__main__':
+    async_loop = asyncio.get_event_loop()
+    main(async_loop)

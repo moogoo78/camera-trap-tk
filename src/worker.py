@@ -4,6 +4,10 @@ import threading
 
 from image import get_thumb
 
+#class UploadTask(threading.Thread):
+#    def __init__(self, name, data, image_list, upload_state, func_to_s3):
+#        pass
+
 class UploadTask(threading.Thread):
     def __init__(self, name, data, image_list, upload_state, func_to_s3):
         '''
@@ -21,7 +25,7 @@ class UploadTask(threading.Thread):
 
     def run(self):
         th_id = self.native_id
-        logging.info(f'task start: {self.thread_name} ({th_id})')
+        logging.debug(f'task start: {self.thread_name} ({th_id})')
         source_id = self.data['source_id']
         image_list = self.image_list
         #print ('upload task ', source_id, len(image_list))

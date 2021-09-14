@@ -6,34 +6,196 @@ import queue
 import logging
 import json
 
-
 import threading
 import time
+import random
 import asyncio
 import concurrent.futures
+from queue import Queue
 
 from worker import UploadTask
+from image import get_thumb
+
+HIDE = -1
+STOP = -2
+DONE = -3
+BREAK = -4
+PAUSE = -5
 
 class UploadProgress(tk.Frame):
-
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, background='#2d3142', *args, **kwargs)
         self.parent = parent
-        self.app = self.parent.parent
+        self.app = self.parent.app
+
+        #self.message = ttk.Label(self, text="uploading!")
+        #self.message.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
+        self.start_button = ttk.Button(
+            self,
+            text='Start',
+            #command=self.start_upload
+            command=self.handle_start
+        )
+        self.start_button.grid(row=0, column=0, padx=10, pady=10, sticky='we')
+
+        self.stop_button = ttk.Button(
+            self,
+            text='Stop',
+            #command=self.stop_upload
+            #command=self.foo_handle_pause,
+            command=self.handle_stop,
+        )
+        self.stop_button.grid(row=0, column=1, padx=10, pady=10, sticky='we')
+
+
+        #self.app_que = Queue()
+        #self.dialog_que = Queue()
+        #self.thread = threading.Thread(target=self.worker, daemon=True)
+        #self.thread.start()
+
+        #self.is_running = False
+        #self.is_finished = True
+        self.uploading_list = []
+
+        self.refresh()
+        #self.loop = asyncio.new_event_loop()
+        #t = threading.Thread(target=self.start_background_loop, args=(self.loop,), daemon=True)
+        #t.start()
+
+    def refresh(self):
+        sql = "SELECT * FROM source WHERE status in ('10', '20')"
+        res = self.app.db.fetch_sql_all(sql)
+
+        pb_style = ttk.Style()
+        pb_style.configure("green.Horizontal.TProgressbar", foreground='#5eba7d', background='#6fca64')
+        for i, v in enumerate(res):
+            sql_images = f"SELECT * FROM image WHERE source_id={v[0]} AND upload_status != '200' ORDER BY image_id"
+            res_images = self.app.db.fetch_sql_all(sql_images)
+
+            frame = tk.LabelFrame(self, text=f'{v[3]}', width='300')
+            total = v[4] # real left image TODO
+            #value = round(((total-i[8])/total) * 100.0)
+            value = total - len(res_images)
+            subtitle1_label = ttk.Label(frame, text=f'{value}/{total}')
+            subtitle1_label.grid(row=0, column=0, sticky='nw', padx=4)
+            subtitle2_label = ttk.Label(frame, text='{} %'.format(round(value/total*100.0)))
+            subtitle2_label.grid(row=0, column=0, sticky='ne', padx=4)
+            pb = ttk.Progressbar(frame, orient=tk.HORIZONTAL, length=600, mode='determinate', value=value, style='green.Horizontal.TProgressbar', maximum=total)
+            pb.grid(row=1, column=0, padx=4, pady=4)
+            frame.grid(row=1+i, column=0, pady=10, columnspan=3)
+
+            self.uploading_list.append({
+                'progress_bar': pb,
+                'subtitle1': subtitle1_label,
+                'subtitle2': subtitle2_label,
+                'total': total,
+                'source': v,
+                'init_value': value,
+                'image_pending_list': res_images,
+            })
+
+    def test_stop(self):
+        if self.is_running or self.is_finished:
+            self.dialog_que.put(HIDE)
+
+        self.stop_btn.config(state=tk.DISABLED)
+        self.start_btn.config(state=tk.NORMAL)
+
+    def handle_start(self):
+        # if self.uploading[0]['progress_bar']['value'] < self.uploading[0]['progress_bar']['maximum']:
+        #     text = self.stop_button.cget('text')
+        #     text = 'Resume' if text == 'Pause' else 'Pause'
+        #     self.start_button.config(text=text)
+        #     self.app_que.put(PAUSE)
+        # else:
+        #     #self.Start_button.config(text='Pause')
+        #     self.stop_btn.config(state=tk.DISABLED)
+        threading.Thread(target=self._asyncio_thread, args=(self.app.async_loop,)).start()
+
+    def handle_stop(self):
+        if self.running or self.finished:
+            self.dialog_que.put(HIDE)
+
+        self.stop_button.config(state=tk.DISABLED)
+        self.start_button.config(state=tk.NORMAL)
+
+    def app_worker(self):
+        #self.dlg.cancel_btn.config(text='Cancel')
+        #self.dlg.pause_btn.config(state=tk.NORMAL)
+
+        for count in range(0, self.uploading[0]['total']+1):
+            try:
+                message = self.app_que.get_nowait()
+                if message:
+                    if message == PAUSE:
+                        message = self.app_que.get()
+
+                    if message == BREAK:
+                        self.stop_btn.config(state=tk.DISABLED)
+                        break
+                    elif message == STOP:
+                        #self.destroy()
+                        pass
+            except queue.Empty:
+                pass
+
+            time.sleep(1)  # Simulate work.
+            self.dialog_que.put(count)
+
+        self.dialog_que.put(DONE)
+        #self.dlg.cancel_btn.config(text='Close')
+
+        self.is_finished = True
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+
+    def worker(self):
+        while True:
+            message = self.dialog_que.get()
+            print(message)
+            if message == HIDE:
+                #self.hide()
+                pass
+            elif message == STOP:
+                self.app_que.put(DONE)
+                break
+            elif message == DONE:
+                #self.pause_btn.config(state=tk.DISABLED)
+                pass
+            else:
+                item = self.uploading[0]
+                item['progress_bar']['value'] = message
+                item['label']['text'] = '{}/{}'.format(message, item['total'])
+                item['pb_percent_label'] = '{} %'.format(round((message/item['total'])*100.0))
+
+    def start_background_loop(self, loop: asyncio.AbstractEventLoop) -> None:
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+
+    def foo_start_loop(self):
+        t = threading.Thread(target=self.start_background_loop, args=(self.loop,), daemon=True)
+        t.start()
+
+    def __init2__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, background='#2d3142', *args, **kwargs)
+        self.parent = parent
+        self.app = self.parent.app
 
         #self.message = ttk.Label(self, text="uploading!")
         #self.message.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
         self.start_button = ttk.Button(
             self,
             text='start',
-            command=self.start_upload
+            #command=self.start_upload
+            command=self.foo_handle_start
         )
         self.start_button.grid(row=0, column=0, padx=10, pady=10, sticky='we')
 
         self.stop_button = ttk.Button(
             self,
             text='stop',
-            command=self.stop_upload
+            #            command=self.stop_upload
+            command=self.foo_handle_pause,
         )
         self.stop_button.grid(row=0, column=1, padx=10, pady=10, sticky='we')
 
@@ -63,96 +225,22 @@ class UploadProgress(tk.Frame):
 
         self.counter1 = 0 # num of process_upload
         self.counter2 = 0 # num of each process_upload tick
-        self.refresh()
+
+        self.refresh2()
+        #self.refresh()
+        self.foo_can = False
+
+    def refresh2(self):
+        for i in range(0, 2):
+            _thread = threading.Thread(target=self.foo_long, kwargs={'source_id':i})
+            _thread.start()
+            print ('ahh thread')
+        print ('ohoh')
 
     def handle_refresh(self):
         self.refresh()
 
-    def refresh(self):
-        # fetch sql source status and add to upload queue
 
-        # reset list
-        if uploads:= self.state['upload_map']:
-            for _, v in uploads.items():
-                v['frame'].destroy()
-        self.state['upload_map'] = {}
-
-        # get all source from db
-        sql = "SELECT source.*, COUNT(*) AS img_count FROM image LEFT JOIN source ON image.source_id = source.source_id WHERE source.status IN ('20', '30') AND (image.upload_status IS NULL OR image.upload_status != '200') GROUP BY image.source_id ORDER BY source.source_id"
-        res = self.app.db.fetch_sql_all(sql)
-
-        # 不信任 i[4], 重新 count
-        sql2 = "SELECT source.source_id, COUNT(*) AS img_all_count FROM image LEFT JOIN source ON image.source_id = source.source_id WHERE source.status IN ('20', '30') GROUP BY image.source_id ORDER BY source.source_id"
-        res2 = self.app.db.fetch_sql_all(sql2)
-        src_img_count = {}
-        for (src_id, count) in res2:
-            src_img_count[src_id] = count
-
-        #print(src_img_count, '---')
-        pb_style = ttk.Style()
-        pb_style.configure("green.Horizontal.TProgressbar", foreground='#5eba7d', background='#6fca64')
-        for i in res:
-            self.state['num_queue_process'] += 1
-            frame = tk.LabelFrame(self, text=i[3], width='300')
-            label_text = '--'
-            percent_text = '0 %'
-            total = src_img_count.get(i[0], 0) #i[4]
-            #print (i[0], total)
-            value = round(((total-i[8])/total) * 100.0)
-            if i[6] == '20':
-                label_text = f'等待上傳'
-                percent_text = f'{value} % ({total-i[8]}/{total})'
-            if i[6] == '30':
-                label_text = f'上傳中'
-                percent_text = f'{value} % ({total-i[8]}/{total})'
-            #elif i[6] == '40':
-            #    label_text = '已上傳完成'
-            #    percent_text = '100 %'
-            #    value = 100
-
-            label = ttk.Label(frame, text=label_text)
-            label.grid(row=0, column=0, sticky='nw', padx=4)
-            pb_percent_label = ttk.Label(frame, text=percent_text)
-            pb_percent_label.grid(row=0, column=0, sticky='ne', padx=4)
-            pb = ttk.Progressbar(frame, orient=tk.HORIZONTAL, length=600, mode='determinate', value=value, style='green.Horizontal.TProgressbar', maximum=100)
-            pb.grid(row=1, column=0, padx=4, pady=4)
-            frame.grid(pady=10)
-
-            item = {
-                'frame': frame, # for destroy next process
-                'progressbar': pb,
-                'label': label,
-                'percent_label': pb_percent_label,
-                'status': i[6],
-                'source_id': i[0],
-                'value': value,
-                'total': total,
-                'current_text': '',
-                'count': total-i[8], # num of already uploaded
-                #'num_not_uploaded': i[8],
-                'enable_upload': False,
-                'uploaded': [],
-                'process_step': 0, # 0: init, 1: processing, 2: done
-            }
-
-            if descr := i[7]:
-                d = json.loads(descr)
-                if dep_id := d.get('deployment_id', ''):
-                    if item['status'] == '20':
-                        item['enable_upload'] = True
-            self.state['upload_map'][i[0]] = item
-
-
-        '''
-        if is_init:
-            for source_id, item in self.state['upload_map'].items():
-                if item['status'] in ['20', '30']:
-                    #self.queue.put(item)
-                    self.state['upload_list'].append({
-                        'data': item,
-                        'status': '',
-                    })
-        '''
     def create_upload_process(self, data):
         self.refresh()
         self.start_upload()
@@ -222,11 +310,11 @@ class UploadProgress(tk.Frame):
             'is_thread_running': False
         })
 
-    def _asyncio_thread(self, item):
-        print ('thread source:', item)
-        self.async_loop.run_until_complete(self.do_uploads(item))
-        self.state['doing'] = False
-        print ('thread complete!!')
+    #def _asyncio_thread(self, item):
+    #    print ('thread source:', item)
+    #    self.async_loop.run_until_complete(self.do_uploads(item))
+    #self.state['doing'] = False
+    #    print ('thread complete!!')
 
     async def one_url(self, url):
         """ One task. """
@@ -365,3 +453,133 @@ class UploadProgress(tk.Frame):
                     self.process_upload()
 
         self.app.after(1000, self.polling)
+
+    async def do_upload(self, source_id, index):
+        await asyncio.sleep(1)
+
+    def process_upload(self, source_id):
+        for i in range(0, 11):
+            #await asyncio.sleep(1)
+            #await do_upload(source_id, i)
+            time.sleep(1)
+            print (i, source_id)
+        print ('processed')
+
+    def foo_start(self, source_id):
+        print('start', source_id)
+        #self.process_upload(source_id)
+        _thread = threading.Thread(target=self.process_upload, kwargs={'source_id':source_id})
+        _thread.start()
+        print ('end')
+
+
+    def foo_long(self, **kwargs):
+        import random
+        r = random.randint(2,7)
+        source_id = kwargs.pop('source_id', '')
+        for i in range(0, r+1):
+            time.sleep(1)
+            print (source_id, '{}/{}'.format(i, r), self.foo_can)
+            if self.foo_can:
+                return
+
+    async def fetch(self, url):
+        try:
+            # Wait for 1 hour
+            r = random.randint(3,5)
+            print (url)
+            for i in range(0, r):
+                await asyncio.sleep(0.3*i)
+                print (url, '{}/{}'.format(i, r))
+        except asyncio.CancelledError:
+            print('cancel_me(): cancel sleep')
+            raise
+        finally:
+            print('cancel_me(): after sleep')
+
+        return url, 200
+
+    async def upload_image_list(self, row):
+        #print (row)
+        server_image_id = row[11]
+        thumb_paths = get_thumb(row[10], row[2], row[1], 'all')
+        for x, path in thumb_paths.items():
+            object_name = f'{server_image_id}-{x}.jpg'
+            print (object_name)
+            time.sleep(0.3)
+            #res = self.func_to_s3(str(path), object_name)
+
+    async def upload_folder(self, data):
+        try:
+            for i, image in enumerate(data['image_pending_list']):
+            #for i in range(0, len(data['image_pending_list'])+1):
+                await asyncio.sleep(0.5)
+                #await self.upload_image_list(data['image_pending_list'][i])
+                # update progress display
+                value = i + 1 + data['init_value']
+                total = data['total']
+                data['progress_bar']['value'] = value
+                data['subtitle1']['text'] = '{} ({}/{})'.format(image[2], value, total)
+                data['subtitle2']['text'] = '{} %'.format(round(value/total*100.0))
+        except asyncio.CancelledError:
+            logging.debug('asyncio: cancel ')
+            raise
+        finally:
+            logging.debug('task: upload_folder done')
+
+        return data
+
+    async def do_uploads(self, uploading_list):
+
+        limit = 2
+        res_all = []
+        total = len(uploading_list)
+        page_total = round(total / limit)
+        page_last_num = total % limit
+
+        for i in range(0, page_total):
+            step = i * limit
+            tasks = []
+            page_end = limit if i+1 < page_total or page_last_num == 0 else page_last_num
+            #print (m2)
+            for j in range(0, page_end):
+                index = j + step
+                task = asyncio.create_task(self.upload_folder(uploading_list[index]))
+                #await asyncio.sleep(10)
+                #t.cancel()
+                tasks.append(task)
+            res = []
+            try:
+                res = await asyncio.gather(*tasks)
+                print (res)
+            except asyncio.CancelledError:
+                logging.debug('do_uploads: cancel')
+
+        return res_all
+
+    def _asyncio_thread(self, async_loop):
+        async_loop.run_until_complete(self.do_uploads(self.uploading_list))
+        print ('fin asyncio_thread')
+        #async_loop.run_forever()
+
+    def foo_handle_start(self):
+        #thread = threading.Thread(target=self.app_worker, daemon=True)
+        #thread.start()
+        '''
+        #self.foo_start_loop()
+        t = threading.Thread(target=self.start_background_loop, args=(self.loop,), daemon=True)
+        t.start()
+        '''
+        #self.loop = asyncio.new_event_loop()
+        #t = threading.Thread(target=self.start_background_loop, args=(self.loop,), daemon=True)
+        #t.start()
+        threading.Thread(target=self._asyncio_thread, args=(self.app.async_loop,), daemon=True).start()
+        #task = asyncio.run_coroutine_threadsafe(self.hard_works(URLS), self.app.async_loop)
+        #print ('star wait')
+        #print (task.result())
+        self.loop.stop()
+
+
+    def foo_handle_pause(self):
+        #self.foo_can = False
+        print (asyncio.Task.all_tasks())

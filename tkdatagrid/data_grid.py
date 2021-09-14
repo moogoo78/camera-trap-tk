@@ -66,6 +66,8 @@ class DataGrid(tk.Frame):
             'row_index_display': row_index_display,
             'box_display_type': 'lower',
         }
+        #self.current_rc = [0, 0]
+
         # other not default
         # cell_image_x_pad
         # cell_image_y_pad
@@ -176,3 +178,14 @@ class DataGrid(tk.Frame):
         self.main_table.xview(*args)
         if self.state['row_index_display']:
             self.row_index.xview(*args)
+
+    def get_row_list(self):
+        row_list = []
+        if mt := self.main_table.selected:
+            row_list = mt.get('row_list', [])
+        else:
+            row_list = self.row_index.get_selected_rows()
+        #elif ri := self.row_index.selected:
+        #    row_list = ri.get('row_list', [])
+
+        return row_list

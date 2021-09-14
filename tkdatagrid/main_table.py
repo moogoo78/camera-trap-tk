@@ -600,7 +600,7 @@ class MainTable(tk.Canvas):
             'row_end': row,
             'col_start': col,
             'col_end': col,
-            'row_list': [],
+            'row_list': [row],
             'col_list': [],
         }
         #self.render_box(self.selected)
@@ -622,6 +622,7 @@ class MainTable(tk.Canvas):
         #     self.render_listbox(row, col, choices)
         # else:
         #     self.remove_widgets()
+
         logging.debug('click: {}'.format(self.current_rc))
         return self.current_rc
 
@@ -847,7 +848,7 @@ class MainTable(tk.Canvas):
 
     def init_data(self):
         logging.debug('init_data')
-        self.current_ruc = (0, 0)
+        self.current_rc = [0, 0]
         self.selected = {}
         self.render_selected(0, 0)
 

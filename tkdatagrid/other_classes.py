@@ -103,9 +103,12 @@ class RowIndex(tk.Canvas):
         })
         self.selected['row_list'].append(row)
 
-        logging.debug('ctrl_button_1 <Control-Button-1>: {}'.format(self.selected))
+        self.parent.current_rc[0] = row
+        self.parent.current_rc[1] = -1
 
         self.render_row_highlight()
+
+        logging.debug('ctrl_button_1 <Control-Button-1>: {}'.format(self.selected))
 
     def handle_mouse_button_1(self, event):
         self.parent.main_table.clear_selected()
