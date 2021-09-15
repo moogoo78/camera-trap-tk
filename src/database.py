@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS source (
   count INTEGER,
   created INTEGER,
   status TEXT,
-  description TEXT
+  description TEXT,
+  history TEXT
 );'''
 
 SQL_INIT_IMAGE = '''

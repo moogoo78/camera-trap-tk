@@ -5,12 +5,13 @@ from tkinter import (
 import queue
 import logging
 import json
+import time
+from datetime import datetime
+import random
 
 import threading
-import time
-import random
 import asyncio
-import concurrent.futures
+#import concurrent.futures
 from queue import Queue
 
 from worker import UploadTask
@@ -43,10 +44,12 @@ class UploadProgress(tk.Frame):
             'status': 'stop', # stop/start
             'source_list': [],
             'tasks': [],
-            'limit': 2,
             'uploaded_que': Queue(),
+            'history_que': Queue(),
         }
-        self.is_dry_run = True
+        self.is_dry_run = False
+        self.upload_limit = 2
+        self.upload_quota = 2
 
         self.refresh()
         #self.loop = asyncio.new_event_loop()
@@ -125,17 +128,20 @@ class UploadProgress(tk.Frame):
             if self.is_dry_run == True:
                 await asyncio.sleep(0.3)
             else:
-                #self.app.source.upload_to_s3(str(path), object_name)
-                pass
+                self.app.source.upload_to_s3(str(path), object_name)
 
             # TODO error return
 
     async def upload_folder(self, data):
+        source_id = None
         try:
+            start_time = datetime.now()
             for i, row in enumerate(data['image_pending_list']):
+                if not source_id:
+                    source_id = row[10]
                 if self.is_dry_run == True:
                     await asyncio.sleep(0.5)
-                    self.uploading_data['uploaded_que'].put(row[0])
+                    #self.uploading_data['uploaded_que'].put(row[0])
                 else:
                     await self.upload_images(row)
                     # TODO check if upload not successed
@@ -151,17 +157,42 @@ class UploadProgress(tk.Frame):
             logging.debug('asyncio: cancel ')
             raise
         finally:
+            now = datetime.now()
+            exec_time = (now - start_time).total_seconds()
+            self.uploading_data['history_que'].put({
+                'timestamp': str(now),
+                'elapsed': exec_time,
+                'source_id': source_id,
+            })
+
             logging.debug('task: upload_folder done')
 
         return data
 
     async def do_uploads(self):
-        limit = self.uploading_data['limit']
+        limit = self.upload_limit
         res_all = []
         total = len(self.uploading_data['source_list'])
+        for i in range(total):
+            #free_buf_num = limit - len(self.uploading_data['tasks'])
+            if self.uploading_data['status'] == 'stop':
+                break
+
+            task = asyncio.create_task(self.upload_folder(self.uploading_data['source_list'][i]))
+            self.uploading_data['tasks'].append(task)
+            #self.upload_quota -= 1
+            try:
+                res = await task
+                #res = await asyncio.gather(*self.uploading_data['tasks'])
+                print (res)
+                logging.debug('done 1 task')
+            except asyncio.CancelledError:
+                logging.debug('do_uploads: cancel')
+
+        '''
         page_total = round(total / limit)
         page_last_num = total % limit
-
+        print (total,'----------', self.uploading_data['status'], page_total)
         # TODO 改成 1 次 1 個, 總共 2 個
         for i in range(0, page_total):
             step = i * limit
@@ -170,7 +201,6 @@ class UploadProgress(tk.Frame):
 
             if self.uploading_data['status'] == 'stop':
                 break
-
             for j in range(0, page_end):
                 index = j + step
                 task = asyncio.create_task(self.upload_folder(self.uploading_data['source_list'][index]))
@@ -182,7 +212,7 @@ class UploadProgress(tk.Frame):
                 logging.debug('done 2 tasks')
             except asyncio.CancelledError:
                 logging.debug('do_uploads: cancel')
-
+        '''
         return res_all
 
     def _asyncio_thread(self, async_loop):
@@ -201,5 +231,18 @@ class UploadProgress(tk.Frame):
             sql = f"UPDATE image SET upload_status='200' WHERE image_id = {image_id}"
             self.app.db.exec_sql(sql)
         self.app.db.commit()
+
+        qh = self.uploading_data['history_que']
+        for _ in range(qh.qsize()):
+            item = qh.get()
+            sql = 'SELECT * FROM source WHERE source_id={}'.format(item['source_id'])
+            if res := self.app.db.fetch_sql(sql):
+                history = json.loads(res[8]) if res[8] else {'upload': []}
+                history['upload'].append({
+                    'elapsed': item['elapsed'],
+                    'timestamp': item['timestamp'],
+                })
+                sql_update = "UPDATE source SET history='{}', status='40' WHERE source_id={}".format(json.dumps(history), item['source_id'])
+                self.app.db.exec_sql(sql_update, True)
 
         self.app.after(1000, self.polling)

@@ -48,6 +48,7 @@ class Application(tk.Tk):
         self.title(f'Camera Trap Desktop - v{self.version}')
         #self.maxsize(1000, 400)
 
+        self.protocol('WM_DELETE_WINDOW', self.quit)
         s = ttk.Style()
         s.theme_use('clam')
 
@@ -193,6 +194,10 @@ class Application(tk.Tk):
             self.frames['image_viewer'].grid(row=0, column=0, sticky='nsew')
             self.frames['image_viewer'].init_data()
             self.frames['image_viewer'].refresh()
+
+    def quit(self):
+        self.frames['upload_progress'].handle_stop()
+        self.destroy()
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(

@@ -103,9 +103,10 @@ class FolderList(tk.Frame):
             num = ttk.Label(folder_frame, text=f'{i[4]} 張照片', font=tk.font.Font(family='Microsoft JhengHei', size=10))
             num.grid(row=2, column=0, sticky='nw')
             '''
+            uploaded_mark = '*' if i[6] == '40' else ''
             source_button = ttk.Button(
                 self.source_list_frame,
-                text=f'{i[3]} ({i[4]})',
+                text=f'{i[3]}{uploaded_mark} ({i[4]})',
                 style='my.TButton',
                 takefocus=0,
                 command=lambda x=i[0]: self.app.frames['main'].from_source(x))
