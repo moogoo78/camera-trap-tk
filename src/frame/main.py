@@ -285,7 +285,7 @@ class Main(tk.Frame):
             text='上傳',
             #command=self.handle_upload
             #command=lambda: self.foo_worker.do_work()
-            command=self.handle_upload3,
+            command=self.handle_upload2,
             takefocus=0,
         )
         self.upload_button.grid(row=0, column=0, padx=20, pady=4, sticky='w')
@@ -537,12 +537,6 @@ class Main(tk.Frame):
             # TODO
             #tk.messagebox.showinfo('info', '已設定相機位置')
 
-    def handle_upload3(self):
-        #self.app.frames['upload_progress'].foo_start(self.source_id)
-        pass
-
-
-
     def handle_upload2(self):
         # check deployment
         deployment_id = ''
@@ -593,7 +587,7 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql)
         self.app.db.commit()
 
-        self.upload_progress.create_upload_process(data)
+        self.app.frames['upload_progress'].handle_start()
 
         self.upload_button['text'] = '上傳中'
         self.upload_button['state'] = 'disabled'

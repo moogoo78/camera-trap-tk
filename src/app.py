@@ -201,13 +201,14 @@ parser.add_argument(
     help='ini file path')
 args = parser.parse_args()
 
-def main(async_loop):
+def main():
     conf = Config(args.ini_file) if args.ini_file else Config()
     app = Application(conf)
-    app.async_loop = async_loop
+    #app.async_loop = async_loop
     app.mainloop()
 
 
 if __name__ == '__main__':
-    async_loop = asyncio.get_event_loop()
-    main(async_loop)
+    #async_loop = asyncio.get_event_loop()
+    #main(async_loop)
+    main()

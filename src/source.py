@@ -10,7 +10,7 @@ from boto3.exceptions import S3UploadFailedError
 #S3UploadFailedError
 
 from image import ImageManager, make_thumb, get_thumb
-from upload import UploadThread
+#from upload import UploadThread
 
 IGNORE_FILES = ['Thumbs.db', '']
 IMAGE_EXTENSIONS = ['.JPG', '.JPEG', '.PNG']
@@ -174,77 +174,7 @@ class Source(object):
 
         return ret
 
-    # depricated
-    def gen_upload_file(self, image_list, source_id, deployment_id, server_image_map):
-        for i in image_list:
-            file_path = i[1]
-            server_image_id = server_image_map.get(str(i[0]), '')
-            object_name = f'{server_image_id}.jpg'
 
-            thumb_path = get_thumb(i[10], i[2], i[1])
-            #print (thumb_path))
-            res = self.upload_to_s3(str(thumb_path), object_name)
-            #print ('upload file:', file_path, object_name, res)
-            if res['error']:
-                yield None
-            else:
-                yield i[0], server_image_id, object_name, res
-
-    def do_upload(self, source_data):
-        count = 0
-        count_uploaded = 0
-
-        upload_thread = UploadThread(self.db, source_data['image_list'])
-        upload_thread.start()
-        source_id = source_data['source'][0]
-        self.upload_monitor(upload_thread, source_id)
-
-        #for i in source_data['image_list']:
-        #    count += 1
-        #    file_name = i[1]
-        #    img = ImageManager(file_name)
-        #    object_key = f'foo-bar-{i[0]}.jgp'
-        #    print (object_key)
-        #    time.sleep(1)
-
-        #    sql = "UPDATE image SET status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in res['image_list']]))
-            #time.sleep(1)
-            #self.progress_frame.tkraise()
-            #self.pb.start(20)
-        '''
-            s3_client = boto3.client(
-                's3',
-                aws_access_key_id=aws_conf['access_key_id'],
-                aws_secret_access_key=aws_conf['secret_access_key']
-            )
-
-            try:
-            response = s3_client.upload_file(
-            file_name,
-            aws_conf['bucket_name'],
-            object_name,
-            ExtraArgs={'ACL': 'public-read'}
-            )
-            except ClientError as e:
-            logging.error(e)
-            return False
-            return True'''
-            #is_uploaded = upload_to_s3(config['AWSConfig'], file_name, object_name)
-
-            #    server_image_id = server_image_map.get(str(i[0]), '')
-                #object_name = '{}-{}.jpg'.format(server_image_id, i[6])
-                #object_name = '{}.jpg'.format(server_image_id)
-                #is_uploaded = upload_to_s3(config['AWSConfig'], file_name, object_name)
-    def upload_monitor(self, upload_thread, source_id):
-        """ Monitor the uload thread """
-        if upload_thread.is_alive():
-            images = self.db.fetch_sql_all('SELECT * FROM image WHERE source_id={}'.format(source_id))
-            #print (self.app)
-            print ('mon', len([x for x in images if x[5] == '100']), len(images))
-            self.app.after(1000, lambda: self.upload_monitor(upload_thread, source_id))
-        else:
-            pass
-            #pbstop && raise
 
     def delete_folder(self, source_id):
         #print ('delete', source_id)
