@@ -68,12 +68,12 @@ HEADER = {
 
 def _get_status_display(code):
     status_map = {
-        '10': 'new',
-        '20': 'viewed',
-        '30': 'annotated',
-        '100': 'start',
+        '10': 'I',
+        '20': 'V',
+        '30': 'A',
+        '100': 'S',
         '110': '-',
-        '200': 'uploaded',
+        '200': 'D',
     }
     return status_map.get(code, '-')
 

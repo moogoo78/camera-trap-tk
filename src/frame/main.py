@@ -437,9 +437,12 @@ class Main(tk.Frame):
             self.data_grid.state['box_display_type'] = 'raise'
 
         # show first image if no select
-        first_key = next(iter(data))
-        first_item = data[first_key]
-        self.show_image(first_item['thumb'], first_item['path'], 'm')
+        if len(data) > 0:
+            first_key = next(iter(data))
+            first_item = data[first_key]
+            self.show_image(first_item['thumb'], first_item['path'], 'm')
+        else:
+            self.image_thumb_label.image = None
 
         self.data_grid.main_table.delete('row-img-seq')
         self.data_grid.refresh(data, keep_row_highlight=keep_row_highlight)
@@ -661,22 +664,13 @@ class Main(tk.Frame):
         self.app.frames['folder_list'].refresh_source_list()
         self.app.frames['landing'].show(True)
 
-    def get_status_display(self, code):
-        status_map = {
-            '10': 'new',
-            '20': 'viewed',
-            '30': 'annotated',
-            '100': 'start',
-            '110': '-',
-            '200': 'uploaded',
-        }
-        return status_map.get(code, '-')
-
     def custom_set_data(self, row_key, col_key, value):
         self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
-        if self.seq_info:
+        #if self.seq_info:
             # has seq_info need re-render
-            self.refresh()
+
+        # always refresh for status display
+        self.refresh()
 
     def select_item(self, rc):
         '''
@@ -703,7 +697,9 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
             row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
             #self.data_grid.main_table.set_data_value(row_key, col_key, 'vv')
-            self.data_grid.state['data'][row_key]['status'] = self.get_status_display('20')
+            sd = self.data_grid.state['data'][row_key]['status_display']
+            tmp = sd.split(' / ')
+            self.data_grid.state['data'][row_key]['status_display'] = 'V / {}'.format(tmp[1]) # TODO hard code display, (not self.refresh() for better performance?)
             self.data_grid.main_table.render()
 
         self.show_image(item['thumb'], item['path'], 'm')
@@ -774,9 +770,7 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
             self.refresh()
 
-    def custom_remove_row(self, row_key):
-        #print ('rm row_key', row_key)
-
+    def _remove_row_key(self, row_key):
         item = self.data_helper.data[row_key]
         image_id = item['image_id']
         adata = self.data_helper.annotation_data[image_id]
@@ -800,7 +794,15 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
         self.refresh()
 
-
+    def custom_remove_row(self, row):
+        rc_key = self.data_helper.get_rc_key(row, 2)
+        self._remove_row_key(rc_key[0])
+        sql = f"SELECT COUNT(*) FROM image WHERE source_id = {self.source_id}"
+        res = self.app.db.fetch_sql(sql)
+        if res:
+            sql = f"UPDATE source SET count={res[0]} WHERE source_id={self.source_id}"
+            self.app.db.exec_sql(sql)
+            self.app.frames['folder_list'].refresh_source_list()
     # def custom_apply_pattern(self, pattern_copy, selected):
     #     print (pattern_copy, selected)
     #     num_pattern = len(pattern_copy)
@@ -811,8 +813,6 @@ class Main(tk.Frame):
 
     #     self.data_grid.main_table.pattern_copy = []
     #     self.refresh()
-
-
 
     def copy_cloned_species(self):
         rows = self.data_grid.row_index.get_selected_rows()
@@ -846,7 +846,7 @@ class Main(tk.Frame):
         row_list = self.data_grid.get_row_list()
         for row in row_list:
             row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
-            self.data_helper.update_annotation(row_key, col_key, species)
+            self.data_helper.update_annotation(row_key, col_key, species, self.seq_info)
         self.refresh()
 
     def handle_keyboard_shortcut(self, event):
@@ -858,6 +858,6 @@ class Main(tk.Frame):
         if value := self.keyboard_shortcuts.get(event.keysym, ''):
             for row in rows:
                 row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
-                self.data_helper.update_annotation(row_key, col_key, value)
+                self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
 
         self.refresh()

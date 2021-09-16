@@ -93,18 +93,18 @@ class RowIndex(tk.Canvas):
 
     def handle_ctrl_button_1(self, event):
         self.parent.main_table.clear_selected()
-
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
 
         self.selected.update({
             'mode': 'ctrl-click',
+            'x': event.x,
+            'y': event.y,
         })
-        self.selected['row_list'].append(row)
 
-        self.parent.current_rc[0] = row
-        self.parent.current_rc[1] = -1
+        if row not in self.selected['row_list']:
+            self.selected['row_list'].append(row)
 
         self.render_row_highlight()
 
@@ -122,6 +122,8 @@ class RowIndex(tk.Canvas):
             'row_start': row,
             'row_end': row,
             'row_list': [row],
+            'x': event.x,
+            'y': event.y,
         })
         logging.debug('mouse_button_1 <Button-1>: {}'.format(self.selected))
 
@@ -150,6 +152,10 @@ class RowIndex(tk.Canvas):
 
         # prevent drag if in ctrl-click
         if self.selected['mode'] == 'ctrl-click':
+            return None
+
+        if abs(self.selected['x']-event.x) <= 3 or abs(self.selected['y']-event.y) <= 3:
+           # drag 不夠, 不算 drag (prevent 誤觸)
             return None
 
         self.selected['mode'] = 'drag'

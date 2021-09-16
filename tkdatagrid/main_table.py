@@ -481,6 +481,8 @@ class MainTable(tk.Canvas):
             'mode': 'drag',
             'row_end': row,
             'col_end': col,
+            'row_list': list(range(self.selected['row_start'], row+1)),
+            'col_list': list(range(self.selected['col_start'], col+1))
         })
         ''' TODO
         if row >= self.ps['num_rows']:
@@ -548,7 +550,7 @@ class MainTable(tk.Canvas):
         self.popup_menu = tk.Menu(self)
         #self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
         self.popup_menu.add_command(label='複製一列', command=self.clone_rows)
-        self.popup_menu.add_command(label='刪除一列', command=lambda: self.remove_row(res_rc['row_key']))
+        self.popup_menu.add_command(label='刪除一列', command=self.remove_rows)
 
         # custom menus
         self.popup_menu.add_separator()
@@ -722,8 +724,9 @@ class MainTable(tk.Canvas):
 
     @custom_action(name='clone_row')
     def clone_rows(self):
-        rows = self.parent.row_index.get_selected_rows()
-        logging.debug('rows: {}'.format(rows))
+        #rows = self.parent.row_index.get_selected_rows()
+        rows = self.parent.get_row_list()
+        logging.debug(f'rows: {rows}')
 
         if len(rows) == 0:
             return
@@ -762,19 +765,26 @@ class MainTable(tk.Canvas):
             new_data[d[0]] = d[1]
 
         self.parent.refresh(new_data)
-
+        self.parent.row_index.clear_selected()
         #if func := self.ps.get('after_clone_row', ''):
         #    return func(row_key, clone_iid)
         #return row_key, clone_iid
         return res
 
     @custom_action(name='remove_row')
-    def remove_row(self, row_key=''):
-        logging.debug(f'remove_row: {row_key}')
+    def remove_rows(self):
+        rows = self.parent.get_row_list()
+        logging.debug(f'remove_rows: {rows}')
 
-        del self.ps['data'][row_key]
-        self.parent.refresh(self.ps['data'])
-        return row_key
+        # only do first row
+        if len(rows) > 0:
+            row = rows[0]
+            row_key, col_key = self.get_rc_key(row, 0)
+            del self.ps['data'][row_key]
+            self.parent.refresh(self.ps['data'])
+
+            return row
+        return rows
 
     def get_selected_list(self):
         '''return rows depends on selected mode'''

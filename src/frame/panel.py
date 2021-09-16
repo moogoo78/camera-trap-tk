@@ -16,8 +16,8 @@ class Panel(tk.Frame):
     def layout(self):
         #miFrame=tk.Frame(self,bg='red',width=800,height=700)
         #miFrame.grid()
-        photo_folder = ImageTk.PhotoImage(file="./src/img/folder.png")
-        photo_cloud = ImageTk.PhotoImage(file="./src/img/cloud.png")
+        photo_folder = ImageTk.PhotoImage(file="./assets/folder.png")
+        photo_cloud = ImageTk.PhotoImage(file="./assets/cloud.png")
 
         self.button_folder = ttk.Button(
             self,

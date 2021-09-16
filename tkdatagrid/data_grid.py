@@ -134,6 +134,7 @@ class DataGrid(tk.Frame):
 
     def clear(self):
         self.main_table.clear()
+        self.row_index.clear_selected()
 
     def update_columns(self, columns):
         # count coulmn_width_list and set new width
