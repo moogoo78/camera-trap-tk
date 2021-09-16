@@ -1,3 +1,5 @@
+import logging
+
 import tkinter as tk
 from tkinter import (
     ttk,
@@ -69,7 +71,7 @@ class ImageViewer(tk.Frame):
         self.back_button = ttk.Button(
             self.right_frame,
             text='回上頁',
-            command=self.app.toggle_image_viewer,
+            command=lambda: self.app.toggle_image_viewer(False),
             takefocus=0)
         self.back_button.grid(row=0, column=0, pady=(0, 10), sticky='nw')
 
@@ -198,7 +200,7 @@ class ImageViewer(tk.Frame):
 
     def handle_key_move(self, action):
         row = self.app.frames['main'].current_row
-        #print(row, self.current_annotation_num, '--->')
+        last_row = row
 
         if action in ['down', 'right']:
             row += self.current_annotation_num
@@ -207,7 +209,7 @@ class ImageViewer(tk.Frame):
             n = self.get_last_annotation_num_by_image_id(image_id)
             if n:
                 row -= n
-
+        logging.debug(f'action: {action}, row: {last_row} -> {row}')
         if len(self.unsaved_entry):
             args = self.unsaved_entry
             sv = self.table[args[0]][args[1]+1][0]
@@ -224,14 +226,38 @@ class ImageViewer(tk.Frame):
                 'row_list': [row],
             })
             self.app.frames['main'].select_item((row, 0))
+            self.app.frames['main'].data_grid.main_table.render_selected(row, 4) # show species column
+            image_index, total = self._count_image_index()
+            if image_index >= 10: # hard code
+                moveto = float(image_index/total)
+                self.app.frames['main'].data_grid.handle_yviews('moveto', moveto)
+
             self.refresh()
 
+    def _count_image_index(self):
+        row = self.app.frames['main'].current_row
+        #row_key, _ = self.helper.get_rc_key(row, 0)
+
+        item = self.helper.get_item(row)
+        image_index = item['image_index']
+        total = len(self.helper.annotation_data)
+
+        return image_index, total
+
+    def toggle_arrow_key_binding(self, to_bind=True):
+        if to_bind == True:
+            self.bind_all('<Down>', lambda _: self.handle_key_move('down'))
+            self.bind_all('<Up>', lambda _: self.handle_key_move('up'))
+            self.bind_all('<Left>', lambda _: self.handle_key_move('left'))
+            self.bind_all('<Right>', lambda _: self.handle_key_move('right'))
+        else:
+            self.unbind_all('<Up>')
+            self.unbind_all('<Down>')
+            self.unbind_all('<Left>')
+            self.unbind_all('<Right>')
+
     def refresh(self):
-        # bind key event
-        self.app.bind('<Down>', lambda _: self.handle_key_move('down'))
-        self.app.bind('<Up>', lambda _: self.handle_key_move('up'))
-        self.app.bind('<Left>', lambda _: self.handle_key_move('left'))
-        self.app.bind('<Right>', lambda _: self.handle_key_move('right'))
+        self.toggle_arrow_key_binding()
 
         source = self.app.frames['main'].source_data['source']
 

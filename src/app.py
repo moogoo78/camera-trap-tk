@@ -176,24 +176,22 @@ class Application(tk.Tk):
             self.panedwindow.add(self.frames['upload_progress'])
             self.panedwindow.add(self.frames['main'])
 
-    def toggle_image_viewer(self):
-        '''image_viewer & main'''
-        if self.frames['main'].winfo_viewable():
-            self.frames['main'].grid_remove()
+    def toggle_image_viewer(self, is_image_viewer=True):
+        # 先不 remove main , 蓋掉就好了
+        #if not self.frames['main'].winfo_viewable():
+        #self.frames['main'].grid(row=0, column=0, sticky='nsew')
+        if is_image_viewer:
+            #self.frames['main'].data_grid.main_table.toggle_arrow_key_binding(False)
+            self.frames['image_viewer'].toggle_arrow_key_binding(True)
+            if not self.frames['image_viewer'].winfo_viewable():
+                self.frames['image_viewer'].grid(row=0, column=0, sticky='nsew')
+                self.frames['image_viewer'].init_data()
+                self.frames['image_viewer'].refresh()
         else:
-            self.frames['main'].grid(row=0, column=0, sticky='nsew')
-
-        if self.frames['image_viewer'].winfo_viewable():
-            self.frames['image_viewer'].grid_remove()
-            # TODO
-            self.unbind('<Left>')
-            self.unbind('<Up>')
-            self.unbind('<Right>')
-            self.unbind('<Down>')
-        else:
-            self.frames['image_viewer'].grid(row=0, column=0, sticky='nsew')
-            self.frames['image_viewer'].init_data()
-            self.frames['image_viewer'].refresh()
+            self.frames['main'].data_grid.main_table.toggle_arrow_key_binding(True)
+            #self.frames['image_viewer'].toggle_arrow_key_binding(False)
+            if self.frames['image_viewer'].winfo_viewable():
+                self.frames['image_viewer'].grid_remove()
 
     def quit(self):
         self.frames['upload_progress'].handle_stop()

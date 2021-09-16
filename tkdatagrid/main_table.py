@@ -99,11 +99,19 @@ class MainTable(tk.Canvas):
             for bind_key in custom_binding['bind_list']:
                 #self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
                 self.bind_all(f'<{bind_key}>', custom_binding['command'])
-        #self.parent.master.bind_all('<Control-a>', self.handle_sh)
-        self.parent.master.bind_all('<Up>', self.handle_arrow_key)
-        self.parent.master.bind_all('<Down>', self.handle_arrow_key)
-        self.parent.master.bind_all('<Left>', self.handle_arrow_key)
-        self.parent.master.bind_all('<Right>', self.handle_arrow_key)
+        self.toggle_arrow_key_binding()
+
+    def toggle_arrow_key_binding(self, to_bind=True):
+        if to_bind == True:
+            self.bind_all('<Up>', self.handle_arrow_key)
+            self.bind_all('<Down>', self.handle_arrow_key)
+            self.bind_all('<Left>', self.handle_arrow_key)
+            self.bind_all('<Right>', self.handle_arrow_key)
+        else:
+            self.unbind_all('<Up>')
+            self.unbind_all('<Down>')
+            self.unbind_all('<Left>')
+            self.unbind_all('<Right>')
 
     def handle_space_key(self, event):
         row, col = self.current_rc
@@ -672,8 +680,8 @@ class MainTable(tk.Canvas):
 
     @custom_action(name='arrow_key')
     def handle_arrow_key(self, event):
-        #print ('handle_arrow:', event, self.current_rc)
         row, col = self.current_rc
+        last_rc = self.current_rc
 
         if row == None:
             return
@@ -714,6 +722,7 @@ class MainTable(tk.Canvas):
             'col_list': [col],
         })
         #if event.keysym in ('Up', 'Down'):
+        logging.debug(f'{event.keysym}, last_rc: {last_rc} -> {row}, {col}')
         self.render_selected(row, col)
         #elif event.keysym in ('Left', 'Right'):
         # create text_editor
