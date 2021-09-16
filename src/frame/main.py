@@ -416,15 +416,11 @@ class Main(tk.Frame):
         source_status = self.source_data['source'][6]
         if source_status == '20':
             self.upload_button['text'] = '上傳中'
+            self.upload_button['state'] = 'disabled'
         elif source_status == '40':
-            self.upload_button['text'] = '已上傳'
+            self.upload_button['text'] = '上傳*'
         else:
             self.upload_button['text'] = '上傳'
-
-        if source_status != '10':
-            self.upload_button['state'] = 'disabled'
-        else:
-            self.upload_button['state'] = 'normal'
 
         # data list
         data = self.data_helper.read_image_list(self.source_data['image_list'])
@@ -564,6 +560,26 @@ class Main(tk.Frame):
         #f.write(json.dumps(data))
         #f.close()
 
+        # prepare for upload
+        account_id = self.app.config.get('Installation', 'account_id')
+        payload = {
+            'image_list': image_list,
+            'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
+            'deployment_id': deployment_id,
+        }
+
+        if self.source_data['source'][6] == '40':
+            ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
+            if ans == 'no':
+                return False
+            elif ans == 'yes':
+                res = self.app.server.post_annotation(payload)
+                if res['error']:
+                    tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
+                else:
+                    tk.messagebox.showinfo('info', '文字資料更新成功 !')
+                return
+
         # 1. post annotation to server
         sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
         self.app.db.exec_sql(sql, True)
@@ -594,6 +610,7 @@ class Main(tk.Frame):
 
         self.upload_button['text'] = '上傳中'
         self.upload_button['state'] = 'disabled'
+
 
     def handle_notebook_change(self, event):
         tab = event.widget.tab('current')['text']
@@ -801,7 +818,7 @@ class Main(tk.Frame):
         res = self.app.db.fetch_sql(sql)
         if res:
             sql = f"UPDATE source SET count={res[0]} WHERE source_id={self.source_id}"
-            self.app.db.exec_sql(sql)
+            self.app.db.exec_sql(sql, True)
             self.app.frames['folder_list'].refresh_source_list()
     # def custom_apply_pattern(self, pattern_copy, selected):
     #     print (pattern_copy, selected)

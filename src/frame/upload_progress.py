@@ -123,7 +123,6 @@ class UploadProgress(tk.Frame):
         #print ('upload_image', row[10])
         for x, path in thumb_paths.items():
             object_name = f'{server_image_id}-{x}.jpg'
-            print (object_name)
             #time.sleep(0.3)
             if self.is_dry_run == True:
                 await asyncio.sleep(0.3)
@@ -143,6 +142,8 @@ class UploadProgress(tk.Frame):
                     await asyncio.sleep(0.5)
                     #self.uploading_data['uploaded_que'].put(row[0])
                 else:
+                    if self.uploading_data['status'] == 'stop':
+                        return
                     await self.upload_images(row)
                     # TODO check if upload not successed
                     self.uploading_data['uploaded_que'].put(row[0])
