@@ -85,7 +85,7 @@ class MainTable(tk.Canvas):
 
         # binding
         self.bind('<Button-1>', self.handle_mouse_button_1)
-        self.bind('<Button-3>', self.handle_mouse_click_right)
+        self.bind('<Button-3>', self.handle_mouse_button_3)
         self.bind('<B1-Motion>', self.handle_mouse_drag)
         self.bind('<MouseWheel>', self.handle_mouse_wheel)
         self.bind('<Button-4>', self.handle_mouse_wheel)
@@ -531,7 +531,7 @@ class MainTable(tk.Canvas):
             del self.listbox
         self.delete('listbox_win')
 
-    def handle_mouse_click_right(self, event):
+    def render_popup_menu(self, event):
         if hasattr(self, 'popup_menu'):
             self.popup_menu.destroy()
 
@@ -571,6 +571,9 @@ class MainTable(tk.Canvas):
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         self.popup_menu.post(event.x_root, event.y_root)
         #print (y1, y2, int((y1+y2)/2), event.y_root)
+
+    def handle_mouse_button_3(self, event):
+        self.render_popup_menu(event)
 
     @custom_action(name='mouse_click')
     def handle_mouse_button_1(self, event):
@@ -863,8 +866,9 @@ class MainTable(tk.Canvas):
         self.selected = {}
         self.render_selected(0, 0)
 
-    def clear_selected(self):
+    def clear_selected(self, to_refresh=True):
         self.delete('cell-highlight')
         self.delete('cell-highlight-border')
         self.selected = {}
-        self.parent.refresh(self.ps['data'])
+        if to_refresh == True:
+            self.parent.refresh(self.ps['data'])

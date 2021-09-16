@@ -70,6 +70,7 @@ class RowIndex(tk.Canvas):
         }
         self.bind('<B1-Motion>', self.handle_mouse_drag)
         self.bind('<Button-1>', self.handle_mouse_button_1)
+        self.bind('<Button-3>', self.handle_mouse_button_3)
         self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
         self.bind('<Shift-Button-1>', self.handle_shift_button_1)
 
@@ -96,7 +97,7 @@ class RowIndex(tk.Canvas):
         #             'row_list': list(range(row_start, row+1)),
         #             'mode': 'shift',
         #         })
-
+        self.parent.main_table.clear_selected(False)
         self.render_row_highlight()
 
     def handle_ctrl_button_1(self, event):
@@ -136,6 +137,12 @@ class RowIndex(tk.Canvas):
         logging.debug('mouse_button_1 <Button-1>: {}'.format(self.selected))
 
         self.render_row_highlight()
+
+    def foo(self):
+        pass
+
+    def handle_mouse_button_3(self, event):
+        self.parent.main_table.render_popup_menu(event)
 
     def get_selected_rows(self):
         s = self.selected
