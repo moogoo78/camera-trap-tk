@@ -582,6 +582,9 @@ class MainTable(tk.Canvas):
         # clear
         #self.delete('entry_win')
         self.remove_widgets()
+        self.parent.row_index.clear_selected()
+        self.delete('row-highlight')
+        self.delete('box-highlight')
 
         res_rc = self.get_rc(event.x, event.y)
         if not res_rc['is_available']:
@@ -606,8 +609,6 @@ class MainTable(tk.Canvas):
             'col_list': [],
         }
         #self.render_box(self.selected)
-        # clear box-highlight
-        self.delete('box-highlight')
 
         self.render_selected(row, col)
 

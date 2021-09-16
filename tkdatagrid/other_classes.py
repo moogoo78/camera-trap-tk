@@ -81,18 +81,26 @@ class RowIndex(tk.Canvas):
         return row
 
     def handle_shift_button_1(self, event):
-        row = self.get_cleaned_row(event.y)
-        if self.selected['mode'] == 'click':
-             if row_start := self.selected['row_start']:
-                 self.selected.update({
-                     'row_list': list(range(row_start, row+1)),
-                     'mode': 'shift',
-                 })
-                 logging.debug('shift select, {}'.format(self.selected))
-                 self.render_row_highlight()
+        logging.debug('shift select, {}'.format(self.selected))
+
+        rows = self.parent.get_row_list()
+        current_row = self.get_cleaned_row(event.y)
+        last_row = rows[0]
+        self.selected.update({
+            'row_list': list(range(last_row, current_row+1)),
+            'mode': 'shift',
+        })
+        #if self.selected.get('mode', '') in ('click', ''):
+        #     if row_start := self.selected['row_start']:
+        #         self.selected.update({
+        #             'row_list': list(range(row_start, row+1)),
+        #             'mode': 'shift',
+        #         })
+
+        self.render_row_highlight()
 
     def handle_ctrl_button_1(self, event):
-        self.parent.main_table.clear_selected()
+
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -141,17 +149,19 @@ class RowIndex(tk.Canvas):
                 rows = list(range(s['row_start'], s['row_start'] + diff + 1))
         elif mode == 'ctrl-click':
             rows = s['row_list']
+        elif mode == 'shift':
+            rows = s['row_list']
         return rows
 
     def handle_mouse_drag(self, event):
-        self.parent.main_table.clear_selected()
+        #self.parent.main_table.clear_selected()
 
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
 
         # prevent drag if in ctrl-click
-        if self.selected['mode'] == 'ctrl-click':
+        if self.selected.get('mode', '') == 'ctrl-click':
             return None
 
         if abs(self.selected['x']-event.x) <= 3 or abs(self.selected['y']-event.y) <= 3:
