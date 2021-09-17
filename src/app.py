@@ -55,6 +55,11 @@ class Application(tk.Tk):
         self.config = config
 
         # logging
+        log_level = logging.INFO
+        if ll := config.get('Mode', 'log_level'):
+            ll = ll.upper()
+            log_level = getattr(logging, ll)
+
         file_handler = logging.FileHandler(
             filename='ct-log.txt',
             encoding='utf-8', mode='a+')
@@ -65,7 +70,7 @@ class Application(tk.Tk):
                 stdout_handler],
             format="%(asctime)s|%(levelname)s|%(filename)s:%(lineno)d|%(funcName)s => %(message)s",
             datefmt="%Y-%m-%d:%H:%M:%S",
-            level=logging.DEBUG)
+            level=log_level)
 
         # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s 
         self.logger = logging.getLogger('ct-tk')

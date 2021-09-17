@@ -391,6 +391,7 @@ class Main(tk.Frame):
         #print (self.current_row, self.current_image_data, self.data_grid.main_table.selected)
         #print (self.data_grid.main_table.get_selected_list(), 'a', self.data_grid.main_table.selected, keep_row_highlight)
 
+        #self.data_helper.set_status_display(image_id=35, status_code='300')-
         # let project image group intervel entry off focus
         # or after key in minute then press arrow key, focus will still on entry
         self.app.focus_set()
@@ -416,11 +417,12 @@ class Main(tk.Frame):
         source_status = self.source_data['source'][6]
         if source_status == '20':
             self.upload_button['text'] = '上傳中'
-            self.upload_button['state'] = 'disabled'
+            self.upload_button['state'] = tk.DISABLED
         elif source_status == '40':
             self.upload_button['text'] = '上傳*'
         else:
             self.upload_button['text'] = '上傳'
+            self.upload_button['state'] = tk.NORMAL
 
         # data list
         data = self.data_helper.read_image_list(self.source_data['image_list'])
@@ -714,10 +716,10 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
             row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
             #self.data_grid.main_table.set_data_value(row_key, col_key, 'vv')
-            sd = self.data_grid.state['data'][row_key]['status_display']
-            tmp = sd.split(' / ')
-            self.data_grid.state['data'][row_key]['status_display'] = 'V / {}'.format(tmp[1]) # TODO hard code display, (not self.refresh() for better performance?)
+            # update status_display
+            self.data_helper.set_status_display(row_key, status_code='20')
             self.data_grid.main_table.render()
+
 
         self.show_image(item['thumb'], item['path'], 'm')
 

@@ -102,6 +102,23 @@ class DataHelper(object):
         self.annotation_data = {}
         self.exif_data = {}
 
+    def get_image_row_keys(self, image_id):
+        row_keys = []
+        for iid, item in self.data.items():
+            if image_id == item['image_id']:
+                row_keys.append(iid)
+        return row_keys
+
+    def set_status_display(self, row_key='', status_code=''):
+        delimeter = ' / '
+        orig = self.data[row_key]['status_display']
+        orgi_list = orig.split(delimeter)
+
+        if len(status_code) == 2:
+            self.data[row_key]['status_display'] = delimeter.join([_get_status_display(status_code), orig[1]])
+        elif len(status_code) == 3:
+            self.data[row_key]['status_display'] = delimeter.join([orig[0], _get_status_display(status_code)])
+
     def update_annotation(self, row_key, col_key, value, seq_info=None):
 
         item = self.data[row_key]

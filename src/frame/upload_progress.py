@@ -8,6 +8,7 @@ import json
 import time
 from datetime import datetime
 import random
+import sys
 
 import threading
 import asyncio
@@ -37,11 +38,17 @@ class UploadProgress(tk.Frame):
             text='Stop',
             command=self.handle_stop,
             takefocus=0,
+            state=tk.DISABLED,
         )
         self.stop_button.grid(row=0, column=1, padx=10, pady=10, sticky='we')
 
+        # break:  while press stop, set break and disable start_button
+        # stop: while thread run_untile_complete
+        # start: fetch db & start
+        # done:
+        # pause:
         self.uploading_data = {
-            'status': 'stop', # stop/start
+            'status': 'stop', # stop/break/start
             'source_list': [],
             'tasks': [],
             'uploaded_que': Queue(),
@@ -61,7 +68,11 @@ class UploadProgress(tk.Frame):
         for i in self.uploading_data['source_list']:
             i['frame'].destroy()
 
-        self.uploading_data['source_list'] = []
+        self.uploading_data.update({
+            'source_list': [],
+            'uploaded_que': Queue(),
+            'history_que': Queue(),
+        })
 
         sql = "SELECT * FROM source WHERE status in ('20', '30')"
         res = self.app.db.fetch_sql_all(sql)
@@ -98,20 +109,26 @@ class UploadProgress(tk.Frame):
             })
 
     def handle_start(self):
-        self.uploading_data['status'] = 'start'
         self.refresh()
-        threading.Thread(target=self._asyncio_thread, args=(self.async_loop,)).start()
-        self.polling()
+        self.uploading_data['status'] = 'start'
         self.start_button.config(state=tk.DISABLED)
         self.stop_button.config(state=tk.NORMAL)
 
+        threading.Thread(target=self._asyncio_thread, args=(self.async_loop,)).start()
+        self.polling()
+
+
     def handle_stop(self):
         #self.loop.stop() # RuntimeError: Event loop stopped before Future completed
-        self.uploading_data['status'] = 'stop'
+        self.uploading_data['status'] = 'break'
+        logging.info('cancel all upload tasks')
+        #self.start_button.config(state=tk.DISABLED)
+        #self.stop_button.config(state=tk.DISABLED)
         for t in self.uploading_data['tasks']:
             t.cancel()
-        self.start_button.config(state=tk.NORMAL)
-        self.stop_button.config(state=tk.DISABLED)
+        logging.info('set status to stop')
+        #self.start_button.config(state=tk.NORMAL)
+        #self.stop_button.config(state=tk.DISABLED)
 
     def start_background_loop(self, loop: asyncio.AbstractEventLoop) -> None:
         asyncio.set_event_loop(self.async_loop)
@@ -133,9 +150,13 @@ class UploadProgress(tk.Frame):
 
     async def upload_folder(self, data):
         source_id = None
+        uploaded_count = 0
         try:
             start_time = datetime.now()
             for i, row in enumerate(data['image_pending_list']):
+                if self.uploading_data['status'] in ['stop', 'break']:
+                    break
+
                 if not source_id:
                     source_id = row[10]
                 if self.is_dry_run == True:
@@ -145,28 +166,36 @@ class UploadProgress(tk.Frame):
                     if self.uploading_data['status'] == 'stop':
                         return
                     await self.upload_images(row)
+                    uploaded_count += 1
                     # TODO check if upload not successed
                     self.uploading_data['uploaded_que'].put(row[0])
 
                 # update progress display
                 value = i + 1 + data['init_value']
                 total = data['total']
-                data['progress_bar'].config(value=value)
-                data['subtitle1'].config(text='{} ({}/{})'.format(row[2], value, total))
-                data['subtitle2'].config(text='{} %'.format(round(value/total*100.0)))
+                try:
+                    data['progress_bar'].config(value=value)
+                    data['subtitle1'].config(text='{} ({}/{})'.format(row[2], value, total))
+                    data['subtitle2'].config(text='{} %'.format(round(value/total*100.0)))
+                except:
+                    logging.info('progress bar update error')
+
         except asyncio.CancelledError:
-            logging.debug('asyncio: cancel ')
+            logging.info('asyncio: cancel ')
             raise
         finally:
             now = datetime.now()
             exec_time = (now - start_time).total_seconds()
-            self.uploading_data['history_que'].put({
-                'timestamp': str(now),
-                'elapsed': exec_time,
-                'source_id': source_id,
-            })
 
-            logging.debug('task: upload_folder done')
+            if uploaded_count >= len(data['image_pending_list']):
+                self.uploading_data['history_que'].put({
+                    'timestamp': str(now),
+                    'elapsed': exec_time,
+                    'source_id': source_id,
+                })
+                logging.info('task: upload_folder finally')
+            else:
+                logging.info('task: upload_folder finally - unfinish')
 
         return data
 
@@ -175,8 +204,7 @@ class UploadProgress(tk.Frame):
         res_all = []
         total = len(self.uploading_data['source_list'])
         for i in range(total):
-            #free_buf_num = limit - len(self.uploading_data['tasks'])
-            if self.uploading_data['status'] == 'stop':
+            if self.uploading_data['status'] in ['stop', 'break']:
                 break
 
             task = asyncio.create_task(self.upload_folder(self.uploading_data['source_list'][i]))
@@ -185,10 +213,9 @@ class UploadProgress(tk.Frame):
             try:
                 res = await task
                 #res = await asyncio.gather(*self.uploading_data['tasks'])
-                print (res)
-                logging.debug('done 1 task')
+                logging.info(f'done 1 task: {res}')
             except asyncio.CancelledError:
-                logging.debug('do_uploads: cancel')
+                logging.info('do_uploads: cancel')
 
         '''
         page_total = round(total / limit)
@@ -218,26 +245,42 @@ class UploadProgress(tk.Frame):
 
     def _asyncio_thread(self, async_loop):
         async_loop.run_until_complete(self.do_uploads())
-        logging.debug('asyncio loop complete')
+        logging.info('asyncio loop complete')
+
+        self.uploading_data['status'] = 'stop'
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
         #async_loop.run_forever()
 
     def polling(self):
         '''to save upload progress'''
-        if self.uploading_data['status'] != 'start':
+        q = self.uploading_data['uploaded_que']
+        qh = self.uploading_data['history_que']
+
+        if q.qsize() == 0 and qh.qsize() == 0 and self.uploading_data['status'] == 'stop':
             return
 
-        q = self.uploading_data['uploaded_que']
         for _ in range(q.qsize()):
             image_id = q.get()
             sql = f"UPDATE image SET upload_status='200' WHERE image_id = {image_id}"
-            self.app.db.exec_sql(sql)
-        self.app.db.commit()
+            self.app.db.exec_sql(sql, True)
 
-        qh = self.uploading_data['history_que']
+            # update table status
+            main = self.app.frames['main']
+            row_keys = main.data_helper.get_image_row_keys(image_id)
+            for k in row_keys:
+                main.data_helper.set_status_display(k, '200')
+                main.data_grid.main_table.render()
+
         for _ in range(qh.qsize()):
             item = qh.get()
+
             sql = 'SELECT * FROM source WHERE source_id={}'.format(item['source_id'])
             if res := self.app.db.fetch_sql(sql):
+                #sql_img_count = "SELECT COUNT(*) FROM image WHERE source_id={} AND upload_status='200'".format(item['source_id'])
+                #if res2 := self.app.db.fetch_sql(sql_img_count):
+                #    print (res2[0], res2[1])
+
                 history = json.loads(res[8]) if res[8] else {'upload': []}
                 history['upload'].append({
                     'elapsed': item['elapsed'],
