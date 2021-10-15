@@ -1,4 +1,5 @@
 import sqlite3
+import logging
 
 SQL_INIT_SOURCE = '''
 CREATE TABLE IF NOT EXISTS source (
@@ -9,7 +10,8 @@ CREATE TABLE IF NOT EXISTS source (
   count INTEGER,
   created INTEGER,
   status TEXT,
-  description TEXT
+  description TEXT,
+  history TEXT
 );'''
 
 SQL_INIT_IMAGE = '''
@@ -27,6 +29,7 @@ CREATE TABLE IF NOT EXISTS image (
   source_id INTEGER,
   server_image_id TEXT,
   upload_status TEXT,
+  sys_note TEXT,
   FOREIGN KEY (source_id) REFERENCES source(source_id)
 );'''
 
@@ -48,7 +51,7 @@ class Database(object):
         self.cursor.execute(SQL_INIT_IMAGE)
 
     def exec_sql(self, sql, commit=False):
-        #print(sql)
+        logging.debug(sql)
         self.cursor.execute(sql)
 
         if commit:

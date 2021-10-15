@@ -1,9 +1,8 @@
-from .toolbar import Toolbar
-from .sidebar import Sidebar
-from .statusbar import Statusbar
-from .main import Main
-
-# main frames
-from .datatable import Datatable
-from .landing import Landing
+#from .toolbar import Toolbar
+from .folder_list import FolderList
+#from .statusbar import Statusbar
+from .panel import Panel
 from .imageviewer import ImageViewer
+from .upload_progress import UploadProgress
+from .landing import Landing
+from .main import Main
