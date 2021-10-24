@@ -24,6 +24,18 @@ label_list = filename:原始檔案,datetime:日期時間,species:物種,lifestag
 default_list = filename,datetime,species,lifestage
 annotation_list = species:Species,lifestage:LifeStage,sex:Sex,antler:Antler,animal_id:AnimalID,remarks:Remarks
 
+[KeyboardShortcut]
+Control-Key-0 = 空拍
+Control-Key-1 = 測試
+Control-Key-2 = 工作照
+Control-Key-3 = 山羌
+Control-Key-4 = 獼猴
+Control-Key-5 = 野豬
+Control-Key-6 = 鼬獾
+Control-Key-7 = 白鼻心
+Control-Key-8 = 食蟹獴
+Control-Key-9 = 鳥
+
 [AnnotationFieldSpecies]
 type = select
 mutiple = 1

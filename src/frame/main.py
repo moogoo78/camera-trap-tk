@@ -333,7 +333,7 @@ class Main(tk.Frame):
             'bind_list': [],
             'command': self.handle_keyboard_shortcut,
         }
-        for n in range(1, 6):
+        for n in range(0, 10):
             self.keyboard_shortcuts[str(n)] = self.app.config.get('KeyboardShortcut', f'Control-Key-{n}')
 
             custom_binding['bind_list'].append(f'Control-Key-{n}')
