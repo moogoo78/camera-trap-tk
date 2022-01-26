@@ -6,7 +6,9 @@ tkinter GUI
 
 ### Requirements
 
-- Python 3.6+
+- Python 3.6+ 
+
+Note: Python 3.9.6 cannot be used on Windows 7 or earlier - [Python Releases for Windows](https://www.python.org/downloads/windows/)
 
 **Dependency**
 - Pillow
