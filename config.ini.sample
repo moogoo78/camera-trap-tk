@@ -2,10 +2,14 @@
 account_id = EXSAMPLE
 
 [Server]
-host = http://dev.camera-trap.tw
+host = https://dev.camera-trap.tw
 image_annotation_api = /api/client/v1/image/annotation/
 image_update_api = /api/client/v1/image/update/
 project_api = /api/client/v1/projects/
+project_option_list = 329::Project 2021教育訓練-總計畫
+
+[Mode]
+log_level = debug
 
 [SQLite]
 dbfile = camera-trap-desktop.db
@@ -36,12 +40,6 @@ Control-Key-7 = 白鼻心
 Control-Key-8 = 食蟹獴
 Control-Key-9 = 鳥
 
-[AnnotationFieldSpecies]
-type = select
-mutiple = 1
-choices = 測試,空拍,山羌,山羊,水鹿,
-label = 物種
-
 [AnnotationFieldLifeStage]
 type = select
 choices = 成體,亞成體,幼體,無法判定
@@ -68,3 +66,6 @@ label = 個體 ID
 key = remarks
 type = text
 label = 備註
+
+[AnnotationSpeciesExtra]
+birds = 台灣山鷓鴣,台灣竹雞,黑長尾雉,藍腹鷴,黑冠麻鷺,環頸雉,山鷸,灰林鴿,金背鳩,珠頸斑鳩,翠翼鳩,黃痣藪眉,台灣噪眉,台灣紫嘯鶇,虎鶇,白眉鶇,白腹鶇,赤腹鶇,白頭鶇
