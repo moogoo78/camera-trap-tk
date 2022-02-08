@@ -338,7 +338,7 @@ class Main(tk.Frame):
 
             custom_binding['bind_list'].append(f'Control-Key-{n}')
 
-        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus, custom_binding=custom_binding)
+        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus, custom_binding=custom_binding, num_per_page=500)
         # TODO: 400 是湊出來的
         self.data_grid.state.update({
             'cell_height': 35,
@@ -699,6 +699,7 @@ class Main(tk.Frame):
         if rc == None:
             return
         #print ('current item', rc)
+
         item = self.data_helper.get_item(rc[0])
         if item:
             self.current_image_data.update({
@@ -717,7 +718,7 @@ class Main(tk.Frame):
             row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
             #self.data_grid.main_table.set_data_value(row_key, col_key, 'vv')
             # update status_display
-            self.data_helper.set_status_display(row_key, status_code='20')
+            #self.data_helper.set_status_display(row_key, status_code='20')
             self.data_grid.main_table.render()
 
 

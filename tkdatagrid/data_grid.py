@@ -1,4 +1,5 @@
 import logging
+import math
 #import copy
 
 import tkinter as tk
@@ -9,6 +10,7 @@ from .other_classes import (
     ColumnHeader,
     RowIndex,
     AutoScrollbar,
+    Footer,
 )
 
 class DataGrid(tk.Frame):
@@ -19,6 +21,7 @@ class DataGrid(tk.Frame):
                  width=None,
                  height=None,
                  row_index_display='',
+                 num_per_page=1000,
                  custom_menus=[],
                  custom_binding=None,
     ):
@@ -32,6 +35,12 @@ class DataGrid(tk.Frame):
             'columns': columns,
             'width': width,
             'height': height,
+            'pagination': {
+                'num_per_page': num_per_page,
+                'current_page': 1,
+                'num_pages': 0,
+                'total': 0,
+            },
             'cell_height': 20,
             'cell_width': 100,
             'style': {
@@ -79,6 +88,7 @@ class DataGrid(tk.Frame):
 
         self.main_table = MainTable(self)
         self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'])
+        self.footer = Footer(self, bg='purple')
 
         if self.state['row_index_display']:
             self.row_index = RowIndex(self, bg=self.state['style']['color']['row_index_bg'])
@@ -102,35 +112,66 @@ class DataGrid(tk.Frame):
             self.row_index.grid(row=1, column=0, rowspan=1, sticky='news', pady=2)
         self.main_table.grid(row=1, column=1, sticky='news', rowspan=1, pady=0)
 
+        self.footer.grid(row=3, column=1, sticky='news')
+
         if len(self.state['data']):
             self.refresh(data)
 
-    def refresh(self, new_data={}, keep_row_highlight=False):
+    def to_page(self, page):
+        self.refresh(page=page)
+        self.footer.render()
+
+    def refresh(self, new_data={}, keep_row_highlight=False, page=None):
         """now, only consider MainTable"""
         self.clear()
+        #print(page, 'refresh')
 
         # use iid:{original_key} as data dict key
         # add iid:{key} if has no "iid:" prefix
+        #count = 0
         new_data_iid = {}
-        for k, v in new_data.items():
+        data_visible = {}
+
+        rows = new_data if len(new_data) > 0 and page == None else self.state['data_all']
+        total = len(rows)
+        num = self.state['pagination']['num_per_page']
+        num_pages = math.ceil(total / num)
+        cur_page = self.state['pagination']['current_page'] if not page else page
+        start = (cur_page - 1) * num
+        end = cur_page * num
+
+        for count, (k, v) in enumerate(rows.items()):
             key = str(k)
             iid = k if 'iid:' in key else f'iid:{key}'
+
+            if count >= start and count < end:
+                data_visible[iid] = v
+
             new_data_iid[iid] = v
 
         row_keys = list(new_data_iid.keys())
+
         self.state.update({
-            'data': new_data_iid,
-            'num_rows': len(new_data_iid),
+            'data': data_visible, # only visible in certain page
+            'data_all': new_data_iid,
+            'num_rows': len(data_visible),
             'row_keys': row_keys,
-            'height': len(new_data_iid) * self.state['cell_height']
+            'height': len(data_visible) * self.state['cell_height'],
+            'pagination': {
+                'current_page': cur_page,
+                'num_pages': num_pages,
+                'total': total,
+                'num_per_page': self.state['pagination']['num_per_page'],
+            },
         })
+
 
         #self.main_table.render_selected(0, 0)
         self.main_table.render()
         if self.state['row_index_display']:
             self.row_index.render()
         self.column_header.render()
-
+        self.footer.render()
 
     def clear(self):
         self.main_table.clear()

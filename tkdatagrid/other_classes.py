@@ -3,6 +3,40 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
+class Footer(tk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.ps = parent.state
+
+        self.button_list = []
+
+        # layout
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+
+    def render(self):
+        # clear
+        for x in self.button_list:
+            x.destroy()
+
+        #print('foot', self.ps['pagination'])
+
+        for i in range(0, self.ps['pagination']['num_pages']):
+            page = i+1
+            button = ttk.Button(
+                self,
+                text=f'{page}',
+                width=2,
+                command=lambda x=page: self.parent.to_page(x),
+            )
+            if i+1 == self.ps['pagination']['current_page']:
+                button.state(['pressed'])
+
+            button.grid(row=0, column=i, sticky='nswe', padx=(0, 2))
+            self.button_list.append(button)
+
+
 class ColumnHeader(tk.Canvas):
 
     def __init__(self, parent, bg):
