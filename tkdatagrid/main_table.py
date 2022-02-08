@@ -92,7 +92,8 @@ class MainTable(tk.Canvas):
         self.bind('<Button-5>', self.handle_mouse_wheel)
         #self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
         self.bind_all('<Escape>', self.remove_widgets)
-        self.bind_all('<space>', self.handle_space_key)
+        self.bind_all('<space>', self.start_edit)
+        self.bind('<Double-Button-1>', self.start_edit)
 
         # custom bindind
         if custom_binding := self.ps['custom_binding']:
@@ -113,7 +114,7 @@ class MainTable(tk.Canvas):
             self.unbind_all('<Left>')
             self.unbind_all('<Right>')
 
-    def handle_space_key(self, event):
+    def start_edit(self, event):
         row, col = self.current_rc
         row_key, col_key = self.get_rc_key(row, col)
 
