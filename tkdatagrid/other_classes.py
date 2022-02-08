@@ -172,9 +172,6 @@ class RowIndex(tk.Canvas):
 
         self.render_row_highlight()
 
-    def foo(self):
-        pass
-
     def handle_mouse_button_3(self, event):
         self.parent.main_table.render_popup_menu(event)
 
@@ -304,6 +301,7 @@ class RowIndex(tk.Canvas):
 
             disp = self.ps.get('row_index_display', '')
             text = ''
+
             if disp == 'iid':
                 text = f'{i+1}({v[0]})', #f'{i+1}'
             else:

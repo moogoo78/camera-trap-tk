@@ -412,13 +412,18 @@ class MainTable(tk.Canvas):
         return x1, y1, x2, y2
 
     def get_rc_key(self, row, col):
-        iid = self.ps['row_keys'][row]
         col_key = self.ps['col_keys'][col]
+
+        if self.ps['pagination']['current_page'] > 1:
+            row = (self.ps['pagination']['current_page'] - 1) * self.ps['pagination']['num_per_page'] + row
+
+        iid = self.ps['row_keys'][row]
+
         return (iid, col_key)
 
     @custom_action(name='set_data')
     def set_data_value(self, row_key, col_key, value):
-        self.ps['data'][row_key][col_key] = value
+        self.ps['data_all'][row_key][col_key] = value
         logging.debug('MainTable.save_data_value: {}, {}: {}'.format(row_key, col_key, value))
         self.render()
 
@@ -874,6 +879,14 @@ class MainTable(tk.Canvas):
         self.current_rc = [0, 0]
         self.selected = {}
         self.render_selected(0, 0)
+        self.ps.update({
+            'pagination': {
+                'num_per_page': self.ps['pagination']['num_per_page'],
+                'current_page': 1,
+                'num_pages': 0,
+                'total': 0,
+            }
+        })
 
     def clear_selected(self, to_refresh=True):
         self.delete('cell-highlight')

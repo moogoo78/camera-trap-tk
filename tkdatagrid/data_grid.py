@@ -88,7 +88,7 @@ class DataGrid(tk.Frame):
 
         self.main_table = MainTable(self)
         self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'])
-        self.footer = Footer(self, bg='purple')
+        self.footer = Footer(self)
 
         if self.state['row_index_display']:
             self.row_index = RowIndex(self, bg=self.state['style']['color']['row_index_bg'])
