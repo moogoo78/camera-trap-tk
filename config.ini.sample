@@ -23,6 +23,9 @@ access_key_id = my-access-key-id
 secret_access_key = my-secret-access-key
 bucket_name = my-bucket-name
 
+[DataGrid]
+num_per_page = 500
+
 [Column]
 label_list = filename:原始檔案,datetime:日期時間,species:物種,lifestage:年齡,sex:性別,antler:角況,animal_id:個體ID,remarks:備註
 default_list = filename,datetime,species,lifestage

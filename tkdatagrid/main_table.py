@@ -188,6 +188,26 @@ class MainTable(tk.Canvas):
                 fill=color['cell-border'], width=1)
 
 
+    def update_text(self, rc, value):
+        row = rc[0]
+        col = rc[1]
+        row_key, col_key = self.get_rc_key(row, col)
+        tag = f'cell-text:{row}_{col}'
+        self.delete(tag)
+
+        col_w_list = self.ps['column_width_list']
+        x_left = col_w_list[col] + self.x_start
+        width = self.ps['columns'][col_key]['width']
+        x_center = x_left + width / 2
+        y_top = row * self.ps['cell_height'] + self.y_start
+        y_center = y_top + self.ps['cell_height'] / 2
+        self.create_text(
+            x_center,
+            y_center,
+            text=value,
+            tags=('cell', 'cell-text', tag)
+        )
+
     def render_data(self):
         self.delete('cell')
 
@@ -426,7 +446,8 @@ class MainTable(tk.Canvas):
     def set_data_value(self, row_key, col_key, value):
         self.ps['data_all'][row_key][col_key] = value
         logging.debug('MainTable.save_data_value: {}, {}: {}'.format(row_key, col_key, value))
-        self.render()
+        #self.render()
+        self.update_text(self.current_rc, value)
 
         #if func := self.ps.get('after_set_data_value', ''):
         #    return func(row_key, col_key, value)

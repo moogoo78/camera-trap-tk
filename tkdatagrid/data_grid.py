@@ -29,6 +29,7 @@ class DataGrid(tk.Frame):
         super().__init__(parent, width=width, height=height)
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
+        num_per_page = min(int(num_per_page), 2000) # 2000 is max limit
         self.state = {
             'data': data,
             'data_keys': {},

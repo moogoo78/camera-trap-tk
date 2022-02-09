@@ -5,6 +5,7 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 import logging
+import queue
 
 from PIL import ImageTk, Image
 
@@ -19,6 +20,7 @@ from frame import (
     ImageViewer,
 )
 from image import check_thumb
+from worker import UpdateAction
 
 sys.path.insert(0, '') # TODO: pip install -e .
 from tkdatagrid import DataGrid
@@ -28,6 +30,7 @@ SPECIES_COL_POS = 4 # species annotation column position
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.foo = 0
 
         self.parent = parent
         self.app = self.parent.app
@@ -78,7 +81,7 @@ class Main(tk.Frame):
         self.app.frames['landing'].show()
         #self.landing.grid(row=0, column=0, sticky='nsew')
 
-        #self.queue = queue.Queue()
+        self.action_queue = queue.Queue()
         self.upload_status = 0 # 0: stop, 1: start, 2: pause
         #self.thread = threading.Thread(target=self.worker)
         #self.polling()
@@ -338,7 +341,8 @@ class Main(tk.Frame):
 
             custom_binding['bind_list'].append(f'Control-Key-{n}')
 
-        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus, custom_binding=custom_binding, num_per_page=500)
+        num_per_page = int(self.app.config.get('DataGrid', 'num_per_page'))
+        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus, custom_binding=custom_binding, num_per_page=num_per_page)
         # TODO: 400 是湊出來的
         self.data_grid.state.update({
             'cell_height': 35,
@@ -689,7 +693,11 @@ class Main(tk.Frame):
             # has seq_info need re-render
 
         # always refresh for status display
-        self.refresh()
+        #self.refresh() 先不要
+        #item = self.data_helper.data[row_key]
+        #tmp = item['status_display']
+        #status = tmp.split(' / ')
+        #self.data_grid.main_table.update_text((rc[0], 0), f'{status[0]} / ')
 
     def select_item(self, rc):
         '''
@@ -711,18 +719,31 @@ class Main(tk.Frame):
 
         self.current_row = rc[0]
 
+        self.show_image(item['thumb'], item['path'], 'm')
+
         if item['status'] == '10':
             image_id = item['image_id']
             sql = f"UPDATE image SET status='20' WHERE image_id={image_id}"
             self.app.db.exec_sql(sql, True)
+            '''
             row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
             #self.data_grid.main_table.set_data_value(row_key, col_key, 'vv')
             # update status_display
             #self.data_helper.set_status_display(row_key, status_code='20')
             self.data_grid.main_table.render()
+            '''
 
+            # 無用
+            #row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
+            #self.action_queue.put(sql)
+            #ua = UpdateAction(self.action_queue, self)
+            #ua.start()
+            #self.data_helper.set_status_display(row_key, status_code='20')
+            #item = self.data_helper.get_item(rc[0])
+            #tmp = item['status_display']
+            #status = tmp.split(' / ')
+            #self.data_grid.main_table.update_text((rc[0], 0), f'V / {status[1]}')
 
-        self.show_image(item['thumb'], item['path'], 'm')
 
     def custom_arrow_key(self, rc):
         #print ('arrow', rc)

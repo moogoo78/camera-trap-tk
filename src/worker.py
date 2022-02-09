@@ -4,9 +4,28 @@ import threading
 
 from image import get_thumb
 
-#class UploadTask(threading.Thread):
-#    def __init__(self, name, data, image_list, upload_state, func_to_s3):
-#        pass
+class UpdateAction(threading.Thread):
+    def __init__(self, queue, main):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.main = main
+        main.foo += 1
+        print(self.main.foo)
+
+
+    def run(self):
+        while self.queue.qsize() > 0:
+            msg = self.queue.get()
+            print("Worker %s %d" % (msg, self.main.foo))
+            time.sleep(1)
+            print("done %s %d" % (msg, self.main.foo))
+            s = 'SELECT * FROM image LIMIT 10;'
+            #self.db.exec_sql(s, True)
+            self.main.foo -= 1
+
+        if self.main.foo == 0:
+            print('all done!!!')
+            self.main.data_grid.main_table.render()
 
 class UploadTask(threading.Thread):
     def __init__(self, name, data, image_list, upload_state, func_to_s3):

@@ -112,7 +112,7 @@ class DataHelper(object):
     def set_status_display(self, row_key='', status_code=''):
         delimeter = ' / '
         orig = self.data[row_key]['status_display']
-        orgi_list = orig.split(delimeter)
+        orig_list = orig.split(delimeter)
 
         if len(status_code) == 2:
             self.data[row_key]['status_display'] = delimeter.join([_get_status_display(status_code), orig[1]])
@@ -221,6 +221,7 @@ class DataHelper(object):
                 return item
 
     def get_rc_key(self, row, col):
+        '''rc to rc_key'''
         get_row_key = ''
         for counter, (row_key, item) in enumerate(self.data.items()):
             if row == counter:
