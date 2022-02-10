@@ -70,6 +70,7 @@ class DataGrid(tk.Frame):
                 'set_data_value': None,
                 'clone_row': None,
                 'remove_row': None,
+                'to_page': None,
             },
             'custom_menus': custom_menus,
             'custom_binding': custom_binding,
@@ -122,6 +123,14 @@ class DataGrid(tk.Frame):
         self.refresh(page=page)
         self.footer.render()
 
+        # TODO, failed
+        #self.main_table.yview_moveto(0.0)
+        #self.main_table.yview('moveto', 0.0)
+
+        # after refresh
+        if func := self.state['custom_actions']['to_page']:
+            func()
+
     def refresh(self, new_data={}, keep_row_highlight=False, page=None):
         """now, only consider MainTable"""
         self.clear()
@@ -165,7 +174,6 @@ class DataGrid(tk.Frame):
                 'num_per_page': self.state['pagination']['num_per_page'],
             },
         })
-
 
         #self.main_table.render_selected(0, 0)
         self.main_table.render()
@@ -212,6 +220,7 @@ class DataGrid(tk.Frame):
     def handle_yviews(self, *args):
         #print ('yviews', *args, args)
         self.main_table.yview(*args)
+        #print(*args)
         if self.state['row_index_display']:
             self.row_index.yview(*args)
         #print (self.main_table.canvasy(0))

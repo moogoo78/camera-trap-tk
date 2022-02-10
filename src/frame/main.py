@@ -354,6 +354,7 @@ class Main(tk.Frame):
                 'mouse_click': self.custom_mouse_click,
                 'arrow_key': self.custom_arrow_key,
                 'set_data': self.custom_set_data,
+                'to_page': self.custom_to_page,
                 #'apply_pattern': self.custom_apply_pattern,
             },
         })
@@ -687,10 +688,46 @@ class Main(tk.Frame):
         self.app.frames['folder_list'].refresh_source_list()
         self.app.frames['landing'].show(True)
 
+    def custom_to_page(self):
+
+        if self.seq_info == None:
+            return
+
+        num = self.data_grid.state['pagination']['num_per_page']
+        cur_page = self.data_grid.state['pagination']['current_page']
+        start = (cur_page - 1) * num
+        end = cur_page * num
+
+        data = self.data_helper.read_image_list(self.source_data['image_list'])
+        seq_int = self.seq_interval_val.get()
+        if self.seq_checkbox_val.get() == 'Y' and seq_int:
+            self.seq_info = self.data_helper.group_image_sequence(seq_int)
+            # change DataGrid.main_table.render_box color
+            self.data_grid.state['box_display_type'] = 'raise'
+
+        self.data_grid.main_table.delete('row-img-seq')
+
+        for i, (iid, row) in enumerate(data.items()):
+            if i >= start and i <= end:
+                index = i - ((cur_page - 1) * num)
+                tag_name = row.get('img_seq_tag_name', '')
+                color = row.get('img_seq_color', '')
+                y1 = self.data_grid.state['cell_height'] * index
+                y2 = self.data_grid.state['cell_height'] * (index+1)
+                if tag_name and color:
+                    self.data_grid.main_table.create_rectangle(
+                        0, y1, self.data_grid.main_table.width + self.data_grid.main_table.x_start, y2,
+                        fill=color,
+                        tags=('row-img-seq', 'row-img-seq_{}'.format(tag_name)))
+        self.data_grid.main_table.tag_lower('row-img-seq')
+        elf.data_grid.main_table.render_row_highlight()
+
+
     def custom_set_data(self, row_key, col_key, value):
         self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
-        #if self.seq_info:
+        if self.seq_info:
             # has seq_info need re-render
+            self.refresh()
 
         # always refresh for status display
         #self.refresh() 先不要

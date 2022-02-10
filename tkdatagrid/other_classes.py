@@ -267,7 +267,7 @@ class RowIndex(tk.Canvas):
                 #outline=self.ps['style']['color']['cell-highlight-border'],
                 #stipple="gray50",
                 tags=('row-highlight'))
-        self.lower('row-highlight')
+        self.tag_lower('row-highlight')
 
         if func := self.ps.get('after_row_index_selected', ''):
             return func(rows)
@@ -317,7 +317,6 @@ class AutoScrollbar(ttk.Scrollbar):
        works if you use the grid geometry manager."""
 
     def set(self, lo, hi):
-        #print (lo, hi)
         '''
         if float(lo) <= 0.0 and float(hi) >= 1.0:
             # grid_remove is currently missing from Tkinter!
