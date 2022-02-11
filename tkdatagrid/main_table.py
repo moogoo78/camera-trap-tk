@@ -864,7 +864,7 @@ class MainTable(tk.Canvas):
         self.copy_buffer = buf
         logging.debug('buf: {}'.format(buf))
 
-    #@custom_action(name='apply_pattern')
+    @custom_action(name='paste_from_buffer')
     def paste_from_buffer(self):
         logging.debug('copy_buffer:'.format(self.copy_buffer))
         res = self.get_selected_list()
@@ -879,8 +879,9 @@ class MainTable(tk.Canvas):
                 value = buf[buf_i][buf_j]
                 self.set_data_value(row_key, col_key, value)
 
-        self.copy_buffer = []
+        #self.copy_buffer = [] donnot clean buffer
         #return (buf, res)
+        return (buf, res)
 
     def clear_pattern(self):
         self.pattern_copy = []

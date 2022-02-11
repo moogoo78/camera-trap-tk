@@ -71,6 +71,7 @@ class DataGrid(tk.Frame):
                 'clone_row': None,
                 'remove_row': None,
                 'to_page': None,
+                'paste_from_buffer': None,
             },
             'custom_menus': custom_menus,
             'custom_binding': custom_binding,

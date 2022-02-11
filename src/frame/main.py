@@ -356,6 +356,7 @@ class Main(tk.Frame):
                 'set_data': self.custom_set_data,
                 'to_page': self.custom_to_page,
                 #'apply_pattern': self.custom_apply_pattern,
+                'paste_from_buffer': self.custom_paste_from_buffer,
             },
         })
         self.data_grid.grid(row=0, column=0, sticky='nsew')
@@ -881,6 +882,11 @@ class Main(tk.Frame):
             sql = f"UPDATE source SET count={res[0]} WHERE source_id={self.source_id}"
             self.app.db.exec_sql(sql, True)
             self.app.frames['folder_list'].refresh_source_list()
+
+    def custom_paste_from_buffer(self, buf, rows):
+        #print('paste !!', buf, rows)
+        self.refresh()
+
     # def custom_apply_pattern(self, pattern_copy, selected):
     #     print (pattern_copy, selected)
     #     num_pattern = len(pattern_copy)
