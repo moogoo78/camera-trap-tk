@@ -46,3 +46,7 @@ $ pyinstaller.exe --onefile -F .\src\app.py --clean
 ```
 
 提供 config.ini file, 注意: `account_id`,
+
+## Changes
+
+[CHANGELOG.md](CHANGELOG.md)
