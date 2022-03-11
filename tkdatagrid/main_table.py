@@ -585,7 +585,7 @@ class MainTable(tk.Canvas):
         self.popup_menu = tk.Menu(self)
         #self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
         self.popup_menu.add_command(label='複製一列', command=self.clone_rows)
-        self.popup_menu.add_command(label='刪除一列', command=self.remove_rows)
+        self.popup_menu.add_command(label='刪除列', command=self.remove_rows)
 
         # custom menus
         self.popup_menu.add_separator()
@@ -811,19 +811,24 @@ class MainTable(tk.Canvas):
         #return row_key, clone_iid
         return res
 
-    @custom_action(name='remove_row')
+    @custom_action(name='remove_rows')
     def remove_rows(self):
         rows = self.parent.get_row_list()
         logging.debug(f'remove_rows: {rows}')
 
         # only do first row
-        if len(rows) > 0:
-            row = rows[0]
+        # if len(rows) > 0:
+        #     row = rows[0]
+        #     row_key, col_key = self.get_rc_key(row, 0)
+        #     del self.ps['data'][row_key]
+        #     self.parent.refresh(self.ps['data'])
+        #     return row
+        for row in rows:
             row_key, col_key = self.get_rc_key(row, 0)
             del self.ps['data'][row_key]
-            self.parent.refresh(self.ps['data'])
 
-            return row
+        self.parent.refresh(self.ps['data'])
+
         return rows
 
     def get_selected_list(self):

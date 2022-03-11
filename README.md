@@ -33,6 +33,13 @@ $ poetry shell
 ```sh
 $ python ./src/app.py
 ```
+
+or
+
+```
+$ poetry run python src/app.py
+```
+
 use custom ini file
 
 ```sh

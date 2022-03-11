@@ -349,7 +349,7 @@ class Main(tk.Frame):
             'cell_image_x_pad': 3,
             'cell_image_y_pad': 1,
             'custom_actions': {
-                'remove_row': self.custom_remove_row,
+                'remove_rows': self.custom_remove_rows,
                 'clone_row': self.custom_clone_row,
                 'mouse_click': self.custom_mouse_click,
                 'arrow_key': self.custom_arrow_key,
@@ -849,7 +849,7 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
             self.refresh()
 
-    def _remove_row_key(self, row_key):
+    def _remove_rows_key(self, row_key):
         item = self.data_helper.data[row_key]
         image_id = item['image_id']
         adata = self.data_helper.annotation_data[image_id]
@@ -873,9 +873,11 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
         self.refresh()
 
-    def custom_remove_row(self, row):
-        rc_key = self.data_helper.get_rc_key(row, 2)
-        self._remove_row_key(rc_key[0])
+    def custom_remove_rows(self, rows):
+        for row in rows:
+            if rc_key := self.data_helper.get_rc_key(row, 2):
+                self._remove_rows_key(rc_key[0])
+
         sql = f"SELECT COUNT(*) FROM image WHERE source_id = {self.source_id}"
         res = self.app.db.fetch_sql(sql)
         if res:
