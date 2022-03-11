@@ -132,6 +132,7 @@ class DataHelper(object):
             annotation_col: value
         })
         json_data = json.dumps(adata)
+        json_data = json_data.replace(',', '')
 
         #is_cloned = True if '-' in row_key else False
 
