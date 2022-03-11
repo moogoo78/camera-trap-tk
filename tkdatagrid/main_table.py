@@ -94,6 +94,7 @@ class MainTable(tk.Canvas):
         self.bind_all('<Escape>', self.remove_widgets)
         self.bind_all('<space>', self.start_edit)
         self.bind('<Double-Button-1>', self.start_edit)
+        self.bind_all('<Control-c>', self.foo)
 
         # custom bindind
         if custom_binding := self.ps['custom_binding']:
@@ -101,6 +102,9 @@ class MainTable(tk.Canvas):
                 #self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
                 self.bind_all(f'<{bind_key}>', custom_binding['command'])
         self.toggle_arrow_key_binding()
+
+    def foo(self, event):
+        print(event)
 
     def toggle_arrow_key_binding(self, to_bind=True):
         if to_bind == True:
