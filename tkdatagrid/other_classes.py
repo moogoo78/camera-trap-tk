@@ -218,33 +218,34 @@ class RowIndex(tk.Canvas):
     def render_row_highlight(self):
         self.delete('row-highlight')
 
-        s = self.selected
+        selected = self.selected
 
         y1 = -1
         y2 = -1
         y_pos_list = [] # for row_index bg color
         rows = [] # for main_table row highlight
-        mode = s.get('mode', '')
+        mode = selected.get('mode', '')
         if mode == 'click':
             #rows.append(s['row_start'])
-            y1 = self.ps['cell_height'] * s['row_start']
-            y2 = self.ps['cell_height'] * (s['row_start'] + 1)
+            y1 = self.ps['cell_height'] * selected['row_start']
+            y2 = self.ps['cell_height'] * (selected['row_start'] + 1)
             y_pos_list.append((y1, y2))
-            rows = s['row_list']
+            rows = selected['row_list']
         elif mode == 'drag':
-            if s['row_start'] >= 0 and s['row_end'] >= 0:
-                diff = s['row_end'] - s['row_start']
+            if selected['row_start'] >= 0 and selected['row_end'] >= 0:
+                diff = selected['row_end'] - selected['row_start']
                 # 不給逆向 (由下往上選)
-                if diff > 0:
-                    #print (self.ps['cell_height'] * s['row_start'], self.ps['cell_height'] * s['row_end'])
-                    y1 = self.ps['cell_height'] * s['row_start']
-                    y2 = self.ps['cell_height'] * (s['row_end'] + 1)
-                    y_pos_list.append((y1, y2))
-
+                if diff != 0:
                     if diff > 0:
-                        rows = list(range(s['row_start'], s['row_end']+1))
-                    #elif diff < 0:
-                    #    rows = list(range(s['row_end'], s['row_start']+1))
+                        y1 = self.ps['cell_height'] * selected['row_start']
+                        y2 = self.ps['cell_height'] * (selected['row_end'] + 1)
+                        y_pos_list.append((y1, y2))
+                        rows = list(range(selected['row_start'], selected['row_end']+1))
+                    elif diff < 0:
+                        y1 = self.ps['cell_height'] * selected['row_end']
+                        y2 = self.ps['cell_height'] * (selected['row_start'] + 1)
+                        y_pos_list.append((y1, y2))
+                        rows = list(range(selected['row_end'], selected['row_start']+1))
 
         elif mode == 'ctrl-click':
             for row in s['row_list']:
