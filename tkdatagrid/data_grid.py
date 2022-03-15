@@ -63,6 +63,7 @@ class DataGrid(tk.Frame):
             'column_width_list': [], # count by update_columns()
             'num_rows': 0, # count by refresh()
             'num_cols': 0, # count by update_columns()
+            'is_row_index_selected': False,
             'after_row_index_selected': None,
             'custom_actions': {
                 'mouse_click_left': None,
@@ -242,3 +243,11 @@ class DataGrid(tk.Frame):
         #    row_list = ri.get('row_list', [])
 
         return row_list
+
+    def update_state(self, key, value):
+        if key in self.state and self.state[key] != value:
+            logging.debug(f'update state: {key}: {value}')
+            self.state[key] = value
+            return True
+
+        return False

@@ -80,7 +80,8 @@ class MainTable(tk.Canvas):
             'col_list': [],
             'row_list': [],
         }
-        self.copy_buffer = []
+        self.clipboard = {}
+
         self.ps['after_row_index_selected'] = self.handle_row_index_selected
 
         # binding
@@ -94,7 +95,8 @@ class MainTable(tk.Canvas):
         self.bind_all('<Escape>', self.remove_widgets)
         self.bind_all('<space>', self.start_edit)
         self.bind('<Double-Button-1>', self.start_edit)
-        self.bind_all('<Control-c>', self.foo)
+        self.bind_all('<Control-c>', self.handle_ctrl_c)
+        self.bind_all('<Control-v>', self.handle_ctrl_v)
 
         # custom bindind
         if custom_binding := self.ps['custom_binding']:
@@ -102,9 +104,6 @@ class MainTable(tk.Canvas):
                 #self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
                 self.bind_all(f'<{bind_key}>', custom_binding['command'])
         self.toggle_arrow_key_binding()
-
-    def foo(self, event):
-        print(event)
 
     def toggle_arrow_key_binding(self, to_bind=True):
         if to_bind == True:
@@ -153,6 +152,19 @@ class MainTable(tk.Canvas):
             if self.ps['row_index_display']:
                 self.parent.row_index.yview_scroll(-1, 'units')
 
+    def handle_ctrl_c(self, event):
+        #print(self.current_rc, self.parent.state['is_row_index_selected'])
+        #row_key, col_key = self.get_rc_key(self.current_rc[0], self.current_rc[1])
+        #print(row_key, col_key, self.ps['data'][row_key][col_key])
+        self.copy_to_clipboard()
+        self.render_copy_box(self.selected['row_list'], self.selected['col_list'])
+
+    def handle_ctrl_v(self, event):
+        #print(self.current_rc, self.parent.state['is_row_index_selected'])
+        #row_key, col_key = self.get_rc_key(self.current_rc[0], self.current_rc[1])
+        #print(self.selected)
+        #print(self.clipboard)
+        self.paste_from_clipboard()
 
     def render(self):
         #print ('render', self.height, self.width, self.ps['height'])
@@ -384,14 +396,15 @@ class MainTable(tk.Canvas):
             self.parent.row_index.render(row)
         self.parent.column_header.render(col)
 
-    def render_box(self, selected):
+    def render_box(self, row_list, col_list):
         '''render rectangle box (multi-row & multi-column)'''
         self.delete('box-highlight')
         self.delete('row-highlight')
         self.parent.row_index.clear_selected()
 
-        xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['row_start'], selected['col_start'])
-        xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['row_end'], selected['col_end'])
+        xs1, ys1, xs2, ys2 = self.get_cell_coords(row_list[0], col_list[0])
+        xe1, ye1, xe2, ye2 = self.get_cell_coords(row_list[-1], col_list[-1])
+
         box_fill_color = self.ps['style']['color']['box-highlight']
         # don't change color (purple)
         #if len(self.copy_buffer):
@@ -418,8 +431,35 @@ class MainTable(tk.Canvas):
                 stipple="gray50",
                 outline=self.ps['style']['color']['box-border'],
                 width=2,
-                tags=('box', 'box-highlight',))
+                tags=('box', 'box-highlight'))
             self.tag_raise('box-highlight')
+
+    def render_copy_box(self, row_list, col_list):
+        '''render rectangle box (multi-row & multi-column)'''
+        self.delete('copy-box-highlight')
+        self.delete('row-highlight')
+        self.parent.row_index.clear_selected()
+
+        xs1, ys1, xs2, ys2 = self.get_cell_coords(row_list[0], col_list[0])
+        xe1, ye1, xe2, ye2 = self.get_cell_coords(row_list[-1], col_list[-1])
+
+        box_fill_color = self.ps['style']['color']['box-highlight']
+        # don't change color (purple)
+        #if len(self.copy_buffer):
+        #    box_fill_color = self.ps['style']['color']['box-highlight-buffer']
+
+        pad = 1
+        self.create_rectangle(
+            xs1-pad,
+            ys1-pad,
+            xe2+self.x_start+pad,
+            ye2+pad,
+            outline='#0073E6',
+            dash=(3,5),
+            width=2,
+            tags=('box', 'copy-box-highlight')
+        )
+        self.tag_raise('copy-box-highlight')
 
     def clear(self):
         self.delete('cell')
@@ -516,45 +556,35 @@ class MainTable(tk.Canvas):
         row = res_rc['row']
         col = res_rc['col']
 
+        # init
+        row_range = [row, row+1]
+        col_range = [col, col+1]
+
+        if self.selected['row_start'] < self.selected['row_end']:
+            row_range[0] = self.selected['row_start']
+            row_range[1] = row + 1
+        elif self.selected['row_start'] > self.selected['row_end']:
+            row_range[0] = row
+            row_range[1] = self.selected['row_start'] + 1
+
+        if self.selected['col_start'] < self.selected['col_end']:
+            col_range[0] = self.selected['col_start']
+            col_range[1] = col + 1
+        elif self.selected['col_start'] > self.selected['col_end']:
+            col_range[0] = col
+            col_range[1] = self.selected['col_start'] + 1
+
         self.selected.update({
             'mode': 'drag',
             'row_end': row,
             'col_end': col,
-            'row_list': list(range(self.selected['row_start'], row+1)),
-            'col_list': list(range(self.selected['col_start'], col+1))
+            'row_list':list(range(row_range[0], row_range[1])),
+            'col_list': list(range(col_range[0], col_range[1]))
         })
-        ''' TODO
-        if row >= self.ps['num_rows']:
-            #or self.startrow > self.rows:
-            return
-        else:
-            self.selected['row_end'] = row
+        # drag in one cell, don't render_box, 只有一格就不用畫了
+        if row_range[0] != row_range[1] or col_range[0] != col_range[1]:
+            self.render_box(self.selected['row_list'], self.selected['col_list'])
 
-        if col > self.ps['num_cols']:
-            #or self.startcol > self.cols:
-            return
-        else:
-            self.selected['col_end'] = col
-            if self.selected['col_start'] is None or self.selected['col_end'] is None:
-                return
-            if self.selected['col_end'] < self.selected['col_start']:
-                self.selected['col_list'] = range(self.selected['col_end'], self.selected['col_start']+1)
-            else:
-                self.selected['col_list'] = range(self.selected['col_start'], self.selected['col_end']+1)
-
-
-        if self.selected['row_end'] != self.selected['row_start']:
-            if self.selected['row_end'] < self.selected['row_start']:
-                self.selected['row_list'] = range(self.selected['row_end'], self.selected['row_start']+1)
-            else:
-                self.selected['row_list'] = range(self.selected['row_start'], self.selected['row_end']+1)
-
-        else:
-            self.selected['row_list'] = [self.current_rc[0]]
-
-        if len(self.selected['row_list']) > 1 and len(self.selected['col_list']):
-        '''
-        self.render_box(self.selected)
 
     def remove_widgets(self, widget='all'):
         if widget in ['all', 'entry'] and hasattr(self, 'text_editor'):
@@ -604,8 +634,8 @@ class MainTable(tk.Canvas):
         # end custom menus
         self.popup_menu.add_separator()
 
-        self.popup_menu.add_command(label='複製內容', command=self.copy_to_buffer)
-        self.popup_menu.add_command(label='貼上內容', command=self.paste_from_buffer)
+        self.popup_menu.add_command(label='複製內容', command=self.copy_to_clipboard)
+        self.popup_menu.add_command(label='貼上內容', command=self.paste_from_clipboard)
         #self.popup_menu.add_command(label='清除 pattern', command=self.clear_pattern)
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         self.popup_menu.post(event.x_root, event.y_root)
@@ -626,7 +656,7 @@ class MainTable(tk.Canvas):
         self.remove_widgets()
         self.parent.row_index.clear_selected()
         self.delete('row-highlight')
-        self.delete('box-highlight')
+        self.delete('box')
 
         res_rc = self.get_rc(event.x, event.y)
         if not res_rc['is_available']:
@@ -648,7 +678,7 @@ class MainTable(tk.Canvas):
             'col_start': col,
             'col_end': col,
             'row_list': [row],
-            'col_list': [],
+            'col_list': [col],
         }
         #self.render_box(self.selected)
 
@@ -835,6 +865,7 @@ class MainTable(tk.Canvas):
 
         return rows
 
+    # DEPRICATED
     def get_selected_list(self):
         '''return rows depends on selected mode'''
         s = self.selected
@@ -857,27 +888,46 @@ class MainTable(tk.Canvas):
 
         return result
 
-    def copy_to_buffer(self):
+    def copy_to_clipboard(self):
         logging.debug('selected: {}'.format(self.selected))
-        buf = []
-        res = self.get_selected_list()
-
-        for row in res['rows']:
+        clip = {}
+        for row in self.selected['row_list']:
             row_values = []
-            for col in res['cols']:
+            for col in self.selected['col_list']:
                 row_key, col_key = self.get_rc_key(row, col)
                 v = self.ps['data'][row_key][col_key]
-                row_values.append(v)
-            buf.append(row_values)
+                if row_key not in clip:
+                    clip[row_key] = {}
+                clip[row_key][col_key] = v
 
-        self.copy_buffer = buf
-        logging.debug('buf: {}'.format(buf))
+        self.clipboard = clip
+        logging.debug('clipboard: {}'.format(clip))
 
     @custom_action(name='paste_from_buffer')
-    def paste_from_buffer(self):
-        logging.debug('copy_buffer:'.format(self.copy_buffer))
-        res = self.get_selected_list()
-        buf = self.copy_buffer
+    def paste_from_clipboard(self):
+        logging.debug('clipboard: :'.format(self.clipboard))
+        #res = self.get_selected_list()
+        clip = self.clipboard
+        #print(self.selected, 'clip', clip, list(clip)[0])
+        col_first_key = list(clip)[0]
+
+        paste_range = {
+            'row_list': list(range(self.selected['row_start'], self.selected['row_start'] + len(clip))),
+            'col_list': list(range(self.selected['col_start'], self.selected['col_start'] + len(clip[col_first_key]))),
+        }
+        print(paste_range)
+        self.render_box(paste_range['row_list'], paste_range['col_list'])
+        self.render_copy_box(paste_range['row_list'], paste_range['col_list'])
+
+        '''
+        for i, row in enumerate(res['row_list']):
+            for j, col in enumerate(res['col_list']):
+                row_key, col_key = self.get_rc_key(row, col)
+                value = buf[i][j]
+                print(row_key, col_key, value)
+                #self.set_data_value(row_key, col_key, value)
+        '''
+        '''
         num_buf_rows = len(buf)
         num_buf_cols = len(buf[0])
         for i, row in enumerate(res['rows']):
@@ -890,7 +940,8 @@ class MainTable(tk.Canvas):
 
         #self.copy_buffer = [] donnot clean buffer
         #return (buf, res)
-        return (buf, res)
+        '''
+        return (clip, self.selected)
 
     def clear_pattern(self):
         self.pattern_copy = []

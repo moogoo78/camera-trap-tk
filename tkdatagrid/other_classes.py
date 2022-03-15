@@ -118,6 +118,8 @@ class RowIndex(tk.Canvas):
     def handle_shift_button_1(self, event):
         logging.debug('shift select, {}'.format(self.selected))
 
+        self.parent.update_state('is_row_index_selected', True)
+
         rows = self.parent.get_row_list()
         current_row = self.get_cleaned_row(event.y)
         last_row = rows[0]
@@ -135,7 +137,7 @@ class RowIndex(tk.Canvas):
         self.render_row_highlight()
 
     def handle_ctrl_button_1(self, event):
-
+        self.parent.update_state('is_row_index_selected', True)
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -155,7 +157,7 @@ class RowIndex(tk.Canvas):
 
     def handle_mouse_button_1(self, event):
         self.parent.main_table.clear_selected()
-
+        self.parent.update_state('is_row_index_selected', True)
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -193,7 +195,7 @@ class RowIndex(tk.Canvas):
 
     def handle_mouse_drag(self, event):
         #self.parent.main_table.clear_selected()
-
+        self.parent.update_state('is_row_index_selected', True)
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -225,6 +227,8 @@ class RowIndex(tk.Canvas):
         y_pos_list = [] # for row_index bg color
         rows = [] # for main_table row highlight
         mode = selected.get('mode', '')
+        self.ps['is_row_index_selected'] = True
+
         if mode == 'click':
             #rows.append(s['row_start'])
             y1 = self.ps['cell_height'] * selected['row_start']
@@ -254,7 +258,7 @@ class RowIndex(tk.Canvas):
                 y_pos_list.append((y1, y2))
                 rows.append(row)
         elif mode == 'shift':
-            for row in s['row_list']:
+            for row in selected['row_list']:
                 y1 = self.ps['cell_height'] * row
                 y2 = self.ps['cell_height'] * (row + 1)
                 y_pos_list.append((y1, y2))
@@ -274,6 +278,7 @@ class RowIndex(tk.Canvas):
             return func(rows)
 
     def clear_selected(self):
+        self.parent.update_state('is_row_index_selected', False)
         self.delete('row-highlight')
         self.selected = {}
 
