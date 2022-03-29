@@ -156,7 +156,7 @@ class MainTable(tk.Canvas):
 
     def handle_ctrl_v(self, event):
         self.paste_from_clipboard()
-        self.render_rect(self.selected)
+        #self.render_rect(self.selected)
         self.render_copy_rect(self.selected)
 
     def render(self):
@@ -684,8 +684,8 @@ class MainTable(tk.Canvas):
         self.selected.update({
             'drag_start': [row, col],
             'drag_end': [None, None],
-            'rect_top_left': [None, None],
-            'rect_bottom_right': [None, None],
+            'rect_top_left': [row, col],
+            'rect_bottom_right': [row, col],
         })
 
         self.render_selected(row, col)
