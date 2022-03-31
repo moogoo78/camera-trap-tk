@@ -44,3 +44,27 @@ text, image listbox, entry(default)
 |     | FT  |     |
 |-----|-----|-----|
 ```
+
+## Actions
+
+1: click on cell
+- `render_cell_box`
+- action: click
+
+
+1a: click on fill handle and drag
+- `render_fill_box`
+- action: handle
+
+1b: drag on cell
+- `render_drag_box`
+- action: drag
+
+1a1: mouse release
+- `render--`
+- action: ''
+
+
+1a1a: auto fill
+
+

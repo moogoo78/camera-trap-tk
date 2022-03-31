@@ -50,11 +50,9 @@ class DataGrid(tk.Frame):
                     'row_index_bg': '#2a3132', #'#2A3132'
                     'column_header_bg': '#336b87', #'#2c3e50', #'#336B87'
                     'cell-border': '#d3d3d3',
-                    'cell-highlight-border': '#6699ff',
-                    'row-highlight': '#ddeeff',
-                    'box-highlight': '#fff2cc',
-                    'box-highlight-buffer': '#776485',
-                    'box-border': '#ffcc33',
+                    'row-highlight': 'brown',
+                    'box-highlight': '#e8edf7',
+                    'outline-dark': '#4772c4',
                     'row-index-highlight': '#b90504',
                 }
             },
