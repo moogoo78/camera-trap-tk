@@ -72,11 +72,11 @@ class MainTable(tk.Canvas):
         self.entry_queue = {}
         self.current_rc = [0, 0]
         self.selected = {
-            'box_top_left': [None, None],
-            'box_bottom_right': [None, None],
             'drag_start': [None, None],
             'drag_end': [None, None],
-            'action': '', # click, drag, handle
+            'box': [None, None, None, None],
+            'fill': [None, None, None, None],
+            'action': '', # click, drag, single-handle/box-handle
         }
         self.clipboard = {}
 
@@ -129,18 +129,24 @@ class MainTable(tk.Canvas):
 
         x = int(self.canvasx(event.x))
         y = int(self.canvasy(event.y))
-        print(self.selected)
-        if self.selected['box_bottom_right'][0] is not None and self.selected['box_top_left'][0] is not None:
-            x_center = self.ps['column_width_list'][self.selected['box_bottom_right'][1]+1]
-            y_center = self.ps['cell_height']*(self.selected['box_top_left'][0]+1)
-            handle_x_range = [x_center-4, x_center+4]
-            handle_y_range = [y_center-4, y_center+4]
-            # print(x, y, handle_x_range, handle_y_range)
+
+        if self.selected['box'][2] is not None and self.selected['box'][0] is not None:  # prevent first time click None value
+            handle_x_center = self.ps['column_width_list'][self.selected['box'][3]+1]
+            handle_y_center = self.ps['cell_height']*(self.selected['box'][2]+1)
+            handle_x_range = [handle_x_center-4, handle_x_center+4]
+            handle_y_range = [handle_y_center-4, handle_y_center+4]
+
             if x >= handle_x_range[0] and x <= handle_x_range[1] \
                and y >= handle_y_range[0] and y <= handle_y_range[1]:
-                self.selected.update({'action': 'handle'})
+                # click on handle
+                if self.selected['drag_end'][0] == None or self.selected['drag_end'][1] == None:
+                    # previous action is click
+                    self.selected.update({'action': 'single-handle'})
+                else:
+                    self.selected.update({'action': 'box-handle'})
                 return
 
+        # click on cell
         self.click_on_cell(event)
 
     def click_on_cell(self, event):
@@ -153,8 +159,10 @@ class MainTable(tk.Canvas):
         # self.delete('entry_win')
         self.remove_widgets()
         self.parent.row_index.clear_selected()
-        self.delete('row-highlight')
-        self.delete('box')
+        # self.delete('row-highlight')
+        # self.delete('box')
+        self.delete('drag-box')
+        self.delete('fill-box')
 
         res_rc = self.get_rc(event.x, event.y)
         if not res_rc['is_available']:
@@ -172,12 +180,11 @@ class MainTable(tk.Canvas):
         self.selected.update({
             'drag_start': [row, col],
             'drag_end': [None, None],
-            'box_top_left': [row, col],
-            'box_bottom_right': [row, col],
+            'box': [row, col, row, col],
         })
 
         self.render_cell_outline(row, col)
-        self.render_box_handle(row, col)
+        self.render_box_handle(res_rc['xy'])
 
         # draw entry if not readonly
         if not row_key or not col_key:
@@ -198,7 +205,7 @@ class MainTable(tk.Canvas):
 
     def handle_mouse_move(self, event):
         logging.debug('mouse move xy: {}, {}'.format(event.x, event.y))
-        print(self.selected)
+        # print(self.selected)
         selected = self.selected
         res_rc = self.get_rc(event.x, event.y)
         if not res_rc['is_available']:
@@ -207,37 +214,46 @@ class MainTable(tk.Canvas):
         row = res_rc['row']
         col = res_rc['col']
 
-        if row < selected['drag_start'][0]:
-            # select from bottom to top
-            self.selected['box_top_left'][0] = row
-            self.selected['box_bottom_right'][0] = selected['drag_start'][0]
-        else:
-            self.selected['box_top_left'][0] = selected['drag_start'][0]
-            self.selected['box_bottom_right'][0] = row
+        r1 = selected['drag_start'][0]
+        c1 = selected['drag_start'][1]
+        r2 = row
+        c2 = col
 
+        # if action == handle, can only move horizontal
+        if row < selected['drag_start'][0]:
+            # select from bottom to top, swap value
+            r2, r1 = r1, r2
 
         if col < selected['drag_start'][1]:
-            # select from right to left
-            self.selected['box_top_left'][1] = col
-            self.selected['box_bottom_right'][1] = selected['drag_start'][1]
-        else:
-            self.selected['box_top_left'][1] = selected['drag_start'][1]
-            self.selected['box_bottom_right'][1] = col
+            # select from right to left, swap value
+            c2, c1 = c1, c2
 
         self.selected['drag_end'] = [row, col]
 
         if self.selected['drag_start'][0] != self.selected['drag_end'][0] or \
            self.selected['drag_start'][1] != self.selected['drag_end'][1]:
+            # render_drag_box or render_fill_box
             # drag in one cell, don't render_box, 只有一格就不用畫了
-
+            #r1, c1, r2, c2 = self.selected['box']
+            handle_xy = self.get_cell_coords(r2, c2)
             if self.selected['action'] in ['click', 'drag']:
-                self.selected.update({'action': 'drag'})
+                #self.selected.update()
+                self.selected.update({
+                    'action': 'drag',
+                    'box': [r1, c1, r2, c2],
+                })
                 logging.debug('mouse dragging')
-                self.render_drag_box(self.selected)
-                self.render_box_handle(self.selected['box_bottom_right'][0], self.selected['box_bottom_right'][1])
-            elif self.selected['action'] == 'handle':
-                self.render_fill_box(self.selected)
-                self.render_box_handle(self.selected['box_bottom_right'][0], self.selected['box_bottom_right'][1])
+                self.render_drag_box(self.selected['box'])
+                self.render_box_handle(handle_xy)
+            elif '-handle' in self.selected['action']:  # single-handle/box-handle
+                c2 = selected['box'][3] # donnot drag horizontal
+                fill = [self.selected['box'][0], selected['box'][1], r2, c2]
+                self.render_fill_box(fill)
+                handle_xy = self.get_cell_coords(r2, c2)
+                self.render_box_handle(handle_xy)
+                self.selected.update({'fill': fill})
+
+        # print('after move', self.selected)
 
     def start_edit(self, event):
         row, col = self.current_rc
@@ -275,13 +291,12 @@ class MainTable(tk.Canvas):
                 self.parent.row_index.yview_scroll(-1, 'units')
 
     def handle_ctrl_c(self, event):
-        self.copy_to_clipboard()
-        self.render_copy_rect(self.selected)
+        self.copy_to_clipboard(self.selected['box'])
+        self.render_copy_box(self.selected['box'])
 
     def handle_ctrl_v(self, event):
         self.paste_from_clipboard()
-        # self.render_rect(self.selected)
-        self.render_copy_rect(self.selected)
+        self.render_copy_box(self.selected['box'])
 
     def render(self):
         # print ('render', self.height, self.width, self.ps['height'])
@@ -492,8 +507,7 @@ class MainTable(tk.Canvas):
         '''
         self.current_rc = [row, col]
 
-        self.delete('cell-highlight')
-        self.delete('box-highlight')
+        self.delete('cell-outline')
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         # cell highlight
@@ -504,9 +518,9 @@ class MainTable(tk.Canvas):
             y2,
             outline=self.ps['style']['color']['outline-dark'],
             width=2,
-            tag=('cell-highlight',),
+            tag=('cell-outline',),
         )
-        self.tag_raise('cell-highlight')
+        self.tag_raise('cell-outline')
 
         # self.render_row_highlight(row)
 
@@ -514,14 +528,14 @@ class MainTable(tk.Canvas):
             self.parent.row_index.render(row)
         self.parent.column_header.render(col)
 
-    def render_drag_box(self, selected):
-        '''render rectangle box (multi-row & multi-column)'''
-        self.delete('box-highlight')
-        self.delete('row-highlight')
+    def render_drag_box(self, box):
+        '''render rcfectangle box (multi-row & multi-column)'''
+        self.delete('drag-box')
+        # self.delete('row-highlight')
         self.parent.row_index.clear_selected()
 
-        xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['box_top_left'][0], selected['box_top_left'][1])
-        xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['box_bottom_right'][0], selected['box_bottom_right'][1])
+        xs1, ys1, xs2, ys2 = self.get_cell_coords(box[0], box[1])
+        xe1, ye1, xe2, ye2 = self.get_cell_coords(box[2], box[3])
 
         box_fill_color = self.ps['style']['color']['box-highlight']
         # don't change color (purple)
@@ -537,8 +551,8 @@ class MainTable(tk.Canvas):
                 fill=box_fill_color,
                 outline=self.ps['style']['color']['outline-dark'],
                 width=2,
-                tags=('box', 'box-highlight',))
-            self.tag_lower('box-highlight')
+                tags=('box', 'drag-box',))
+            self.tag_lower('drag-box')
         elif self.ps['box_display_type'] == 'raise':
             self.create_rectangle(
                 xs1,
@@ -549,52 +563,49 @@ class MainTable(tk.Canvas):
                 stipple="gray50",
                 outline=self.ps['style']['color']['outline-dark'],
                 width=2,
-                tags=('box', 'box-highlight'))
-            self.tag_raise('box-highlight')
+                tags=('box', 'drag-box'))
+            self.tag_raise('drag-box')
 
-    def render_fill_box(self, selected):
+    def render_fill_box(self, box):
         '''render rectangle box drag (multi-row & multi-column)'''
-        self.delete('box-drag')
+        self.delete('fill-box')
 
-        xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['box_top_left'][0], selected['box_top_left'][1])
-        xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['box_bottom_right'][0], selected['box_top_left'][1])
+        # xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['box_top_left'][0], selected['box_top_left'][1])
+        # xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['box_bottom_right'][0], selected['box_bottom_right'][1])
+        # xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['drag_start'][0], selected['box_top_left'][1])
+        # xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['box_bottom_right'][0], selected['box_top_left'][1])
+
+        xs1, ys1, xs2, ys2 = self.get_cell_coords(box[0], box[1])
+        xe1, ye1, xe2, ye2 = self.get_cell_coords(box[2], box[3])
 
         self.create_rectangle(xs1, ys1, xe2+self.x_start, ye2,
                               outline='#009999',
                               width=2,
-                              tags=('box', 'box-drag',))
-        self.tag_lower('box-drag')
+                              tags=('box', 'fill-box',))
+        self.tag_lower('fill-box')
 
-        # self.create_oval(xe2-8, ye2-8, xe2+8, ye2+8,
-        #                  fill='green',
-        #                  outline='black',
-        #                  width=1,
-        #                  tags=('box', 'box-drag',)
-        # )
-
-    def render_box_handle(self, row, col):
+    def render_box_handle(self, xy):
         self.delete('box-handle')
         # little rect handler on bottom right
-        x1, y1, x2, y2 = self.get_cell_coords(row, col)
         self.create_rectangle(
-            x2-4,
-            y2-4,
-            x2+4,
-            y2+4,
+            xy[2]-4,
+            xy[3]-4,
+            xy[2]+4,
+            xy[3]+4,
             fill=self.ps['style']['color']['outline-dark'],
             outline='white',
             width=1,
             tag=('box, box-highlight', 'box-handle'),
         )
 
-    def render_copy_box(self, selected):
+    def render_copy_box(self, box):
         '''render rectangle box (multi-row & multi-column)'''
-        self.delete('copy-box-highlight')
-        self.delete('row-highlight')
+        self.delete('copy-box')
+        # self.delete('row-highlight')
         self.parent.row_index.clear_selected()
 
-        xs1, ys1, xs2, ys2 = self.get_cell_coords(selected['box_top_left'][0], selected['box_top_left'][1])
-        xe1, ye1, xe2, ye2 = self.get_cell_coords(selected['box_bottom_right'][0], selected['box_bottom_right'][1])
+        xs1, ys1, xs2, ys2 = self.get_cell_coords(box[0], box[1])
+        xe1, ye1, xe2, ye2 = self.get_cell_coords(box[2], box[3])
         box_fill_color = self.ps['style']['color']['box-highlight']
 
         pad = 1
@@ -606,9 +617,9 @@ class MainTable(tk.Canvas):
             outline='#0073E6',
             dash=(3,5),
             width=2,
-            tags=('box', 'copy-box-highlight')
+            tags=('box', 'copy-box')
         )
-        self.tag_raise('copy-box-highlight')
+        self.tag_raise('copy-box')
 
     def clear(self):
         self.delete('cell')
@@ -616,14 +627,6 @@ class MainTable(tk.Canvas):
         self.delete('box')
         self.delete('row-highlight')
         self.delete('entry_win')
-
-    def get_selected_box_rc(self):
-        return (
-            self.selected['box_top_left'][0],
-            self.selected['box_bottom_right'][0],
-            self.selected['box_top_left'][1],
-            self.selected['box_bottom_right'][1]
-        )
 
     def get_cell_coords(self, row, col):
         # print (row, col, self.ps['column_width_list'], self.selected)
@@ -724,20 +727,15 @@ class MainTable(tk.Canvas):
 
     def handle_mouse_release_1(self, event):
         logging.debug('mouse release {}, {}'.format(event.x, event.y))
-        '''
-        if self.selected['action']:
-            res = self.get_rc(event.x, event.y)
-            row_start = self.selected['box_top_left'][0]
-            row_end = self.selected['box_bottom_right'][0]
-            col = self.selected['box_top_left'][1]
-            for row in range(row_start, row_end+1):
-                row_key, col_key = self.get_rc_key(row, col)
-                print(row, row_key, col_key)
-                self.set_data_value(row_key, col_key, 'X')
-            self.render_box_handle(res['row'], col)
-
-            print('release', event, res)
-        '''
+        print(self.selected)
+        if '-handle' in self.selected['action']:
+            self.copy_to_clipboard(self.selected['box'])
+            print(self.clipboard)
+            self.paste_from_clipboard(self.selected['fill'])
+            self.clipboard = {}
+            self.render_drag_box(self.selected['fill'])
+            #handle_xy = self.get_cell_coords(self.selected['fill'][2], self.selected['fill'][3])
+            #self.render_box_handle(handle_xy)
 
     def remove_widgets(self, widget='all'):
         if widget in ['all', 'entry'] and hasattr(self, 'text_editor'):
@@ -788,7 +786,7 @@ class MainTable(tk.Canvas):
         self.popup_menu.add_separator()
 
         self.popup_menu.add_command(label='複製內容', command=self.copy_to_clipboard)
-        self.popup_menu.add_command(label='貼上內容', command=self.paste_from_clipboard)
+        sself.popup_menu.add_command(label='貼上內容', command=self.paste_from_clipboard)
         #self.popup_menu.add_command(label='清除 pattern', command=self.clear_pattern)
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         self.popup_menu.post(event.x_root, event.y_root)
@@ -961,12 +959,12 @@ class MainTable(tk.Canvas):
 
         return rows
 
-    def copy_to_clipboard(self):
+    def copy_to_clipboard(self, box=None):
         logging.debug('selected: {}'.format(self.selected))
         clip = {}
-        box_rc = self.get_selected_box_rc()
-        for row in range(box_rc[0], box_rc[1] + 1):
-            for col in range(box_rc[2], box_rc[3] + 1):
+        source = box if box is not None else self.selected['box']
+        for row in range(source[0], source[2] + 1):
+            for col in range(source[1], source[3] + 1):
                 row_key, col_key = self.get_rc_key(row, col)
                 v = self.ps['data'][row_key][col_key]
                 if row_key not in clip:
@@ -976,26 +974,13 @@ class MainTable(tk.Canvas):
         logging.debug('clipboard: {}'.format(clip))
 
     @custom_action(name='paste_from_buffer')
-    def paste_from_clipboard(self):
+    def paste_from_clipboard(self, box=None):
         logging.debug('clipboard: :'.format(self.clipboard))
         clip = self.clipboard
         clip_keys = list(clip)
         num_clip_row = len(clip)
         num_clip_col = len(clip[clip_keys[0]])
-
-        box_rc = self.get_selected_box_rc()
-        selected = self.selected
-        print (self.selected)
-        is_source_rect = True
-        box_start = [None, None]
-        box_end = [None, None]
-        if selected['drag_end'][0] is None:
-            # just click on one cell
-            box_start = selected['drag_start']
-            box_end =  [
-                selected['drag_start'][0],
-                selected['drag_start'][1]
-            ]
+        source = box if box is not None else self.selected['box']
         # excel paste box pattern (ex: choose A, B paste A B C => A B)
         # elif selected['rect_bottom_right'][0] - selected['rect_top_left'][0] < num_clip_row or \
         #     selected['rect_bottom_right'][1] - selected['rect_top_left'][1] < num_clip_col:
@@ -1005,76 +990,16 @@ class MainTable(tk.Canvas):
         #        selected['drag_start'][0] + num_clip_row - 1,
         #        selected['drag_start'][1] + num_clip_col - 1
         #    ]
-        else:
-            box_start = selected['box_top_left']
-            box_end = selected['box_bottom_right']
-
-        for i, row in enumerate(range(box_start[0], box_end[0] + 1)):
+        for i, row in enumerate(range(source[0],source[2] + 1)):
             row_key = clip_keys[i % num_clip_row]
-            for j, col in enumerate(range(box_start[1], box_end[1] + 1)):
+            for j, col in enumerate(range(source[1], source[3] + 1)):
                 col_keys = list(clip[row_key])
                 col_key = col_keys[j % num_clip_col]
                 value = clip[row_key][col_key]
                 target_row_key, target_col_key = self.get_rc_key(row, col)
                 self.set_data_value(target_row_key, target_col_key, value)
-
-        self.selected.update({
-            'box_top_left': box_start,
-            'box_bottom_right': box_end
-        })
-
-        '''
-        row_diff = selected['drag_rect_bottom_right'][0] - selected['drag_rect_top_left'][0] + 1
-        if row_diff > num_clip_row:
-            row_end = row_start + len(selected['row_list'])
-        else:
-            row_end = row_start + num_clip_row
-
-        col_start = self.selected['col_start']
-        if len(selected['col_list']) > num_clip_col:
-            col_end = col_start + num_clip_col
-        else:
-            col_end = col_start + len(clip[col_first_key])
-
-        print(col_start, col_end)
-        row_list = []
-        col_list = []
-        for row in range(row_start, row_end):
-            row_list.append(row)
-            for col in range(col_start, col_end):
-                col_list.append(col)
-                row_key, col_key = self.get_rc_key(row, col)
-                #value = clip[row_key][col_key]
-                self.set_data_value(row_key, col_key, 'foo')
-        paste_range = {
-            'row_list': list(range(row_start, row_end)),
-            'col_list': list(range(col_start, col_end)),
-        }
-        print(paste_range)
-        '''
-
-        '''
-        for i, row in enumerate(res['row_list']):
-            for j, col in enumerate(res['col_list']):
-                row_key, col_key = self.get_rc_key(row, col)
-                value = buf[i][j]
-                print(row_key, col_key, value)
-                #self.set_data_value(row_key, col_key, value)
-        '''
-        '''
-        num_buf_rows = len(buf)
-        num_buf_cols = len(buf[0])
-        for i, row in enumerate(res['rows']):
-            buf_i = i % num_buf_rows
-            for j, col in enumerate(res['cols']):
-                buf_j = j % num_buf_cols
-                row_key, col_key = self.get_rc_key(row, col)
-                value = buf[buf_i][buf_j]
-                self.set_data_value(row_key, col_key, value)
-
-        #self.copy_buffer = [] donnot clean buffer
-        #return (buf, res)
-        '''
+        self.delete('copy-box')
+        # return (buf, res)
         # return (clip, self.selected)
 
     def clear_pattern(self):
