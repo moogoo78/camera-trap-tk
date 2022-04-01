@@ -76,6 +76,7 @@ class MainTable(tk.Canvas):
             'drag_end': [None, None],
             'box': [None, None, None, None],
             'fill': [None, None, None, None],
+            'ctrl_list': [],
             'action': '', # click, drag, single-handle/box-handle
         }
         self.clipboard = {}
@@ -100,8 +101,8 @@ class MainTable(tk.Canvas):
         # composite
         self.bind_all('<Control-c>', self.handle_ctrl_c)
         self.bind_all('<Control-v>', self.handle_ctrl_v)
-        # self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
-        # self.bind('<Shift-Button-1>', self.handle_shift_button_1)
+         self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
+          self.bind('<Shift-Button-1>', self.handle_shift_button_1)
 
         # custom bindind
         if custom_binding := self.ps['custom_binding']:
@@ -260,6 +261,31 @@ class MainTable(tk.Canvas):
                     self.on_scroll('up')
 
         # print('after move', self.selected)
+    def handle_shift_button_1(self, event):
+        logging.debug('shift_button_1 <Shift_button-1>'.format(self.selected))
+
+        '''
+        self.parent.update_state('is_row_index_selected', True)
+
+        rows = self.parent.get_row_list()
+        current_row = self.get_cleaned_row(event.y)
+        last_row = rows[0]
+        self.selected.update({
+            'row_list': list(range(last_row, current_row+1)),
+            'mode': 'shift',
+        })
+        #if self.selected.get('mode', '') in ('click', ''):
+        #     if row_start := self.selected['row_start']:
+        #         self.selected.update({
+        #             'row_list': list(range(row_start, row+1)),
+        #             'mode': 'shift',
+        #         })
+        self.parent.main_table.clear_selected(False)
+        self.render_row_highlight()
+        '''
+    def handle_ctrl_button_1(self, event):
+
+        logging.debug('ctrl_button_1 <Control-Button-1>: {}'.format(self.selected))
 
     def start_edit(self, event):
         row, col = self.current_rc
