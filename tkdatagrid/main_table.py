@@ -76,7 +76,7 @@ class MainTable(tk.Canvas):
             'drag_end': [None, None],
             'box': [None, None, None, None],
             'fill': [None, None, None, None],
-            'ctrl_list': [],
+            # 'ctrl_list': [],
             'action': '', # click, drag, single-handle/box-handle
         }
         self.clipboard = {}
@@ -101,8 +101,8 @@ class MainTable(tk.Canvas):
         # composite
         self.bind_all('<Control-c>', self.handle_ctrl_c)
         self.bind_all('<Control-v>', self.handle_ctrl_v)
-         self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
-          self.bind('<Shift-Button-1>', self.handle_shift_button_1)
+        self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
+        self.bind('<Shift-Button-1>', self.handle_shift_button_1)
 
         # custom bindind
         if custom_binding := self.ps['custom_binding']:
@@ -126,7 +126,9 @@ class MainTable(tk.Canvas):
     @custom_action(name='mouse_click')
     def handle_mouse_button_1(self, event):
         logging.debug('mouse click button1, xy: {},{}'.format(event.x, event.y))
-        self.selected.update({'action': 'click'})
+        self.selected.update({
+            'action': 'click',
+        })
 
         x = int(self.canvasx(event.x))
         y = int(self.canvasy(event.y))
@@ -264,27 +266,19 @@ class MainTable(tk.Canvas):
     def handle_shift_button_1(self, event):
         logging.debug('shift_button_1 <Shift_button-1>'.format(self.selected))
 
-        '''
-        self.parent.update_state('is_row_index_selected', True)
+        res_rc = self.get_rc(event.x, event.y)
+        if not res_rc['is_available']:
+            return
 
-        rows = self.parent.get_row_list()
-        current_row = self.get_cleaned_row(event.y)
-        last_row = rows[0]
+        box = self.selected['box']
         self.selected.update({
-            'row_list': list(range(last_row, current_row+1)),
-            'mode': 'shift',
+            'box': [box[0], box[1], res_rc['row'], box[3]]
         })
-        #if self.selected.get('mode', '') in ('click', ''):
-        #     if row_start := self.selected['row_start']:
-        #         self.selected.update({
-        #             'row_list': list(range(row_start, row+1)),
-        #             'mode': 'shift',
-        #         })
-        self.parent.main_table.clear_selected(False)
-        self.render_row_highlight()
-        '''
-    def handle_ctrl_button_1(self, event):
+        self.render_drag_box(self.selected['box'])
+        handle_xy = self.get_cell_coords(res_rc['row'], box[3])
+        self.render_box_handle(handle_xy)
 
+    def handle_ctrl_button_1(self, event):
         logging.debug('ctrl_button_1 <Control-Button-1>: {}'.format(self.selected))
 
     def start_edit(self, event):
@@ -840,44 +834,6 @@ class MainTable(tk.Canvas):
 
     def handle_mouse_button_3(self, event):
         self.render_popup_menu(event)
-
-    def handle_ctrl_button_1(self, event):
-        # print ('ctrl_b1', event)
-
-        # clear
-        self.delete('entry_win')
-
-        res_rc = self.get_rc(event.x, event.y)
-        if not res_rc['is_available']:
-            return
-
-        row = res_rc['row']
-        col = res_rc['col']
-        # row_key = res_rc['row_key']
-        # col_key = res_rc['col_key']
-        # print (row, col, row_key, col_key)
-        # reset selected
-
-        row_selected = self.selected['row_list']
-        if row_selected == None:
-            row_selected = []
-
-        if len(row_selected) == 0:
-            row_selected.append(row)
-        elif row not in row_selected:
-            row_selected.append(row)
-        else:
-            row_selected.remove(row)
-
-        self.selected.update({
-            'row_start': None,
-            'row_end': None,
-            'col_start': None,
-            'col_end': None,
-            'row_list': row_selected
-        })
-
-        # self.render_row_highlight()
 
     @custom_action(name='arrow_key')
     def handle_arrow_key(self, event):
