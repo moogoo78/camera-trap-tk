@@ -37,7 +37,7 @@ HEADER = {
 #DATA = {f'iid:{k}': v for k, v in DATA.items()}
 import random
 DATA = {}
-for i in range(10):
+for i in range(100):
     x = random.random()
     DATA[i] = {}
     for j in range(5):
