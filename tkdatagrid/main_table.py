@@ -184,7 +184,7 @@ class MainTable(tk.Canvas):
         })
 
         self.render_cell_outline(row, col)
-        self.render_box_handle(res_rc['xy'])
+        self.render_box_handle(res_rc['cell_xy'])
 
         # draw entry if not readonly
         if not row_key or not col_key:
@@ -252,6 +252,12 @@ class MainTable(tk.Canvas):
                 handle_xy = self.get_cell_coords(r2, c2)
                 self.render_box_handle(handle_xy)
                 self.selected.update({'fill': fill})
+                # scroll if mouse drag down
+                # donnot use canvasy(), y will accumulate while scroll down
+                if event.y >= self.height-20:
+                    self.on_scroll('down')
+                elif event.y <= 20:
+                    self.on_scroll('up')
 
         # print('after move', self.selected)
 
@@ -279,11 +285,25 @@ class MainTable(tk.Canvas):
     def handle_mouse_wheel(self, event):
         # print (event.num, event.delta, self.canvasy(0), self.winfo_height(), self.parent.row_index.winfo_height())
         # event.num exists in linux or mac ?
+        # print(event, event.num, event.delta) => mac: delta -1/-2/-3/1/2/3
         if event.num == 5 or event.delta == -120:
             self.yview_scroll(1, 'units')
             if self.ps['row_index_display']:
                 self.parent.row_index.yview_scroll(1, 'units')
         elif event.num == 4 or event.delta == 120:
+            if self.canvasy(0) < 0:  # ?
+                return
+            self.yview_scroll(-1, 'units')
+            if self.ps['row_index_display']:
+                self.parent.row_index.yview_scroll(-1, 'units')
+
+    def on_scroll(self, direction):
+        logging.debug('on_scroll: {}'.format(direction))
+        if direction == 'down':
+            self.yview_scroll(1, 'units')
+            if self.ps['row_index_display']:
+                self.parent.row_index.yview_scroll(1, 'units')
+        elif direction == 'up':
             if self.canvasy(0) < 0:  # ?
                 return
             self.yview_scroll(-1, 'units')
@@ -712,7 +732,8 @@ class MainTable(tk.Canvas):
             'row_key': row_key,
             'col_key': col_key,
             'is_available': True,
-            'xy': self.get_cell_coords(row, col),
+            'cell_xy': self.get_cell_coords(row, col),
+            'xy': [x, y],
         })
         return result
 
@@ -727,10 +748,9 @@ class MainTable(tk.Canvas):
 
     def handle_mouse_release_1(self, event):
         logging.debug('mouse release {}, {}'.format(event.x, event.y))
-        print(self.selected)
+        # print(self.selected)
         if '-handle' in self.selected['action']:
             self.copy_to_clipboard(self.selected['box'])
-            print(self.clipboard)
             self.paste_from_clipboard(self.selected['fill'])
             self.clipboard = {}
             self.render_drag_box(self.selected['fill'])

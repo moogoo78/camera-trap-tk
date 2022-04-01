@@ -218,13 +218,12 @@ class DataGrid(tk.Frame):
         })
 
     def handle_yviews(self, *args):
-        #print ('yviews', *args, args)
+        # print ('yviews', *args, args)
         self.main_table.yview(*args)
-        #print(*args)
         if self.state['row_index_display']:
             self.row_index.yview(*args)
-        #print (self.main_table.canvasy(0))
-        #print (self.row_index.canvasy(0))
+        # print (self.main_table.canvasy(0))
+        # print (self.row_index.canvasy(0))
 
     def handle_xviews(self, *args):
         self.main_table.xview(*args)
@@ -237,7 +236,7 @@ class DataGrid(tk.Frame):
             row_list = mt.get('row_list', [])
         else:
             row_list = self.row_index.get_selected_rows()
-        #elif ri := self.row_index.selected:
+        # elif ri := self.row_index.selected:
         #    row_list = ri.get('row_list', [])
 
         return row_list

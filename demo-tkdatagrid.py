@@ -37,7 +37,7 @@ HEADER = {
 #DATA = {f'iid:{k}': v for k, v in DATA.items()}
 import random
 DATA = {}
-for i in range(100):
+for i in range(200):
     x = random.random()
     DATA[i] = {}
     for j in range(5):
@@ -68,7 +68,7 @@ class DemoApp(tk.Tk):
         self.grid_rowconfigure(0, weight=1)
         self.frame = tk.Frame(self)
 
-        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=600, row_index_display='iid')
+        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=400, row_index_display='iid')
 
         # redraw another
         #data2=sampledata()
