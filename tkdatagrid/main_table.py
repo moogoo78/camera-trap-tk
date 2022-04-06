@@ -79,6 +79,7 @@ class MainTable(tk.Canvas):
             'ctrl_list': [],
             'action': '', # click, drag, single-handle/box-handle
             'is_ctrl_on': False,
+            'is_entry_on': False,
         }
         self.clipboard = {}
 
@@ -98,8 +99,9 @@ class MainTable(tk.Canvas):
         self.bind('<ButtonRelease-1>', self.handle_mouse_release_1)
         # key
         self.bind_all('<Escape>', self.remove_widgets)
-        self.bind_all('<space>', self.start_edit)
-        # self.bind_all('<KeyPress>', self.handle_key_press)
+        #self.bind_all('<space>', self.start_edit)
+        self.bind_all('<Return>', self.start_edit)
+        #self.bind_all('<KeyPress>', self.handle_key_press)
         # self.bind_all('<KeyRelease>', self.handle_key_release)
         # composite
         self.bind_all('<Control-c>', self.handle_ctrl_c)
@@ -114,7 +116,9 @@ class MainTable(tk.Canvas):
                 self.bind_all(f'<{bind_key}>', custom_binding['command'])
         self.toggle_arrow_key_binding()
 
-    # def handle_key_press(self, event):
+    def handle_key_press(self, event):
+        print(event)
+
     # def handle_key_release(self, event):
     #    print('re', event)
 
@@ -500,6 +504,8 @@ class MainTable(tk.Canvas):
         sv = tk.StringVar()
         sv.set(text)
 
+        self.selected.update({'is_entry_on': False})
+
         self.remove_widgets('entry')
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
@@ -527,12 +533,16 @@ class MainTable(tk.Canvas):
             self.entry_queue[cell_tag] = value
 
             if e.keysym in ['Return', 'Escape']:
-                row_key, col_key = self.get_rc_key(row, col)
-                self.set_data_value(row_key, col_key, value)
-                #self.entry_queue.pop()
-                del self.entry_queue[cell_tag]
-                self.delete('entry_win')
+                if self.selected['is_entry_on'] is True:
+                    # first time callback will get "outer event" if event.keysym = 'Return',
+                    # is_entry_on is a workarund for that
+                    row_key, col_key = self.get_rc_key(row, col)
+                    self.set_data_value(row_key, col_key, value)
+                    # self.entry_queue.pop()
+                    del self.entry_queue[cell_tag]
+                    self.delete('entry_win')
 
+                self.selected.update({'is_entry_on': True})
 
         self.text_editor.icursor(tk.END)
         #self.cell_entry.bind('<Return>', callback)
@@ -904,16 +914,17 @@ class MainTable(tk.Canvas):
                 col += 1
 
         self.selected.update({
-            'row_start': None,
-            'row_end': None,
-            'col_start': None,
-            'col_end': None,
-            'row_list': [row],
-            'col_list': [col],
+            'action': 'key-arrow',
+            'drag_start': [row, col],
+            'drag_end': [None, None],
+            'box': [row, col, row, col],
         })
         # if event.keysym in ('Up', 'Down'):
         logging.debug(f'{event.keysym}, last_rc: {last_rc} -> {row}, {col}')
         self.render_cell_outline(row, col)
+        x1, y1, x2, y2 = self.get_cell_coords(row, col)
+        self.render_box_handle([x1, y1, x2, y2])
+
         # elif event.keysym in ('Left', 'Right'):
         # create text_editor
             # row_key, col_key = self.get_rc_key(row, col)
