@@ -70,20 +70,10 @@ class MainTable(tk.Canvas):
         self.height = self.ps['height']
 
         self.entry_queue = {}
-        self.current_rc = [0, 0]
-        self.selected = {
-            'drag_start': [None, None],
-            'drag_end': [None, None],
-            'box': [None, None, None, None],
-            'fill': [None, None, None, None],
-            'ctrl_list': [],
-            'action': '', # click, drag, single-handle/box-handle
-            'is_ctrl_on': False,
-            'is_entry_on': False,
-        }
-        self.clipboard = {}
 
         self.ps['after_row_index_selected'] = self.handle_row_index_selected
+
+        self.init_data()
 
         # binding
         # -------
@@ -134,9 +124,6 @@ class MainTable(tk.Canvas):
             self.unbind_all('<Left>')
             self.unbind_all('<Right>')
 
-    def handle_mouse_button_2(self, event):
-        self.render_popup_menu(event)
-
     @custom_action(name='mouse_click')
     def handle_mouse_button_1(self, event):
         logging.debug('mouse click button1, xy: {},{}'.format(event.x, event.y))
@@ -147,7 +134,7 @@ class MainTable(tk.Canvas):
 
         x = int(self.canvasx(event.x))
         y = int(self.canvasy(event.y))
-
+        print(self.selected)
         if self.selected['box'][2] is not None and self.selected['box'][0] is not None:  # prevent first time click None value
             handle_x_center = self.ps['column_width_list'][self.selected['box'][3]+1]
             handle_y_center = self.ps['cell_height']*(self.selected['box'][2]+1)
@@ -165,7 +152,7 @@ class MainTable(tk.Canvas):
                 return
 
         # click on cell
-        self.click_on_cell(event)
+        return self.click_on_cell(event)
 
     def click_on_cell(self, event):
         # flush entry_queue
@@ -176,7 +163,7 @@ class MainTable(tk.Canvas):
         # clear
         # self.delete('entry_win')
         self.remove_widgets()
-        self.parent.row_index.clear_selected()
+        # self.parent.row_index.clear_selected()
         # self.delete('row-highlight')
         # self.delete('box')
         self.delete('drag-box')
@@ -220,6 +207,9 @@ class MainTable(tk.Canvas):
 
         logging.debug('clicked cell rc: {}'.format(self.current_rc))
         return self.current_rc
+
+    def handle_mouse_button_2(self, event):
+        self.render_popup_menu(event)
 
     def handle_mouse_move(self, event):
         logging.debug('mouse move xy: {}, {}'.format(event.x, event.y))
@@ -280,9 +270,9 @@ class MainTable(tk.Canvas):
             # scroll if mouse drag down
             # donnot use canvasy(), y will accumulate while scroll down
             if event.y >= self.height-20:
-                self.mouse_press_scroll('down')
+                self.to_scroll('down')
             elif event.y <= 20:
-                self.mouse_press_scroll('up')
+                self.to_scroll('up')
 
         # print('after move', self.selected)
     def handle_shift_button_1(self, event):
@@ -350,7 +340,7 @@ class MainTable(tk.Canvas):
             if self.ps['row_index_display']:
                 self.parent.row_index.yview_scroll(-1, 'units')
 
-    def mouse_press_scroll(self, direction):
+    def to_scroll(self, direction):
         logging.debug('on_scroll: {}'.format(direction))
         if direction == 'down':
             self.yview_scroll(1, 'units')
@@ -913,6 +903,18 @@ class MainTable(tk.Canvas):
             else:
                 col += 1
 
+        lower_boundry = self.ps['visible_rows'] - 1
+        if row >= lower_boundry:
+            #self.to_scroll('down')
+            y_ratio = row - int(lower_boundry / 2)  # keep highlight on center 
+            args = ('moveto', y_ratio /self.ps['num_rows'])
+            self.parent.handle_yviews(*args)
+            # print('move', args, y_ratio, lower_boundry)
+        else:
+            args = ('moveto', 0)
+            self.parent.handle_yviews(*args)
+
+        # print(self.canvasx(0), self.canvasy(0), self.canvasx(self.winfo_width()), self.canvasy(self.winfo_height()))
         self.selected.update({
             'action': 'key-arrow',
             'drag_start': [row, col],
@@ -1065,8 +1067,21 @@ class MainTable(tk.Canvas):
     def init_data(self):
         logging.debug('init_data')
         self.current_rc = [0, 0]
-        self.selected = {}
+        self.selected = {
+            'drag_start': [None, None],
+            'drag_end': [None, None],
+            'box': [None, None, None, None],
+            'fill': [None, None, None, None],
+            'ctrl_list': [],
+            'action': '', # click, drag, single-handle/box-handle
+            'is_ctrl_on': False,
+            'is_entry_on': False,
+        }
+        self.clipboard = {}
+
         self.render_cell_outline(0, 0)
+        handle_xy = self.get_cell_coords(0, 0)
+        self.render_box_handle(handle_xy)
         self.ps.update({
             'pagination': {
                 'num_per_page': self.ps['pagination']['num_per_page'],

@@ -31,6 +31,8 @@ class DataGrid(tk.Frame):
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
         num_per_page = min(int(num_per_page), 2000) # 2000 is max limit
+        cell_height = 20
+
         self.state = {
             'data': data,
             'data_keys': {},
@@ -43,7 +45,7 @@ class DataGrid(tk.Frame):
                 'num_pages': 0,
                 'total': 0,
             },
-            'cell_height': 20,
+            'cell_height': cell_height,
             'cell_width': 100,
             'style': {
                 'color': {
@@ -79,6 +81,7 @@ class DataGrid(tk.Frame):
             'row_index_display': row_index_display,
             'box_display_type': 'lower',
         }
+        self.update_state(self.state)
         #self.current_rc = [0, 0]
 
         # other not default
@@ -186,7 +189,7 @@ class DataGrid(tk.Frame):
 
     def clear(self):
         self.main_table.clear()
-        self.row_index.clear_selected()
+        # self.row_index.clear_selected()
 
     def update_columns(self, columns):
         # count coulmn_width_list and set new width
@@ -220,7 +223,6 @@ class DataGrid(tk.Frame):
         })
 
     def handle_yviews(self, *args):
-        # print ('yviews', *args, args)
         self.main_table.yview(*args)
         if self.state['row_index_display']:
             self.row_index.yview(*args)
@@ -242,10 +244,15 @@ class DataGrid(tk.Frame):
         if selected['box'][0] is not None:
             return list(range(selected['box'][0], selected['box'][2] + 1))
 
-    def update_state(self, key, value):
+    def update_state_DEPRICATED(self, key, value):
         if key in self.state and self.state[key] != value:
             logging.debug(f'update state: {key}: {value}')
             self.state[key] = value
             return True
 
         return False
+
+    def update_state(self, new_state):
+        self.state.update(new_state)
+        self.state.update({'visible_rows': int(self.state['height'] / self.state['cell_height'])})
+

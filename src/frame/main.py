@@ -344,19 +344,19 @@ class Main(tk.Frame):
         num_per_page = int(self.app.config.get('DataGrid', 'num_per_page'))
         self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus, custom_binding=custom_binding, num_per_page=num_per_page)
         # TODO: 400 是湊出來的
-        self.data_grid.state.update({
+        self.data_grid.update_state({
             'cell_height': 35,
             'cell_image_x_pad': 3,
             'cell_image_y_pad': 1,
             'custom_actions': {
-                'remove_rows': self.custom_remove_rows,
-                'clone_row': self.custom_clone_row,
+                # 'remove_rows': self.custom_remove_rows,
+                # 'clone_row': self.custom_clone_row,
                 'mouse_click': self.custom_mouse_click,
                 'arrow_key': self.custom_arrow_key,
-                'set_data': self.custom_set_data,
-                'to_page': self.custom_to_page,
+                # 'set_data': self.custom_set_data,
+                # 'to_page': self.custom_to_page,
                 #'apply_pattern': self.custom_apply_pattern,
-                'paste_from_buffer': self.custom_paste_from_buffer,
+                # 'paste_from_buffer': self.custom_paste_from_buffer,
             },
         })
         self.data_grid.grid(row=0, column=0, sticky='nsew')
