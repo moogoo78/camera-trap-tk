@@ -255,12 +255,13 @@ class MainTable(tk.Canvas):
                 handle_xy = self.get_cell_coords(r2, c2)
                 self.render_box_handle(handle_xy)
                 self.selected.update({'fill': fill})
-                # scroll if mouse drag down
-                # donnot use canvasy(), y will accumulate while scroll down
-                if event.y >= self.height-20:
-                    self.on_scroll('down')
-                elif event.y <= 20:
-                    self.on_scroll('up')
+
+            # scroll if mouse drag down
+            # donnot use canvasy(), y will accumulate while scroll down
+            if event.y >= self.height-20:
+                self.mouse_press_scroll('down')
+            elif event.y <= 20:
+                self.mouse_press_scroll('up')
 
         # print('after move', self.selected)
     def handle_shift_button_1(self, event):
@@ -317,7 +318,7 @@ class MainTable(tk.Canvas):
             if self.ps['row_index_display']:
                 self.parent.row_index.yview_scroll(-1, 'units')
 
-    def on_scroll(self, direction):
+    def mouse_press_scroll(self, direction):
         logging.debug('on_scroll: {}'.format(direction))
         if direction == 'down':
             self.yview_scroll(1, 'units')
