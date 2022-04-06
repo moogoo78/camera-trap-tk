@@ -68,3 +68,7 @@ text, image listbox, entry(default)
 1a1a: auto fill
 
 
+
+## Notice
+
+rc 跟 xy 的順序相反 (容易搞錯)

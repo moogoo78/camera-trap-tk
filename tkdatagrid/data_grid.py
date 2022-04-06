@@ -24,6 +24,7 @@ class DataGrid(tk.Frame):
                  num_per_page=1000,
                  custom_menus=[],
                  custom_binding=None,
+                 cols_on_ctrl_button_1=None,
     ):
         """include MainTable, ColumnHeader, RowIndex"""
         super().__init__(parent, width=width, height=height)
@@ -61,6 +62,7 @@ class DataGrid(tk.Frame):
             'column_width_list': [], # count by update_columns()
             'num_rows': 0, # count by refresh()
             'num_cols': 0, # count by update_columns()
+            'cols_on_ctrl_button_1': cols_on_ctrl_button_1 if cols_on_ctrl_button_1 else [],
             'is_row_index_selected': False,
             'after_row_index_selected': None,
             'custom_actions': {

@@ -76,8 +76,9 @@ class MainTable(tk.Canvas):
             'drag_end': [None, None],
             'box': [None, None, None, None],
             'fill': [None, None, None, None],
-            # 'ctrl_list': [],
+            'ctrl_list': [],
             'action': '', # click, drag, single-handle/box-handle
+            'is_ctrl_on': False,
         }
         self.clipboard = {}
 
@@ -94,10 +95,11 @@ class MainTable(tk.Canvas):
         self.bind('<Button-5>', self.handle_mouse_wheel)
         self.bind('<Double-Button-1>', self.start_edit)
         self.bind('<ButtonRelease-1>', self.handle_mouse_release_1)
-
         # key
         self.bind_all('<Escape>', self.remove_widgets)
         self.bind_all('<space>', self.start_edit)
+        # self.bind_all('<KeyPress>', self.handle_key_press)
+        # self.bind_all('<KeyRelease>', self.handle_key_release)
         # composite
         self.bind_all('<Control-c>', self.handle_ctrl_c)
         self.bind_all('<Control-v>', self.handle_ctrl_v)
@@ -110,6 +112,10 @@ class MainTable(tk.Canvas):
                 # self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
                 self.bind_all(f'<{bind_key}>', custom_binding['command'])
         self.toggle_arrow_key_binding()
+
+    # def handle_key_press(self, event):
+    # def handle_key_release(self, event):
+    #    print('re', event)
 
     def toggle_arrow_key_binding(self, to_bind=True):
         if to_bind is True:
@@ -128,6 +134,7 @@ class MainTable(tk.Canvas):
         logging.debug('mouse click button1, xy: {},{}'.format(event.x, event.y))
         self.selected.update({
             'action': 'click',
+            'ctrl_list': [],
         })
 
         x = int(self.canvasx(event.x))
@@ -208,6 +215,12 @@ class MainTable(tk.Canvas):
 
     def handle_mouse_move(self, event):
         logging.debug('mouse move xy: {}, {}'.format(event.x, event.y))
+
+        # if press <Control> do nothing
+        if event.state == 260: # tested in macOS
+            # event.state display as Control|Button1
+            return
+
         # print(self.selected)
         selected = self.selected
         res_rc = self.get_rc(event.x, event.y)
@@ -281,6 +294,17 @@ class MainTable(tk.Canvas):
 
     def handle_ctrl_button_1(self, event):
         logging.debug('ctrl_button_1 <Control-Button-1>: {}'.format(self.selected))
+        ctrl_list = self.selected['ctrl_list']
+
+        res_rc = self.get_rc(event.x, event.y)
+        if not res_rc['is_available']:
+            return
+        row = res_rc['row']
+        col = res_rc['col']
+        if col in self.ps['cols_on_ctrl_button_1']:
+            ctrl_list.append([row, col])
+            self.render_cell_outline(row, col, color='#8ca22d', is_delete=False)
+            self.selected.update({'ctrl_list': ctrl_list})
 
     def start_edit(self, event):
         row, col = self.current_rc
@@ -542,13 +566,17 @@ class MainTable(tk.Canvas):
         #self.lower('row-highlight')
         self.tag_raise('row-highlight')
 
-    def render_cell_outline(self, row, col):
+    def render_cell_outline(self, row, col, is_delete=True, color=None):
         '''render current_row by mouse selected
         if no args, render multi row by self.selected
         '''
         self.current_rc = [row, col]
 
-        self.delete('cell-outline')
+        if is_delete:
+            self.delete('cell-outline')
+
+        if color is None:
+            color = self.ps['style']['color']['outline-dark']
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         # cell highlight
@@ -557,7 +585,7 @@ class MainTable(tk.Canvas):
             y1,
             x2+self.x_start,
             y2,
-            outline=self.ps['style']['color']['outline-dark'],
+            outline=color,
             width=2,
             tag=('cell-outline',),
         )
@@ -565,9 +593,9 @@ class MainTable(tk.Canvas):
 
         # self.render_row_highlight(row)
 
-        if self.ps['row_index_display']:
-            self.parent.row_index.render(row)
-        self.parent.column_header.render(col)
+        # if self.ps['row_index_display']:
+        #    self.parent.row_index.render(row)
+        # self.parent.column_header.render(col)
 
     def render_drag_box(self, box):
         '''render rcfectangle box (multi-row & multi-column)'''

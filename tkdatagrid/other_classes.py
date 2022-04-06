@@ -102,11 +102,11 @@ class RowIndex(tk.Canvas):
             'row_start': None,
             'row_end': None,
         }
-        self.bind('<B1-Motion>', self.handle_mouse_drag)
-        self.bind('<Button-1>', self.handle_mouse_button_1)
-        self.bind('<Button-3>', self.handle_mouse_button_3)
-        self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
-        self.bind('<Shift-Button-1>', self.handle_shift_button_1)
+        # self.bind('<B1-Motion>', self.handle_mouse_drag)
+        # self.bind('<Button-1>', self.handle_mouse_button_1)
+        # self.bind('<Button-3>', self.handle_mouse_button_3)
+        # self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
+        # self.bind('<Shift-Button-1>', self.handle_shift_button_1)
 
     def get_cleaned_row(self, event_y):
         y = int(self.canvasy(event_y))
