@@ -88,7 +88,8 @@ class MainTable(tk.Canvas):
         # -------
         # mouse
         self.bind('<Button-1>', self.handle_mouse_button_1)
-        self.bind('<Button-3>', self.handle_mouse_button_3)
+        self.bind('<Button-2>', self.handle_mouse_button_2) # macOS
+        self.bind('<Button-3>', self.handle_mouse_button_3) # Windows
         self.bind('<B1-Motion>', self.handle_mouse_move)
         self.bind('<MouseWheel>', self.handle_mouse_wheel)
         self.bind('<Button-4>', self.handle_mouse_wheel)
@@ -128,6 +129,9 @@ class MainTable(tk.Canvas):
             self.unbind_all('<Down>')
             self.unbind_all('<Left>')
             self.unbind_all('<Right>')
+
+    def handle_mouse_button_2(self, event):
+        self.render_popup_menu(event)
 
     @custom_action(name='mouse_click')
     def handle_mouse_button_1(self, event):
@@ -855,7 +859,7 @@ class MainTable(tk.Canvas):
         self.popup_menu.add_separator()
 
         self.popup_menu.add_command(label='複製內容', command=self.copy_to_clipboard)
-        sself.popup_menu.add_command(label='貼上內容', command=self.paste_from_clipboard)
+        self.popup_menu.add_command(label='貼上內容', command=self.paste_from_clipboard)
         #self.popup_menu.add_command(label='清除 pattern', command=self.clear_pattern)
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         self.popup_menu.post(event.x_root, event.y_root)

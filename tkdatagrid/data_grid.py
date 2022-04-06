@@ -233,15 +233,14 @@ class DataGrid(tk.Frame):
             self.row_index.xview(*args)
 
     def get_row_list(self):
-        row_list = []
-        if mt := self.main_table.selected:
-            row_list = mt.get('row_list', [])
-        else:
-            row_list = self.row_index.get_selected_rows()
-        # elif ri := self.row_index.selected:
-        #    row_list = ri.get('row_list', [])
-
-        return row_list
+        # row_list = []
+        # if mt := self.main_table.selected:
+        #    row_list = mt.get('row_list', [])
+        # else:
+        #     row_list = self.row_index.get_selected_rows()
+        selected = self.main_table.selected
+        if selected['box'][0] is not None:
+            return list(range(selected['box'][0], selected['box'][2] + 1))
 
     def update_state(self, key, value):
         if key in self.state and self.state[key] != value:
