@@ -21,6 +21,7 @@ class DataGrid(tk.Frame):
                  width=None,
                  height=None,
                  row_index_display='',
+                 row_index_width=60,
                  num_per_page=1000,
                  custom_menus=[],
                  custom_binding=None,
@@ -98,7 +99,7 @@ class DataGrid(tk.Frame):
         self.footer = Footer(self)
 
         if self.state['row_index_display']:
-            self.row_index = RowIndex(self, bg=self.state['style']['color']['row_index_bg'])
+            self.row_index = RowIndex(self, bg=self.state['style']['color']['row_index_bg'], width=row_index_width)
 
         self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.handle_yviews)
         self.scrollbar_y.grid(row=1, column=2, rowspan=1, sticky='news',pady=0, ipady=0)
@@ -129,11 +130,11 @@ class DataGrid(tk.Frame):
         self.footer.render()
 
         # TODO, failed
-        #self.main_table.yview_moveto(0.0)
-        #self.main_table.yview('moveto', 0.0)
+        # self.main_table.yview_moveto(0.0)
+        # self.main_table.yview('moveto', 0.0)
 
         # after refresh
-        if func := self.state['custom_actions']['to_page']:
+        if func := self.state['custom_actions'].get('to_page'):
             func()
 
     def refresh(self, new_data={}, keep_row_highlight=False, page=None):
@@ -156,18 +157,25 @@ class DataGrid(tk.Frame):
         end = cur_page * num
 
         for count, (k, v) in enumerate(rows.items()):
+            iid = ''
             key = str(k)
-            iid = k if 'iid:' in key else f'iid:{key}'
+            if 'iid:' in key:
+                iid = key
+            else:
+                count_str = str(count).rjust(len(str(total)), '0')
+                iid =  f'iid:{count_str}'
 
             if count >= start and count < end:
                 data_visible[iid] = v
 
+            # add _id for sort
+            v['_id'] = count
             new_data_iid[iid] = v
-
+            # print(iid, v)
         row_keys = list(new_data_iid.keys())
 
         self.state.update({
-            'data': data_visible, # only visible in certain page
+            'data': data_visible,  # only visible in certain page
             'data_all': new_data_iid,
             'num_rows': len(data_visible),
             'row_keys': row_keys,
@@ -186,6 +194,7 @@ class DataGrid(tk.Frame):
             self.row_index.render()
         self.column_header.render()
         self.footer.render()
+        self.main_table.init_highlight()
 
     def clear(self):
         self.main_table.clear()

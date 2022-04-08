@@ -17,20 +17,22 @@ automn leaf: #763626
 """
 
 
-def custom_action(_func=None, *, name=''):
+def custom_action(_func=None, *, name='', hook=''):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            ret = func(*args, **kwargs)
-            if f := args[0].ps['custom_actions'].get(name, None):
-                if not None:
-                    # print ('ret:', ret)
+            if act := args[0].ps['custom_actions'].get(name, None):
+                if act[0] == 'after':
+                    ret = func(*args, **kwargs)
                     if isinstance(ret, tuple):
-                        f(*ret)
+                        act[1](*ret)
                     else:
-                        f(ret)
-                return ret
-            return
+                        act[1](ret)
+                    return ret
+
+                elif act[0] == 'bind':
+                    act[1]()
+
         return wrapper
 
     if _func is None:  # called with argument
@@ -206,7 +208,7 @@ class MainTable(tk.Canvas):
         #     self.remove_widgets()
 
         logging.debug('clicked cell rc: {}'.format(self.current_rc))
-        return self.current_rc
+        return self.get_rc_key(row, col)
 
     def handle_mouse_button_2(self, event):
         self.render_popup_menu(event)
@@ -605,7 +607,7 @@ class MainTable(tk.Canvas):
         '''render rcfectangle box (multi-row & multi-column)'''
         self.delete('drag-box')
         # self.delete('row-highlight')
-        self.parent.row_index.clear_selected()
+        # self.parent.row_index.clear_selected()
 
         xs1, ys1, xs2, ys2 = self.get_cell_coords(box[0], box[1])
         xe1, ye1, xe2, ye2 = self.get_cell_coords(box[2], box[3])
@@ -936,56 +938,46 @@ class MainTable(tk.Canvas):
 
         self.current_rc[0] = row
         self.current_rc[1] = col
-        return self.current_rc
+        # return self.current_rc
+        return self.get_rc_key(row, col)
 
     @custom_action(name='clone_row')
     def clone_rows(self):
         # rows = self.parent.row_index.get_selected_rows()
         rows = self.parent.get_row_list()
-        logging.debug(f'rows: {rows}')
+        logging.debug(f'clone rows: {rows}')
 
         if len(rows) == 0:
             return
 
-        new_data = {}
-        res = []
-        insert_map = {}
-        keys = list(self.ps['data'].keys())
+        all_data = {}
+        all_keys = []
+        for iid, v in self.ps['data_all'].items():
+            all_data[iid] = v
+            all_keys.append(iid)
+
         for row in rows:
             row_key, col_key = self.get_rc_key(row, 0)
-            clone_data = dict(self.ps['data'][row_key])
-            iid_key = row_key[4:]  # remove "iid:"
-            prefix = f'iid:{iid_key}-'
-            clone_iid = f'iid:{iid_key}-0'  # default add new branch
+            cloned_data = dict(self.ps['data_all'][row_key])
+            iid_num = row_key.replace('iid:', '')   # remove "iid:"
+            iid_num_main = iid_num.split('-')[0]
+            prefix = f'iid:{iid_num_main}-'
+            num_sibling = len(list(filter(lambda x: prefix in x, all_keys)))
+            target_iid = f'iid:{iid_num_main}-{num_sibling}'
+            all_data[target_iid] = cloned_data
+            # res.append((row_key, clone_iid))
 
-            sibling_counter = 0
-            insert_to = 0
-            for counter, k in enumerate(keys):
-                if prefix in k:
-                    sibling_counter += 1
-                    insert_to = counter + 1
-
-            if sibling_counter > 0:  # already has branch, sibling
-                clone_iid = f'{prefix}{sibling_counter}'
-            else:
-                insert_to = keys.index(row_key)
-
-            insert_map[insert_to] = (clone_iid, clone_data)
-            res.append((row_key, clone_iid))
-        # print (insert_map)
-        # new_data = self.ps['data']
-
-        for _, (iid, clone_data) in insert_map.items():
-            self.ps['data'][iid] = clone_data
-        for d in sorted(self.ps['data'].items(), key=lambda x: x):
-            new_data[d[0]] = d[1]
-
+        # sorted dict
+        new_data = {}
+        for iid, v in sorted(all_data.items(), key=lambda x: x[0]):
+            new_data[iid] = v
         self.parent.refresh(new_data)
-        self.parent.row_index.clear_selected()
+
+        # self.parent.row_index.clear_selected()
         # if func := self.ps.get('after_clone_row', ''):
         #    return func(row_key, clone_iid)
         # return row_key, clone_iid
-        return res
+        return []
 
     @custom_action(name='remove_rows')
     def remove_rows(self):
@@ -1064,6 +1056,11 @@ class MainTable(tk.Canvas):
             self.set_data_value(row_key, col_key, text)
         self.remove_widgets('listbox')
 
+    def init_highlight(self):
+        self.render_cell_outline(0, 0)
+        handle_xy = self.get_cell_coords(0, 0)
+        self.render_box_handle(handle_xy)
+
     def init_data(self):
         logging.debug('init_data')
         self.current_rc = [0, 0]
@@ -1079,9 +1076,8 @@ class MainTable(tk.Canvas):
         }
         self.clipboard = {}
 
-        self.render_cell_outline(0, 0)
-        handle_xy = self.get_cell_coords(0, 0)
-        self.render_box_handle(handle_xy)
+        self.init_highlight()
+
         self.ps.update({
             'pagination': {
                 'num_per_page': self.ps['pagination']['num_per_page'],

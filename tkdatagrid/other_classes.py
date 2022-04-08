@@ -85,16 +85,13 @@ class ColumnHeader(tk.Canvas):
 
 class RowIndex(tk.Canvas):
 
-    def __init__(self, parent, width=None, bg=''):
-        if not width:
-            self.width = 60
-        else:
-            self.width = width
-        super().__init__(parent, bg=bg, width=self.width, bd=0, relief='flat')
+    def __init__(self, parent, width=60, bg=''):
+
+        super().__init__(parent, bg=bg, width=width, bd=0, relief='flat')
 
         self.parent = parent
         self.ps = parent.state
-
+        self.width=width
         # saved row index control action (unit: row number start from 0)
         self.selected = {
             'mode': '',
@@ -278,8 +275,8 @@ class RowIndex(tk.Canvas):
             return func(rows)
 
     def clear_selected(self):
-        self.parent.update_state('is_row_index_selected', False)
-        self.delete('row-highlight')
+        self.parent.update_state({'is_row_index_selected': False})
+        # self.delete('row-highlight')
         self.selected = {}
 
     def render(self, current_row=''):

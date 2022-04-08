@@ -6,8 +6,8 @@ import sys
 sys.path.insert(0, '')
 from tkdatagrid import DataGrid
 
-NUM_ROWS = 78
-NUM_PER_PAGE = 100
+NUM_ROWS = 16
+NUM_PER_PAGE = 10
 
 HEADER = {
     'a': {
@@ -45,7 +45,7 @@ for i in range(NUM_ROWS):
     for j in range(5):
         h = chr(97+j)
         DATA[i][h] = str(round(x * random.random() * 10, 2))
-    DATA[i]['index'] = i+1
+    #DATA[i]['index'] = i+1
 
 DATA3 = {
     0: {
@@ -70,7 +70,7 @@ class DemoApp(tk.Tk):
         self.grid_rowconfigure(0, weight=1)
         self.frame = tk.Frame(self)
 
-        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=400, row_index_display='iid', num_per_page=NUM_PER_PAGE, cols_on_ctrl_button_1=[1])
+        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=400, row_index_display='iid', num_per_page=NUM_PER_PAGE, cols_on_ctrl_button_1=[1], row_index_width=100)
 
         # redraw another
         #data2=sampledata()

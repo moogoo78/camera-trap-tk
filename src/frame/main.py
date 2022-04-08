@@ -349,12 +349,12 @@ class Main(tk.Frame):
             'cell_image_x_pad': 3,
             'cell_image_y_pad': 1,
             'custom_actions': {
-                # 'remove_rows': self.custom_remove_rows,
-                # 'clone_row': self.custom_clone_row,
-                'mouse_click': self.custom_mouse_click,
-                'arrow_key': self.custom_arrow_key,
-                # 'set_data': self.custom_set_data,
-                # 'to_page': self.custom_to_page,
+                'remove_rows': ('bind', self.custom_remove_rows),
+                'clone_row': ('bind', self.custom_clone_row),
+                'mouse_click': ('after', self.custom_mouse_click),
+                'arrow_key': ('after', self.custom_arrow_key),
+                'set_data': ('after', self.custom_set_data),
+                'to_page': self.custom_to_page,  # after
                 #'apply_pattern': self.custom_apply_pattern,
                 # 'paste_from_buffer': self.custom_paste_from_buffer,
             },
@@ -721,7 +721,7 @@ class Main(tk.Frame):
                         fill=color,
                         tags=('row-img-seq', 'row-img-seq_{}'.format(tag_name)))
         self.data_grid.main_table.tag_lower('row-img-seq')
-        elf.data_grid.main_table.render_row_highlight()
+        self.data_grid.main_table.render_row_highlight()
 
 
     def custom_set_data(self, row_key, col_key, value):
@@ -737,16 +737,16 @@ class Main(tk.Frame):
         #status = tmp.split(' / ')
         #self.data_grid.main_table.update_text((rc[0], 0), f'{status[0]} / ')
 
-    def select_item(self, rc):
+    def select_item(self, row_key, col_key):
         '''
         current_row is already set by DataGrid
         set current_image_data
         '''
-        if rc == None:
+        if row_key is None or col_key is None:
             return
-        #print ('current item', rc)
 
-        item = self.data_helper.get_item(rc[0])
+        item = self.data_helper.data[row_key]
+
         if item:
             self.current_image_data.update({
                 'image_id': item['image_id'],
@@ -755,7 +755,7 @@ class Main(tk.Frame):
         else:
             return
 
-        self.current_row = rc[0]
+        # self.current_row = rc[0] NO_NEED_TO
 
         self.show_image(item['thumb'], item['path'], 'm')
 
@@ -783,13 +783,11 @@ class Main(tk.Frame):
             #self.data_grid.main_table.update_text((rc[0], 0), f'V / {status[1]}')
 
 
-    def custom_arrow_key(self, rc):
-        #print ('arrow', rc)
-        self.select_item(rc)
+    def custom_arrow_key(self, row_key, col_key):
+        self.select_item(row_key, col_key)
 
-    def custom_mouse_click(self, rc):
-        #print ('handle click', rc)
-        self.select_item(rc)
+    def custom_mouse_click(self, row_key, col_key):
+        self.select_item(row_key, col_key)
 
     def begin_edit_annotation(self, iid):
         record = self.tree.item(iid, 'values')
@@ -831,15 +829,12 @@ class Main(tk.Frame):
         row = self.tree_helper.get_data(annotation_iid)
         return row.get('alist', [])
 
-    #def custom_clone_row(self, row_key, clone_iid):
-    def custom_clone_row(self, res):
-        if res == None:
-            return
-
-        for (row_key, clone_iid) in res:
-            iid_list = row_key[4:].split('-')
-            row_key_root = 'iid:{}-{}'.format(iid_list[0], iid_list[1])
-            item = self.data_helper.data[row_key_root]
+    def custom_clone_row(self):
+        rows = self.data_grid.get_row_list()
+        print(rows)
+        for row in rows:
+            row_key, _ = self.data_grid.main_table.get_rc_key(row, 0)
+            item = self.data_helper.data[row_key]
             image_id = item['image_id']
             alist = self.data_helper.annotation_data[image_id]
             # no need to copy annotation, clone has different annotation
@@ -847,7 +842,8 @@ class Main(tk.Frame):
             json_alist = json.dumps(alist)
             sql = f"UPDATE image SET annotation='{json_alist}' WHERE image_id={image_id}"
             self.app.db.exec_sql(sql, True)
-            self.refresh()
+
+        self.refresh()
 
     def _remove_rows_key(self, row_key):
         item = self.data_helper.data[row_key]
@@ -873,10 +869,13 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
         self.refresh()
 
-    def custom_remove_rows(self, rows):
+    def custom_remove_rows(self):
+        rows = self.data_grid.get_row_list()
+        print(rows)
         for row in rows:
-            if rc_key := self.data_helper.get_rc_key(row, 2):
-                self._remove_rows_key(rc_key[0])
+            row_key, _ = self.data_grid.main_table.get_rc_key(row, 0)
+            if item := self.data_helper.data[row_key]:
+                self._remove_rows_key(row_key)
 
         sql = f"SELECT COUNT(*) FROM image WHERE source_id = {self.source_id}"
         res = self.app.db.fetch_sql(sql)
@@ -943,7 +942,10 @@ class Main(tk.Frame):
         logging.debug('rows: {}'.format(rows))
         if value := self.keyboard_shortcuts.get(event.keysym, ''):
             for row in rows:
-                row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
+                row_key, col_key = self.data_grid.main_table.get_rc_key(row, SPECIES_COL_POS)
                 self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
 
         self.refresh()
+        cur_page = self.data_grid.state['pagination']['current_page']
+        if cur_page > 1:
+            self.custom_to_page()

@@ -140,6 +140,7 @@ class DataHelper(object):
         if seq_info:
             tag_name = item.get('img_seq_tag_name', '')
             # 複製的不用連拍補齊
+            print(row_key, '---')
             if row_key.endswith('-0') and tag_name:
                 sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
                 self.db.exec_sql(sql)
