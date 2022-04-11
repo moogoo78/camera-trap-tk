@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 import logging
 import queue
+from datetime import datetime
 
 from PIL import ImageTk, Image
 
@@ -276,11 +277,51 @@ class Main(tk.Frame):
         sep = ttk.Separator(self.ctrl_frame, orient='horizontal')
         sep.grid(row=5, column=0, pady=6, sticky='ew')
 
+        # trip & test photo
+        self.ctrl_frame5 = tk.Frame(self.ctrl_frame)
+        self.ctrl_frame5.grid_rowconfigure(0, weight=0)
+        self.ctrl_frame5.grid_rowconfigure(1, weight=0)
+        self.ctrl_frame5.grid_columnconfigure(0, weight=0)
+        self.ctrl_frame5.grid_columnconfigure(1, weight=0)
+        self.ctrl_frame5.grid_columnconfigure(2, weight=0)
+        self.ctrl_frame5.grid(row=6, column=0, sticky='nw', pady=10)
+
+        self.trip_label = ttk.Label(self.ctrl_frame5,  text='行程 (YYYY-mm-dd)')
+        # self.trip_sep_label = ttk.Label(self.ctrl_frame3,  text=':')
+        self.trip_start_val = tk.StringVar(self)
+        self.trip_end_val = tk.StringVar(self)
+
+        self.trip_start_entry = ttk.Entry(
+            self.ctrl_frame5,
+            textvariable=self.trip_start_val,
+            width=10,
+        )
+        self.trip_end_entry = ttk.Entry(
+            self.ctrl_frame5,
+            textvariable=self.trip_end_val,
+            width=10,
+        )
+
+        self.test_foto_val = tk.StringVar(self)
+        self.test_foto_label = ttk.Label(self.ctrl_frame5,  text='測試照時間 (HH:MM)')
+        self.test_foto_entry = ttk.Entry(
+            self.ctrl_frame5,
+            textvariable=self.test_foto_val,
+            width=8,
+        )
+        self.trip_label.grid(row=0, column=0, sticky='we')
+        #self.trip_sep_label.grid(row=1, column=0, sticky='we', pady=10)
+        self.trip_start_entry.grid(row=0, column=1, sticky='w')
+        self.trip_end_entry.grid(row=0, column=2, sticky='w')
+        self.test_foto_label.grid(row=1, column=0, sticky='w')
+        self.test_foto_entry.grid(row=1, column=1, sticky='w')
+
+        # upload  button
         self.ctrl_frame4 = tk.Frame(self.ctrl_frame)
         self.ctrl_frame4.grid_rowconfigure(0, weight=0)
         self.ctrl_frame4.grid_rowconfigure(1, weight=0)
         self.ctrl_frame4.grid_columnconfigure(0, weight=0)
-        self.ctrl_frame4.grid(row=6, column=0, sticky='w')
+        self.ctrl_frame4.grid(row=7, column=0, sticky='w')
 
         # upload button
         self.upload_button = ttk.Button(
@@ -469,6 +510,11 @@ class Main(tk.Frame):
         # folder name
         self.label_folder['text'] = self.source_data['source'][3]
 
+        # trip start/end
+        if trip_start := self.source_data['source'][9]:
+            self.trip_start_val.set(datetime.strptime(trip_start, '%Y%m%d').strftime('%Y-%m-%d'))
+        if trip_end := self.source_data['source'][10]:
+            self.trip_end_val.set(datetime.strptime(trip_end, '%Y%m%d').strftime('%Y-%m-%d'))
 
     def project_option_changed(self, *args):
         name = self.project_var.get()

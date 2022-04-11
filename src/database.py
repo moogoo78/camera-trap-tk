@@ -11,7 +11,10 @@ CREATE TABLE IF NOT EXISTS source (
   created INTEGER,
   status TEXT,
   description TEXT,
-  history TEXT
+  history TEXT,
+  trip_start TEXT,
+  trip_end TEXT
+  test_foto_time TEXT
 );'''
 
 SQL_INIT_IMAGE = '''

@@ -3,6 +3,7 @@ import shutil
 import time
 from datetime import datetime
 import json
+import re
 
 import boto3
 from botocore.exceptions import ClientError
@@ -10,6 +11,7 @@ from boto3.exceptions import S3UploadFailedError
 #S3UploadFailedError
 
 from image import ImageManager, make_thumb, get_thumb
+from utils import validate_datetime
 #from upload import UploadThread
 
 IGNORE_FILES = ['Thumbs.db', '']
@@ -46,10 +48,20 @@ class Source(object):
         db = self.db
         ts_now = int(time.time())
         dir_name = folder_path.stem # final path component
-
+        sql = ''
         sql_jobs = []
-        sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '10')".format(folder_path, dir_name, len(image_list), ts_now)
+        # validate date format
+        if m := re.search(r'([0-9]{8})-([0-9]{8})',dir_name):
+            start = m.group(1)
+            end = m.group(2)
+            if validate_datetime(start, '%Y%m%d') and \
+               validate_datetime(end, '%Y%m%d'):
+                sql = "INSERT INTO source (source_type, path, name, count, created, status, trip_start, trip_end) VALUES('folder', '{}', '{}', {}, {}, '10', '{}', '{}')".format(folder_path, dir_name, len(image_list), ts_now, start, end)
+        else:
+            sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '10')".format(folder_path, dir_name, len(image_list), ts_now)
+
         source_id = db.exec_sql(sql, True)
+
         return source_id
 
     def gen_import_image(self, source_id, image_list, folder_path):
