@@ -132,6 +132,8 @@ class DataGrid(tk.Frame):
         # TODO, failed
         # self.main_table.yview_moveto(0.0)
         # self.main_table.yview('moveto', 0.0)
+        args = ('moveto', 0)
+        self.handle_yviews(*args)
 
         # after refresh
         if func := self.state['custom_actions'].get('to_page'):
