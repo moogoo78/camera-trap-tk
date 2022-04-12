@@ -128,6 +128,12 @@ class DataHelper(object):
         annotation_col = col_key.replace('annotation_', '')
         annotation_index = int(row_key.split('-')[1])
         adata = self.annotation_data[image_id]
+
+        #如果不屬於那個欄位選項不能貼上
+        col_data = self.columns[col_key]
+        if col_data['type'] == 'listbox' and value not in col_data['choices']:
+            return False
+
         adata[annotation_index].update({
             annotation_col: value
         })
@@ -139,7 +145,7 @@ class DataHelper(object):
         if seq_info:
             tag_name = item.get('img_seq_tag_name', '')
             # 複製的不用連拍補齊
-            print(row_key, '---')
+            # print(row_key, '---')
             if row_key.endswith('-0') and tag_name:
                 sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
                 self.db.exec_sql(sql)
@@ -168,6 +174,8 @@ class DataHelper(object):
             # 沒勾連拍, 直接更新
             sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
             self.db.exec_sql(sql, True)
+
+        return True
 
     def read_image_list(self, image_list):
         '''

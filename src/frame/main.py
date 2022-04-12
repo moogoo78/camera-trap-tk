@@ -1,3 +1,4 @@
+import re
 import json
 import time
 from pathlib import Path
@@ -302,8 +303,14 @@ class Main(tk.Frame):
             width=10,
         )
 
+        self.test_foto_button = ttk.Button(
+            self.ctrl_frame5,
+            text='套用',
+            command=self.set_test_foto_by_time,
+            takefocus=0,
+        )
         self.test_foto_val = tk.StringVar(self)
-        self.test_foto_label = ttk.Label(self.ctrl_frame5,  text='測試照時間 (HH:MM)')
+        self.test_foto_label = ttk.Label(self.ctrl_frame5,  text='測試照設定時間 (HH:MM:SS)')
         self.test_foto_entry = ttk.Entry(
             self.ctrl_frame5,
             textvariable=self.test_foto_val,
@@ -315,6 +322,7 @@ class Main(tk.Frame):
         self.trip_end_entry.grid(row=0, column=2, sticky='w')
         self.test_foto_label.grid(row=1, column=0, sticky='w')
         self.test_foto_entry.grid(row=1, column=1, sticky='w')
+        self.test_foto_button.grid(row=1, column=2, sticky='w')
 
         # upload  button
         self.ctrl_frame4 = tk.Frame(self.ctrl_frame)
@@ -349,22 +357,22 @@ class Main(tk.Frame):
         species_choices = self.app.config.get('AnnotationFieldSpecies', 'choices')
         species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         menus = [
-            {
-                'type': 'normal',
-                'label': '複製物種',
-                'command': self.copy_cloned_species,
-            },
-            {
-                'type': 'normal',
-                'label': '貼上物種',
-                'command': self.paste_cloned_species,
-            },
-            #{
-            #    'type': 'menu',
-            #    'label': '物種清單',
-            #    'choices': species_choices.split(','),
-            #    'command': self.handle_click_menu_species,
-            #},
+            # {
+            #     'type': 'normal',
+            #     'label': '複製物種',
+            #     'command': self.copy_cloned_species,
+            # },
+            # {
+            #     'type': 'normal',
+            #     'label': '貼上物種',
+            #     'command': self.paste_cloned_species,
+            # },
+            # {
+            #     'type': 'menu',
+            #     'label': '物種清單',
+            #     'choices': species_choices.split(','),
+            #     'command': self.handle_click_menu_species,
+            # },
             {
                 'type': 'menu',
                 'label': '地棲性鳥類清單',
@@ -383,7 +391,17 @@ class Main(tk.Frame):
             custom_binding['bind_list'].append(f'Control-Key-{n}')
 
         num_per_page = int(self.app.config.get('DataGrid', 'num_per_page'))
-        self.data_grid = DataGrid(self.table_frame, data={}, columns=self.data_helper.columns, height=760-400, row_index_display='sn', custom_menus=menus, custom_binding=custom_binding, num_per_page=num_per_page)
+        self.data_grid = DataGrid(
+            self.table_frame,
+            data={},
+            columns=self.data_helper.columns,
+            height=760-400,
+            row_index_display='sn',
+            cols_on_ctrl_button_1=['annotation_species'],
+            cols_on_fill_handle=['annotation_species', 'annotation_sex', 'annotation_antler', 'annotation_remark', 'annotation_lifestage'],
+            custom_menus=menus,
+            custom_binding=custom_binding,
+            num_per_page=num_per_page)
         # TODO: 400 是湊出來的
         self.data_grid.update_state({
             'cell_height': 35,
@@ -459,6 +477,9 @@ class Main(tk.Frame):
             self.project_var.set('')
             self.studyarea_var.set('')
             self.deployment_var.set('')
+
+        if test_foto_time := self.source_data['source'][11]:
+            self.test_foto_val.set(test_foto_time)
 
         # update upload_button
         source_status = self.source_data['source'][6]
@@ -771,7 +792,10 @@ class Main(tk.Frame):
 
 
     def custom_set_data(self, row_key, col_key, value):
-        self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
+        res = self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
+        if not res:
+            self.refresh()
+
         if self.seq_info:
             # has seq_info need re-render
             self.refresh()
@@ -995,3 +1019,24 @@ class Main(tk.Frame):
         cur_page = self.data_grid.state['pagination']['current_page']
         if cur_page > 1:
             self.custom_to_page()
+
+    def set_test_foto_by_time(self):
+        if time_str := self.test_foto_val.get():
+            if m := re.search(r'([0-9]{2}):([0-9]{2}):([0-9]{2})', time_str):
+                hh = m.group(1)
+                mm = m.group(2)
+                ss = m.group(3)
+                if int(hh) >= 0 and int(hh) <= 24 \
+                   and int(mm) >= 0 and int(mm) <= 60 \
+                   and int(ss) >= 0 and int(ss) <= 60:
+                    #test_foto_ids = []
+                    for row_key, item in self.data_helper.data.items():
+                        image_hms = datetime.fromtimestamp(item['time']).strftime('%H:%M:%S')
+                        if image_hms == time_str:
+                            self.data_helper.update_annotation(row_key, 'annotation_species', '測試照')
+
+
+                    sql = "UPDATE source SET test_foto_time='{}' WHERE source_id={}".format(time_str ,self.source_data['source'][0])
+                    self.app.db.exec_sql(sql, True)
+                    self.refresh()
+                    tk.messagebox.showinfo('info', f'已設定測試照 - {time_str}')

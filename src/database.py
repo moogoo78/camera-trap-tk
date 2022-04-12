@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS source (
   description TEXT,
   history TEXT,
   trip_start TEXT,
-  trip_end TEXT
+  trip_end TEXT,
   test_foto_time TEXT
 );'''
 

@@ -32,6 +32,8 @@ def custom_action(_func=None, *, name='', hook=''):
 
                 elif act[0] == 'bind':
                     act[1]()
+            else:
+                return func(*args, **kwargs)
 
         return wrapper
 
@@ -109,7 +111,7 @@ class MainTable(tk.Canvas):
         self.toggle_arrow_key_binding()
 
     def handle_key_press(self, event):
-        print(event)
+        print('key press', event)
 
     # def handle_key_release(self, event):
     #    print('re', event)
@@ -136,7 +138,7 @@ class MainTable(tk.Canvas):
 
         x = int(self.canvasx(event.x))
         y = int(self.canvasy(event.y))
-        print(self.selected)
+        # print(self.selected)
         if self.selected['box'][2] is not None and self.selected['box'][0] is not None:  # prevent first time click None value
             handle_x_center = self.ps['column_width_list'][self.selected['box'][3]+1]
             handle_y_center = self.ps['cell_height']*(self.selected['box'][2]+1)
@@ -180,6 +182,10 @@ class MainTable(tk.Canvas):
         row_key = res_rc['row_key']
         col_key = res_rc['col_key']
 
+        # draw entry if not readonly
+        if not row_key or not col_key:
+            return
+
         self.current_rc[0] = row
         self.current_rc[1] = col
 
@@ -191,11 +197,8 @@ class MainTable(tk.Canvas):
         })
 
         self.render_cell_outline(row, col)
-        self.render_box_handle(res_rc['cell_xy'])
 
-        # draw entry if not readonly
-        if not row_key or not col_key:
-            return
+        self.render_fill_handle(res_rc['cell_xy'], col_key)
 
         # text = self.ps['data'][row_key][col_key]
         # col_type = self.ps['columns'][col_key].get('type', 'entry')
@@ -248,7 +251,6 @@ class MainTable(tk.Canvas):
 
         if self.selected['drag_start'][0] != self.selected['drag_end'][0] or \
            self.selected['drag_start'][1] != self.selected['drag_end'][1]:
-            # render_drag_box or render_fill_box
             # drag in one cell, don't render_box, 只有一格就不用畫了
             #r1, c1, r2, c2 = self.selected['box']
             handle_xy = self.get_cell_coords(r2, c2)
@@ -260,14 +262,13 @@ class MainTable(tk.Canvas):
                 })
                 logging.debug('mouse dragging')
                 self.render_drag_box(self.selected['box'])
-                self.render_box_handle(handle_xy)
             elif '-handle' in self.selected['action']:  # single-handle/box-handle
                 c2 = selected['box'][3] # donnot drag horizontal
                 fill = [self.selected['box'][0], selected['box'][1], r2, c2]
                 self.render_fill_box(fill)
-                handle_xy = self.get_cell_coords(r2, c2)
-                self.render_box_handle(handle_xy)
                 self.selected.update({'fill': fill})
+
+            self.render_fill_handle(handle_xy, res_rc['col_key'])
 
             # scroll if mouse drag down
             # donnot use canvasy(), y will accumulate while scroll down
@@ -277,6 +278,7 @@ class MainTable(tk.Canvas):
                 self.to_scroll('up')
 
         # print('after move', self.selected)
+
     def handle_shift_button_1(self, event):
         logging.debug('shift_button_1 <Shift_button-1>'.format(self.selected))
 
@@ -290,7 +292,7 @@ class MainTable(tk.Canvas):
         })
         self.render_drag_box(self.selected['box'])
         handle_xy = self.get_cell_coords(res_rc['row'], box[3])
-        self.render_box_handle(handle_xy)
+        self.render_fill_handle(handle_xy, res_rc['col_key'])
 
     def handle_ctrl_button_1(self, event):
         logging.debug('ctrl_button_1 <Control-Button-1>: {}'.format(self.selected))
@@ -301,7 +303,7 @@ class MainTable(tk.Canvas):
             return
         row = res_rc['row']
         col = res_rc['col']
-        if col in self.ps['cols_on_ctrl_button_1']:
+        if res_rc['col_key'] in self.ps['cols_on_ctrl_button_1']:
             ctrl_list.append([row, col])
             self.render_cell_outline(row, col, color='#8ca22d', is_delete=False)
             self.selected.update({'ctrl_list': ctrl_list})
@@ -659,8 +661,13 @@ class MainTable(tk.Canvas):
                               tags=('box', 'fill-box',))
         self.tag_lower('fill-box')
 
-    def render_box_handle(self, xy):
-        self.delete('box-handle')
+    def render_fill_handle(self, xy, col_key=''):
+
+        # TODO: only certain cols can render_fill? comment this for get lots of bug
+        # if len(self.ps['cols_on_fill_handle']) > 0 and col_key not in self.ps['cols_on_fill_handle']:
+        #    return
+
+        self.delete('fill-handle')
         # little rect handler on bottom right
         self.create_rectangle(
             xy[2]-4,
@@ -670,7 +677,7 @@ class MainTable(tk.Canvas):
             fill=self.ps['style']['color']['outline-dark'],
             outline='white',
             width=1,
-            tag=('box, box-highlight', 'box-handle'),
+            tag=('box, box-highlight', 'fill-handle'),
         )
 
     def render_copy_box(self, box):
@@ -927,7 +934,7 @@ class MainTable(tk.Canvas):
         logging.debug(f'{event.keysym}, last_rc: {last_rc} -> {row}, {col}')
         self.render_cell_outline(row, col)
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
-        self.render_box_handle([x1, y1, x2, y2])
+        self.render_fill_handle([x1, y1, x2, y2])
 
         # elif event.keysym in ('Left', 'Right'):
         # create text_editor
@@ -1059,7 +1066,8 @@ class MainTable(tk.Canvas):
     def init_highlight(self):
         self.render_cell_outline(0, 0)
         handle_xy = self.get_cell_coords(0, 0)
-        self.render_box_handle(handle_xy)
+
+        self.render_fill_handle(handle_xy, self.ps['col_keys'][0])
 
     def init_data(self):
         logging.debug('init_data')
