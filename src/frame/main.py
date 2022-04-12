@@ -1034,8 +1034,10 @@ class Main(tk.Frame):
                     #test_foto_ids = []
                     for row_key, item in self.data_helper.data.items():
                         image_hms = datetime.fromtimestamp(item['time']).strftime('%H:%M:%S')
+
+                        print(row_key, image_hms, time_str)
                         if image_hms == time_str:
-                            self.data_helper.update_annotation(row_key, 'annotation_species', '測試照')
+                            self.data_helper.update_annotation(row_key, 'annotation_species', '測試')
 
 
                     sql = "UPDATE source SET test_foto_time='{}' WHERE source_id={}".format(time_str ,self.source_data['source'][0])
