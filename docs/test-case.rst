@@ -23,6 +23,10 @@ DataGrid
 
   - Ctrl-C/Ctrl-V
   - mouse right button (Button3) copy & paste
+- Selection
+
+  - Ctrl+Mouse Left Button Click mark selection
+  - Shift selection
 
 - fill (drag fill handle to auto fill data)
 
