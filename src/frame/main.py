@@ -68,7 +68,9 @@ class Main(tk.Frame):
         antler_choices = self.app.config.get('AnnotationFieldAntler', 'choices')
         sex_choices = self.app.config.get('AnnotationFieldSex', 'choices')
         lifestage_choices = self.app.config.get('AnnotationFieldLifeStage', 'choices')
+        species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         self.data_helper.columns['annotation_species']['choices'] = species_choices.split(',')
+        self.data_helper.columns['annotation_species']['extra_choices'] = species_extra_birds.split(',')
         self.data_helper.columns['annotation_antler']['choices'] = antler_choices.split(',')
         self.data_helper.columns['annotation_sex']['choices'] = sex_choices.split(',')
         self.data_helper.columns['annotation_lifestage']['choices'] = lifestage_choices.split(',')
@@ -380,7 +382,7 @@ class Main(tk.Frame):
                 'command': self.handle_click_menu_species,
             },
         ]
-        species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
+
         custom_binding = {
             'bind_list': [],
             'command': self.handle_keyboard_shortcut,

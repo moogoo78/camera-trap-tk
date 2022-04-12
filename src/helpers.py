@@ -36,7 +36,8 @@ HEADER = {
         'label': '物種',
         'width': 80,
         'type': 'listbox',
-        'choices': []
+        'choices': [],
+        'extra_choices': []
     },
     'annotation_lifestage': {
         'label': '年齡',
@@ -131,7 +132,10 @@ class DataHelper(object):
 
         #如果不屬於那個欄位選項不能貼上
         col_data = self.columns[col_key]
-        if col_data['type'] == 'listbox' and value not in col_data['choices']:
+        choices = col_data['choices']
+        if annotation_col == 'species':
+            choices = choices + col_data['extra_choices']
+        if col_data['type'] == 'listbox' and value not in choices:
             return False
 
         adata[annotation_index].update({
