@@ -135,7 +135,8 @@ class DataHelper(object):
         choices = col_data['choices']
         if annotation_col == 'species':
             choices = choices + col_data['extra_choices']
-        if col_data['type'] == 'listbox' and value not in choices:
+
+        if col_data['type'] == 'listbox' and (value != '' and value not in choices):
             return False
 
         adata[annotation_index].update({

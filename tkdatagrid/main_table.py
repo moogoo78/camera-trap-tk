@@ -7,7 +7,7 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 
 from .utils import check_image
-
+from .autocomplete_widget import Autocomplete
 """
 mist: #90AFC5
 stone: #336B87
@@ -322,6 +322,13 @@ class MainTable(tk.Canvas):
             else:
                 choices = self.ps['columns'][col_key]['choices']
                 self.render_listbox(row, col, choices)
+        elif col_type == 'autocomplete':
+            # if listbox opened close that
+            if hasattr(self, 'autocomplete'):
+                self.remove_widgets('autocomplete')
+            else:
+                choices = self.ps['columns'][col_key]['choices']
+                self.render_autocomplete(row, col, choices)
         elif col_type == 'entry':
             if hasattr(self, 'text_editor'):
                 # text_editor can have space input
@@ -493,7 +500,7 @@ class MainTable(tk.Canvas):
         #self.listbox.grid(row=0, column=0, sticky = 'news')
 
         self.listbox.activate(0)
-        self.listbox.selection_set(0)
+        self.listbox.select_set(0)
 
         self.create_window(
             x1,
@@ -567,6 +574,11 @@ class MainTable(tk.Canvas):
 
     #def handle_enter_drag(self, event):
     #    print (event, 'entry drag')
+
+    def render_autocomplete(self, row, col, choices, default=0):
+        print(row, col, choices)
+
+        a = Autocomplete(self, choices=choices, value='foo')
 
     def render_row_highlight(self, rows=[]):
         '''use border only & raise over other components
@@ -1069,6 +1081,9 @@ class MainTable(tk.Canvas):
         self.render_row_highlight(rows)
 
     def handle_listbox_click(self, event, row, col):
+        if not self.listbox:
+            return
+
         cur_sel = self.listbox.curselection()
         logging.debug('curselection: {}'.format(cur_sel[0]))
         if cur_sel:
@@ -1092,10 +1107,11 @@ class MainTable(tk.Canvas):
                 self.listbox.yview_scroll(-1, 'units')
                 select_index -= 1
 
-            if select_index < self.listbox.size():
+            if select_index >= 0 and select_index < self.listbox.size():
                 self.listbox.selection_clear(0, tk.END)
+                self.listbox.see(select_index-2)
                 self.listbox.activate(select_index)
-                self.listbox.selection_set(select_index)
+                self.listbox.select_set(select_index)
 
 
     def init_highlight(self):
