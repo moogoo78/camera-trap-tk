@@ -94,7 +94,6 @@ class MainTable(tk.Canvas):
         # key
         self.bind_all('<Escape>', self.remove_widgets)
         #self.bind_all('<space>', self.start_edit)
-        self.bind_all('<Return>', self.start_edit)
         #self.bind_all('<KeyPress>', self.handle_key_press)
         # self.bind_all('<KeyRelease>', self.handle_key_release)
         # composite
@@ -108,7 +107,8 @@ class MainTable(tk.Canvas):
             for bind_key in custom_binding['bind_list']:
                 # self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
                 self.bind_all(f'<{bind_key}>', custom_binding['command'])
-        self.toggle_arrow_key_binding()
+
+        self.set_keyboard_control(True)
 
     def handle_key_press(self, event):
         print('key press', event)
@@ -116,13 +116,15 @@ class MainTable(tk.Canvas):
     # def handle_key_release(self, event):
     #    print('re', event)
 
-    def toggle_arrow_key_binding(self, to_bind=True):
+    def set_keyboard_control(self, to_bind=True):
         if to_bind is True:
+            self.bind_all('<Return>', self.start_edit)
             self.bind_all('<Up>', self.handle_arrow_key)
             self.bind_all('<Down>', self.handle_arrow_key)
             self.bind_all('<Left>', self.handle_arrow_key)
             self.bind_all('<Right>', self.handle_arrow_key)
         else:
+            self.unbind_all('<Return>')
             self.unbind_all('<Up>')
             self.unbind_all('<Down>')
             self.unbind_all('<Left>')
@@ -467,11 +469,19 @@ class MainTable(tk.Canvas):
 
     def render_listbox(self, row, col, choices, default=0):
         self.remove_widgets()
+        self.set_keyboard_control(False)
+
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
         self.listbox = tk.Listbox(self.parent, background='white', selectmode=tk.SINGLE)#, **self.listbox_args)
         #'activestyle': 'none'
         #exportselection: False
         self.listbox.bind('<ButtonRelease-1>', lambda event: self.handle_listbox_click(event, row, col))
+        self.listbox.bind_all('<Escape>', lambda event: self.handle_listbox_click(event, row, col))
+        self.listbox.bind_all('<Return>', lambda event: self.handle_listbox_click(event, row, col))
+        #self.listbox.bind('<<ListboxSelect>>', lambda event: self.handle_listbox_click(event, row, col)) # virtual event: replace <Return> & <ButtonRelease-1> ?
+        #self.listbox.bind('<Escape>', lambda event: self.handle_listbox_click(event, row, col))
+        self.listbox.bind_all('<Down>', lambda event: self.handle_listbox_arrow_key(event, 'down'))
+        self.listbox.bind_all('<Up>', lambda event: self.handle_listbox_arrow_key(event, 'up'))
 
         #choices = filtered_choices if len(filtered_choices) else self.choices
         self.listbox.insert(tk.END, '')
@@ -481,6 +491,9 @@ class MainTable(tk.Canvas):
             if isinstance(i, str):
                 self.listbox.insert(tk.END, i)
         #self.listbox.grid(row=0, column=0, sticky = 'news')
+
+        self.listbox.activate(0)
+        self.listbox.selection_set(0)
 
         self.create_window(
             x1,
@@ -1057,11 +1070,33 @@ class MainTable(tk.Canvas):
 
     def handle_listbox_click(self, event, row, col):
         cur_sel = self.listbox.curselection()
+        logging.debug('curselection: {}'.format(cur_sel[0]))
         if cur_sel:
             text = self.listbox.get(cur_sel)
             row_key, col_key = self.get_rc_key(row, col)
             self.set_data_value(row_key, col_key, text)
         self.remove_widgets('listbox')
+        self.set_keyboard_control(True)
+
+    def handle_listbox_arrow_key(self, event, direction):
+        # print(event, 'listbox')
+        if not self.listbox:
+            return
+
+        if sel := self.listbox.curselection():
+            select_index = sel[0]
+            if direction == 'down':
+                self.listbox.yview_scroll(1, 'units')
+                select_index += 1
+            elif direction == 'up':
+                self.listbox.yview_scroll(-1, 'units')
+                select_index -= 1
+
+            if select_index < self.listbox.size():
+                self.listbox.selection_clear(0, tk.END)
+                self.listbox.activate(select_index)
+                self.listbox.selection_set(select_index)
+
 
     def init_highlight(self):
         self.render_cell_outline(0, 0)
