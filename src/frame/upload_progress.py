@@ -176,6 +176,12 @@ class UploadProgress(tk.Frame):
                     # TODO check if upload not successed
                     self.uploading_data['uploaded_que'].put([row[0], uploaded_object_id])
 
+                    server_image_id = row[11]
+                    self.app.server.post_image_status({
+                        'file_url': f'{uploaded_object_id}.jpg',
+                        'pk': server_image_id,
+                    })
+
                 # update progress display
                 value = i + 1 + data['init_value']
                 total = data['total']
@@ -268,7 +274,7 @@ class UploadProgress(tk.Frame):
 
         for _ in range(q.qsize()):
             image_id, object_id = q.get()
-            sql = f"UPDATE image SET upload_status='200' WHERE image_id = {image_id}"
+            sql = f"UPDATE image SET upload_status='200', object_id='{object_id}' WHERE image_id = {image_id}"
             self.app.db.exec_sql(sql, True)
 
             # update table status
