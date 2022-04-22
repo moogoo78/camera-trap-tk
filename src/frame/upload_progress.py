@@ -17,7 +17,7 @@ from queue import Queue
 
 from worker import UploadTask
 from image import get_thumb
-
+from utils import create_image_id
 
 class UploadProgress(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -135,11 +135,13 @@ class UploadProgress(tk.Frame):
         self.loop.run_forever()
 
     async def upload_images(self, row):
-        server_image_id = row[11]
+        # server_image_id = row[11]
+        object_id = create_image_id()
         thumb_paths = get_thumb(row[10], row[2], row[1], 'all')
         #print ('upload_image', row[10])
+
         for x, path in thumb_paths.items():
-            object_name = f'{server_image_id}-{x}.jpg'
+            object_name = f'{object_id}-{x}.jpg'
             #time.sleep(0.3)
             if self.is_dry_run == True:
                 await asyncio.sleep(0.3)
@@ -148,9 +150,12 @@ class UploadProgress(tk.Frame):
 
             # TODO error return
 
+        return object_id
+
     async def upload_folder(self, data):
         source_id = None
         uploaded_count = 0
+
         try:
             start_time = datetime.now()
             for i, row in enumerate(data['image_pending_list']):
@@ -165,10 +170,11 @@ class UploadProgress(tk.Frame):
                 else:
                     if self.uploading_data['status'] == 'stop':
                         return
-                    await self.upload_images(row)
+                    uploaded_object_id = await self.upload_images(row)
+
                     uploaded_count += 1
                     # TODO check if upload not successed
-                    self.uploading_data['uploaded_que'].put(row[0])
+                    self.uploading_data['uploaded_que'].put([row[0], uploaded_object_id])
 
                 # update progress display
                 value = i + 1 + data['init_value']
@@ -261,7 +267,7 @@ class UploadProgress(tk.Frame):
             return
 
         for _ in range(q.qsize()):
-            image_id = q.get()
+            image_id, object_id = q.get()
             sql = f"UPDATE image SET upload_status='200' WHERE image_id = {image_id}"
             self.app.db.exec_sql(sql, True)
 

@@ -35,7 +35,7 @@ HEADER = {
     'annotation_species': {
         'label': '物種',
         'width': 80,
-        'type': 'listbox',
+        'type': 'autocomplete',
         'choices': [],
         'extra_choices': []
     },
