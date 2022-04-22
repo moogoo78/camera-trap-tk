@@ -22,11 +22,13 @@ HEADER = {
     },
     'c': {
         'label': 'C',
-        'type': 'listbox',
-        'choices': [('op1', 'option1'), ('op2', 'option2'), ('op3', 'option3'),('op4', 'option4'),('op5', 'option5'),],
+        'type': 'autocomplete',
+        'choices': ['God Father', 'Top Gun', 'Lord of the Ring', 'Star Wars', 'Tropical Fish']
     },
     'd': {
         'label': 'D',
+        'type': 'listbox',
+        'choices': [('op1', 'option1'), ('op2', 'option2'), ('op3', 'option3'),('op4', 'option4'),('op5', 'option5'),],
     },
     'e': {
         'label': 'E',
