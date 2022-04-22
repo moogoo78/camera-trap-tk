@@ -445,7 +445,7 @@ class MainTable(tk.Canvas):
                 col_type = col.get('type', 'entry')
                 y_top = row_counter * self.ps['cell_height'] + self.y_start
                 y_center = y_top + self.ps['cell_height']/2
-                if col_type in ['entry', 'text', 'listbox']:
+                if col_type in ['entry', 'text', 'listbox', 'autocomplete']:
                     rect = self.create_text(
                         x_center,
                         y_center,
@@ -900,7 +900,9 @@ class MainTable(tk.Canvas):
         self.popup_menu = tk.Menu(self)
         #self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
         self.popup_menu.add_command(label='複製一列', command=self.clone_rows)
-        self.popup_menu.add_command(label='刪除列', command=self.remove_rows)
+
+        if self.ps['rows_delete_type'] in ['ALL', 'CLONED']:
+            self.popup_menu.add_command(label='刪除列', command=self.remove_rows)
 
         # custom menus
         self.popup_menu.add_separator()
@@ -1046,13 +1048,24 @@ class MainTable(tk.Canvas):
         #     del self.ps['data'][row_key]
         #     self.parent.refresh(self.ps['data'])
         #     return row
+        if self.ps['rows_delete_type'] == 'NO':
+            return []
+        deleted_rows = []
         for row in rows:
             row_key, col_key = self.get_rc_key(row, 0)
-            del self.ps['data'][row_key]
+            if self.ps['rows_delete_type'] == 'CLONED':
+                if '-' in row_key:
+                    # cloned rows has "-" in row_key
+                    deleted_rows.append(self.ps['data'][row_key])
+                    del self.ps['data'][row_key]
+
+            elif self.ps['rows_delete_type'] == 'ALL':
+                deleted_rows.append(self.ps['data'][row_key])
+                del self.ps['data'][row_key]
 
         self.parent.refresh(self.ps['data'])
 
-        return rows
+        return deleted_rows
 
     def copy_to_clipboard(self, box=None):
         logging.debug('selected: {}'.format(self.selected))

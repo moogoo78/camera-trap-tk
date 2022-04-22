@@ -27,6 +27,7 @@ class DataGrid(tk.Frame):
                  custom_binding=None,
                  cols_on_ctrl_button_1=None,
                  cols_on_fill_handle=None,
+                 rows_delete_type='ALL', # ALL: any rows can be delete, CLONED: delete cloned rows, NO: not delet any rows
     ):
         """include MainTable, ColumnHeader, RowIndex"""
         super().__init__(parent, width=width, height=height)
@@ -83,6 +84,7 @@ class DataGrid(tk.Frame):
             'custom_binding': custom_binding,
             'row_index_display': row_index_display,
             'box_display_type': 'lower',
+            'rows_delete_type': rows_delete_type,
         }
         self.update_state(self.state)
         #self.current_rc = [0, 0]
