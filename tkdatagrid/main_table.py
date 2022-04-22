@@ -576,9 +576,26 @@ class MainTable(tk.Canvas):
     #    print (event, 'entry drag')
 
     def render_autocomplete(self, row, col, choices, default=0):
-        print(row, col, choices)
+        # print(row, col, choices)
+        self.remove_widgets('autocomplete')
+        x1, y1, x2, y2 = self.get_cell_coords(row, col)
+        row_key, col_key = self.get_rc_key(row, col)
 
-        a = Autocomplete(self, choices=choices, value='foo')
+        def after_update_entry(value):
+            self.set_data_value(row_key, col_key, value)
+            self.delete('autocomplete_win')
+
+
+        self.autocomplete = Autocomplete(self.parent, choices=choices, value='', after_update_entry=after_update_entry)
+
+        self.create_window(
+            x1,
+            y1,
+            width=x2-x1+self.x_start,
+            height=self.ps['cell_height']*5,
+            window=self.autocomplete,
+            anchor='nw',
+            tag='autocomplete_win')
 
     def render_row_highlight(self, rows=[]):
         '''use border only & raise over other components
@@ -851,11 +868,17 @@ class MainTable(tk.Canvas):
                 self.save_entry_queue()
             self.text_editor.destroy()
             del self.text_editor
-        self.delete('entry_win')
 
         if widget in ['all', 'listbox'] and hasattr(self, 'listbox'):
             self.listbox.destroy()
             del self.listbox
+
+        if widget in ['all', 'autocomplete'] and hasattr(self, 'autocomplete'):
+            self.autocomplete.destroy()
+            del self.autocomplete
+
+        self.delete('entry_win')
+        self.delete('autocomplete_win')
         self.delete('listbox_win')
 
     def render_popup_menu(self, event):
