@@ -24,7 +24,9 @@ def custom_action(_func=None, *, name='', hook=''):
             if act := args[0].ps['custom_actions'].get(name, None):
                 if act[0] == 'after':
                     ret = func(*args, **kwargs)
-                    if isinstance(ret, tuple):
+                    if ret is None:
+                        pass
+                    elif isinstance(ret, tuple):
                         act[1](*ret)
                     else:
                         act[1](ret)
