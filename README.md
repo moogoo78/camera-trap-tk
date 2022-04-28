@@ -51,6 +51,7 @@ $ python ./src/app.py -i my-dev.ini
 ```sh
 $ pyinstaller.exe --onefile -F .\src\app.py --clean
 ```
+**⚠WARNING**: 要進去 virtualenv (poetry shell)，才不會找不到 tkdatagrid 的 module
 
 提供 config.ini file, 注意: `account_id`,
 
