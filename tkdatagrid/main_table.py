@@ -242,6 +242,9 @@ class MainTable(tk.Canvas):
         r2 = row
         c2 = col
 
+        if selected['drag_start'][0] is None or selected['drag_start'][1] is None:
+            return
+
         # if action == handle, can only move horizontal
         if row < selected['drag_start'][0]:
             # select from bottom to top, swap value
@@ -516,7 +519,7 @@ class MainTable(tk.Canvas):
 
     def render_entry(self, row, col, text):
         row_key, col_key = self.get_rc_key(row, col)
-        cell_tag = f'cell-text:{row_key}_{col_key}'
+        cell_tag = f'cell-text:{row_key}^-^{col_key}'
         sv = tk.StringVar()
         sv.set(text)
 
@@ -845,10 +848,11 @@ class MainTable(tk.Canvas):
 
     def save_entry_queue(self):
         for i, v in self.entry_queue.items():
-            rc_keys = i.replace('cell-text:', '').split('_')
+            rc_keys = i.replace('cell-text:', '').split('^-^')
             #row_key, col_key = self.get_rc_key(int(rc[0]), int(rc[1]))
             row_key = rc_keys[0]
             col_key = rc_keys[1]
+
             self.set_data_value(row_key, col_key, v)
             self.entry_queue = {}
 

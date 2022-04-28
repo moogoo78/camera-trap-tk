@@ -132,11 +132,11 @@ class DataHelper(object):
 
         #如果不屬於那個欄位選項不能貼上
         col_data = self.columns[col_key]
-        choices = col_data['choices']
+        choices = col_data.get('choices', [])
         if annotation_col == 'species':
             choices = choices + col_data['extra_choices']
 
-        if col_data['type'] == 'listbox' and (value != '' and value not in choices):
+        if col_data.get('type', '') == 'listbox' and (value != '' and value not in choices):
             return False
 
         adata[annotation_index].update({
