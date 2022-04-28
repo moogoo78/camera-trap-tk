@@ -17,7 +17,6 @@ from queue import Queue
 
 from worker import UploadTask
 from image import get_thumb
-from utils import create_image_id
 
 class UploadProgress(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -136,7 +135,7 @@ class UploadProgress(tk.Frame):
 
     async def upload_images(self, row):
         # server_image_id = row[11]
-        object_id = create_image_id()
+        object_id = row[14]
         thumb_paths = get_thumb(row[10], row[2], row[1], 'all')
         #print ('upload_image', row[10])
 
@@ -150,7 +149,7 @@ class UploadProgress(tk.Frame):
 
             # TODO error return
 
-        return object_id
+        return
 
     async def upload_folder(self, data):
         source_id = None
@@ -170,15 +169,17 @@ class UploadProgress(tk.Frame):
                 else:
                     if self.uploading_data['status'] == 'stop':
                         return
-                    uploaded_object_id = await self.upload_images(row)
+                    # uploaded_object_id = await self.upload_images(row)
+                    await self.upload_images(row)
 
                     uploaded_count += 1
                     # TODO check if upload not successed
-                    self.uploading_data['uploaded_que'].put([row[0], uploaded_object_id])
+                    self.uploading_data['uploaded_que'].put(row[0])
 
                     server_image_id = row[11]
                     self.app.server.post_image_status({
-                        'file_url': f'{uploaded_object_id}.jpg',
+                        # 'file_url': f'{uploaded_object_id}.jpg',
+                        'has_storage': 'Y',
                         'pk': server_image_id,
                     })
 
@@ -225,7 +226,7 @@ class UploadProgress(tk.Frame):
             try:
                 res = await task
                 #res = await asyncio.gather(*self.uploading_data['tasks'])
-                logging.info(f'done 1 task: {res}')
+                logging.info(f'done 1 task')
             except asyncio.CancelledError:
                 logging.info('do_uploads: cancel')
 
@@ -273,8 +274,8 @@ class UploadProgress(tk.Frame):
             return
 
         for _ in range(q.qsize()):
-            image_id, object_id = q.get()
-            sql = f"UPDATE image SET upload_status='200', object_id='{object_id}' WHERE image_id = {image_id}"
+            image_id  = q.get()
+            sql = f"UPDATE image SET upload_status='200' WHERE image_id = {image_id}"
             self.app.db.exec_sql(sql, True)
 
             # update table status

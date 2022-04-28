@@ -488,11 +488,14 @@ class Main(tk.Frame):
         if source_status == '20':
             self.upload_button['text'] = '上傳中'
             self.upload_button['state'] = tk.DISABLED
+            self.delete_button['state'] = tk.DISABLED
         elif source_status == '40':
             self.upload_button['text'] = '上傳*'
+            self.delete_button['state'] = tk.NORMAL
         else:
             self.upload_button['text'] = '上傳'
             self.upload_button['state'] = tk.NORMAL
+            self.delete_button['state'] = tk.NORMAL
 
         # data list
         data = self.data_helper.read_image_list(self.source_data['image_list'])
@@ -678,16 +681,16 @@ class Main(tk.Frame):
             sql = f"UPDATE source SET status='20' WHERE source_id={source_id}"
             self.app.db.exec_sql(sql, True)
 
-        for image_id, server_image_id in server_image_map.items():
-            sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id} WHERE image_id={image_id}"
+        for image_id, [server_image_id, server_image_uuid] in server_image_map.items():
+            sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id}, object_id='{server_image_uuid}' WHERE image_id={image_id}"
             self.app.db.exec_sql(sql)
         self.app.db.commit()
 
         self.app.frames['upload_progress'].handle_start()
 
         self.upload_button['text'] = '上傳中'
-        self.upload_button['state'] = 'disabled'
-
+        self.upload_button['state'] = tk.DISABLED
+        self.delete_button['state'] = tk.DISABLED
 
     def handle_notebook_change(self, event):
         tab = event.widget.tab('current')['text']
