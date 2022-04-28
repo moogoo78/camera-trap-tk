@@ -16,8 +16,9 @@ DataGrid
 - keyboard arrow up/down/left/right | 鍵盤上下左右 => 跟滑鼠點擊一樣，看顯示有無正常
 - input data
 
-  - form select/option input | 下拉選單 => 物種/年齡/性別/角況 => 下拉, 選取, 動作有無正常
-  - entry (form input text) | 自由欄位 => 備註/個體 ID => 資料輸入有無正常
+  - form select/option input (listbox) | 下拉選單 => 年齡/性別/角況，下拉, 選取, 動作有無正常
+  - form autocomplete input (entry/listbox widget) | 下拉 + 自動補齊 => 物種欄位，有無自動補齊 (嚴格的說是自動篩選再手動補齊)，下拉清單可否按鍵盤上下或是滑鼠 scroll 移動選項
+  - form text input (entry widget) | 自由欄位 => 備註/個體 ID => 資料輸入有無正常
 
 - copy & paste
 
