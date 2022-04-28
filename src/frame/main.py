@@ -403,14 +403,17 @@ class Main(tk.Frame):
             cols_on_fill_handle=['annotation_species', 'annotation_sex', 'annotation_antler', 'annotation_remark', 'annotation_lifestage'],
             custom_menus=menus,
             custom_binding=custom_binding,
-            num_per_page=num_per_page)
+            num_per_page=num_per_page,
+            rows_delete_type='CLONED',
+            remove_rows_key_ignore_pattern='-0'
+        )
         # TODO: 400 是湊出來的
         self.data_grid.update_state({
             'cell_height': 35,
             'cell_image_x_pad': 3,
             'cell_image_y_pad': 1,
             'custom_actions': {
-                'remove_rows': ('bind', self.custom_remove_rows),
+                'remove_rows': ('after', self.custom_remove_rows),
                 'clone_row': ('bind', self.custom_clone_row),
                 'mouse_click': ('after', self.custom_mouse_click),
                 'arrow_key': ('after', self.custom_arrow_key),
@@ -906,7 +909,6 @@ class Main(tk.Frame):
 
     def custom_clone_row(self):
         rows = self.data_grid.get_row_list()
-        print(rows)
         for row in rows:
             row_key, _ = self.data_grid.main_table.get_rc_key(row, 0)
             item = self.data_helper.data[row_key]
@@ -944,11 +946,10 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
         self.refresh()
 
-    def custom_remove_rows(self):
-        rows = self.data_grid.get_row_list()
-        print(rows)
-        for row in rows:
-            row_key, _ = self.data_grid.main_table.get_rc_key(row, 0)
+    def custom_remove_rows(self, deleted_row_keys):
+        # rows = self.data_grid.get_row_list()
+        for row_key in deleted_row_keys:
+            #row_key, _ = self.data_grid.main_table.get_rc_key(row, 0)
             if item := self.data_helper.data[row_key]:
                 self._remove_rows_key(row_key)
 

@@ -22,6 +22,7 @@ def custom_action(_func=None, *, name='', hook=''):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             if act := args[0].ps['custom_actions'].get(name, None):
+                print (act,  'foo')
                 if act[0] == 'after':
                     ret = func(*args, **kwargs)
                     if ret is None:
@@ -44,6 +45,8 @@ def custom_action(_func=None, *, name='', hook=''):
     else:  # without argument
         return decorator(_func)
 
+
+CLONE_ROWS_KEY_DELIMETER = '-_-'
 
 class MainTable(tk.Canvas):
 
@@ -519,7 +522,7 @@ class MainTable(tk.Canvas):
 
     def render_entry(self, row, col, text):
         row_key, col_key = self.get_rc_key(row, col)
-        cell_tag = f'cell-text:{row_key}^-^{col_key}'
+        cell_tag = f'cell-text:{row_key}{CLONE_ROWS_KEY_DELIMETER}{col_key}'
         sv = tk.StringVar()
         sv.set(text)
 
@@ -848,7 +851,7 @@ class MainTable(tk.Canvas):
 
     def save_entry_queue(self):
         for i, v in self.entry_queue.items():
-            rc_keys = i.replace('cell-text:', '').split('^-^')
+            rc_keys = i.replace('cell-text:', '').split(CLONE_ROWS_KEY_DELIMETER)
             #row_key, col_key = self.get_rc_key(int(rc[0]), int(rc[1]))
             row_key = rc_keys[0]
             col_key = rc_keys[1]
@@ -1023,10 +1026,10 @@ class MainTable(tk.Canvas):
             row_key, col_key = self.get_rc_key(row, 0)
             cloned_data = dict(self.ps['data_all'][row_key])
             iid_num = row_key.replace('iid:', '')   # remove "iid:"
-            iid_num_main = iid_num.split('-')[0]
+            iid_num_main = iid_num.split(CLONE_ROWS_KEY_DELIMETER)[0]
             prefix = f'iid:{iid_num_main}-'
             num_sibling = len(list(filter(lambda x: prefix in x, all_keys)))
-            target_iid = f'iid:{iid_num_main}-{num_sibling}'
+            target_iid = f'iid:{iid_num_main}{CLONE_ROWS_KEY_DELIMETER}{num_sibling}'
             all_data[target_iid] = cloned_data
             # res.append((row_key, clone_iid))
 
@@ -1056,22 +1059,32 @@ class MainTable(tk.Canvas):
         #     return row
         if self.ps['rows_delete_type'] == 'NO':
             return []
-        deleted_rows = []
+
+        deleted_row_keys = []
+        ignore = self.ps['remove_rows_key_ignore_pattern']
+        print(rows, ignore, "!!!")
         for row in rows:
             row_key, col_key = self.get_rc_key(row, 0)
+            print (row_key, col_key)
             if self.ps['rows_delete_type'] == 'CLONED':
-                if '-' in row_key:
-                    # cloned rows has "-" in row_key
-                    deleted_rows.append(self.ps['data'][row_key])
-                    del self.ps['data'][row_key]
+                if ignore == '':
+                    if delimeter in row_key:
+                        # cloned rows has "{CLONE_ROWS_KEY_DELIMETER}" in row_key
+                        print (row_key, 'uuu', delimeter)
+                        deleted_row_keys.append(row_key)
+                        del self.ps['data'][row_key]
+                else:
+                    if ignore not in row_key:
+                        deleted_row_keys.append(row_key)
+                        del self.ps['data'][row_key]
 
             elif self.ps['rows_delete_type'] == 'ALL':
-                deleted_rows.append(self.ps['data'][row_key])
+                deleted_row_keys.append(row_key)
                 del self.ps['data'][row_key]
 
         self.parent.refresh(self.ps['data'])
-
-        return deleted_rows
+        logging.debug(f"actual remove_rows: {deleted_row_keys} (mode: {self.ps['rows_delete_type']})")
+        return deleted_row_keys
 
     def copy_to_clipboard(self, box=None):
         logging.debug('selected: {}'.format(self.selected))
