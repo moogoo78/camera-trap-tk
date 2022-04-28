@@ -1,5 +1,5 @@
 from datetime import datetime
-from bson.objectid import ObjectId
+#from bson.objectid import ObjectId
 
 def validate_datetime(datetime_text, datetime_format=''):
     try:
