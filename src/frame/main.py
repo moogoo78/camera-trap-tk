@@ -922,14 +922,15 @@ class Main(tk.Frame):
 
         self.refresh()
 
-    def _remove_rows_key(self, row_key):
+    def _remove_rows_key_DEPRICATED(self, row_key):
+        sql = ''
         item = self.data_helper.data[row_key]
         image_id = item['image_id']
         adata = self.data_helper.annotation_data[image_id]
         annotation_index = int(row_key.split('-')[1])
         adata_item = adata[annotation_index]
-        sql = ''
-        if annotation_index == 0:
+
+        if annotation_index == 0:  # 目前只刪除 cloned rows 所以不會有這個
             if len(adata) > 1:
                 # remove root item
                 ans = tk.messagebox.askquestion('注意', '刪除此列會將複製出來的資料一併刪除?')
@@ -942,17 +943,41 @@ class Main(tk.Frame):
             adata.remove(adata_item)
             json_data = json.dumps(adata)
             sql = f"UPDATE image SET annotation='{json_data}' WHERE image_id={image_id}"
-        if sql:
-            self.app.db.exec_sql(sql, True)
-        self.refresh()
+
+        #if sql:
+        #    self.app.db.exec_sql(sql, True)
+
+        # self.refresh() # do not refresh, if remove multi rows, cause error
 
     def custom_remove_rows(self, deleted_row_keys):
         # rows = self.data_grid.get_row_list()
+        #self._remove_rows(deleted_row_keys)
+        # must be cloned row_keys
+        tmp = {}
+        # 整理 {image_id: adata} 關係
         for row_key in deleted_row_keys:
-            #row_key, _ = self.data_grid.main_table.get_rc_key(row, 0)
-            if item := self.data_helper.data[row_key]:
-                self._remove_rows_key(row_key)
+            item = self.data_helper.data[row_key]
+            image_id = item['image_id']
+            if image_id not in tmp:
+                alist = self.data_helper.annotation_data[image_id]
+                adata = {idx: values for idx, values in enumerate(alist)}
+                tmp[str(image_id)] = adata
 
+        # delete adata
+        for row_key in deleted_row_keys:
+            rk = row_key.split('-')
+            image_id = rk[0].replace('iid:', '')
+            annotation_index = int(rk[1])
+            del tmp[image_id][annotation_index]
+
+        for image_str, adata in tmp.items():
+            alist = [x for _, x in adata.items()]
+            image_id = int(image_str)
+            json_data = json.dumps(alist)
+            sql = f"UPDATE image SET annotation='{json_data}' WHERE image_id={image_id}"
+            self.app.db.exec_sql(sql, True)
+
+        # update source status & refresh
         sql = f"SELECT COUNT(*) FROM image WHERE source_id = {self.source_id}"
         res = self.app.db.fetch_sql(sql)
         if res:

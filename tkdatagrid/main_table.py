@@ -22,7 +22,6 @@ def custom_action(_func=None, *, name='', hook=''):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             if act := args[0].ps['custom_actions'].get(name, None):
-                print (act,  'foo')
                 if act[0] == 'after':
                     ret = func(*args, **kwargs)
                     if ret is None:
@@ -1062,10 +1061,8 @@ class MainTable(tk.Canvas):
 
         deleted_row_keys = []
         ignore = self.ps['remove_rows_key_ignore_pattern']
-        print(rows, ignore, "!!!")
         for row in rows:
             row_key, col_key = self.get_rc_key(row, 0)
-            print (row_key, col_key)
             if self.ps['rows_delete_type'] == 'CLONED':
                 if ignore == '':
                     if delimeter in row_key:
