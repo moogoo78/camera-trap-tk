@@ -62,6 +62,8 @@ class Autocomplete(ttk.Frame):
 
         self.listbox.delete(0, tk.END)
         for i in filtered:
+            self.listbox.activate(0)
+            self.listbox.select_set(0)
             self.listbox.insert(tk.END, i)
 
 
