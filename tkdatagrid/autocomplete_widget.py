@@ -30,6 +30,7 @@ class Autocomplete(ttk.Frame):
         self.listbox.bind('<<ListboxSelect>>', self._update_entry)
         self.listbox.bind_all('<Down>', lambda event: self.handle_listbox_arrow_key(event, 'down'))
         self.listbox.bind_all('<Up>', lambda event: self.handle_listbox_arrow_key(event, 'up'))
+        self.listbox.bind_all('<Return>', self._update_entry)
         self.listbox.pack(fill='both', expand=True)
         self.listbox.grid()
 
@@ -55,9 +56,9 @@ class Autocomplete(ttk.Frame):
         if len(self.choices) > 0:
             item = self.choices[0]
             if isinstance(item, tuple):
-                filtered = [i for i in self.choices if i[1].lower().startswith(val.lower())]
+                filtered = [i for i in self.choices if val.lower() in i[1].lower()]
             if isinstance(item, str):
-                filtered = [i for i in self.choices if i.lower().startswith(val.lower())]
+                filtered = [i for i in self.choices if val.lower() in i.lower()]
 
         self.listbox.delete(0, tk.END)
         for i in filtered:
