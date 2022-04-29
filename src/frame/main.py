@@ -291,19 +291,21 @@ class Main(tk.Frame):
 
         self.trip_label = ttk.Label(self.ctrl_frame5,  text='行程 (YYYY-mm-dd)')
         # self.trip_sep_label = ttk.Label(self.ctrl_frame3,  text=':')
-        self.trip_start_val = tk.StringVar(self)
-        self.trip_end_val = tk.StringVar(self)
+        self.trip_start_var = tk.StringVar(self)
+        self.trip_end_var = tk.StringVar(self)
 
         self.trip_start_entry = ttk.Entry(
             self.ctrl_frame5,
-            textvariable=self.trip_start_val,
+            textvariable=self.trip_start_var,
             width=10,
         )
         self.trip_end_entry = ttk.Entry(
             self.ctrl_frame5,
-            textvariable=self.trip_end_val,
+            textvariable=self.trip_end_var,
             width=10,
         )
+        #self.trip_start_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_start'))
+        #self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
 
         self.test_foto_button = ttk.Button(
             self.ctrl_frame5,
@@ -485,6 +487,19 @@ class Main(tk.Frame):
 
         if test_foto_time := self.source_data['source'][11]:
             self.test_foto_val.set(test_foto_time)
+            self.data_helper.test_foto_time = test_foto_time
+        else:
+            self.test_foto_val.set('')
+
+        if trip_start := self.source_data['source'][9]:
+            self.trip_start_var.set(trip_start)
+        else:
+            self.trip_start_var.set('')
+
+        if trip_end := self.source_data['source'][10]:
+            self.trip_end_var.set(trip_end)
+        else:
+            self.trip_end_var.set('')
 
         # update upload_button
         source_status = self.source_data['source'][6]
@@ -541,9 +556,9 @@ class Main(tk.Frame):
 
         # trip start/end
         if trip_start := self.source_data['source'][9]:
-            self.trip_start_val.set(datetime.strptime(trip_start, '%Y%m%d').strftime('%Y-%m-%d'))
+            self.trip_start_var.set(trip_start)
         if trip_end := self.source_data['source'][10]:
-            self.trip_end_val.set(datetime.strptime(trip_end, '%Y%m%d').strftime('%Y-%m-%d'))
+            self.trip_end_var.set(trip_end)
 
     def project_option_changed(self, *args):
         name = self.project_var.get()
@@ -801,12 +816,13 @@ class Main(tk.Frame):
 
     def custom_set_data(self, row_key, col_key, value):
         res = self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
-        if not res:
-            self.refresh()
+        #if not res:
+        #    self.refresh()
 
-        if self.seq_info:
+        # if self.seq_info:
             # has seq_info need re-render
-            self.refresh()
+
+        self.refresh()
 
         # always refresh for status display
         #self.refresh() 先不要
@@ -867,6 +883,7 @@ class Main(tk.Frame):
     def custom_mouse_click(self, row_key, col_key):
         self.select_item(row_key, col_key)
 
+    # DEPRICATED
     def begin_edit_annotation(self, iid):
         record = self.tree.item(iid, 'values')
         a_conf = self.tree_helper.get_conf('annotation')
@@ -1064,7 +1081,6 @@ class Main(tk.Frame):
                     for row_key, item in self.data_helper.data.items():
                         image_hms = datetime.fromtimestamp(item['time']).strftime('%H:%M:%S')
 
-                        print(row_key, image_hms, time_str)
                         if image_hms == time_str:
                             self.data_helper.update_annotation(row_key, 'annotation_species', '測試')
 
@@ -1073,3 +1089,19 @@ class Main(tk.Frame):
                     self.app.db.exec_sql(sql, True)
                     self.refresh()
                     tk.messagebox.showinfo('info', f'已設定測試照 - {time_str}')
+
+    def handle_entry_change(self, *args):
+        trace_args = args[0]
+        key = args[1]
+        col = key
+        logging.debug('entry_name: {}'.format(key))
+        value = ''
+        if key == 'trip_start':
+            value = self.trip_start_var.get()
+        elif key == 'trip_end':
+            value = self.trip_end_var.get()
+
+        if key in ['trip_start', 'trip_end']:  # trace 會出發所有 entry 的動作?
+            # save to db
+            sql = "UPDATE source SET {}='{}' WHERE source_id={}".format(col, value, self.source_id)
+            self.app.db.exec_sql(sql, True)

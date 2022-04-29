@@ -102,6 +102,7 @@ class DataHelper(object):
         #}
         self.annotation_data = {}
         self.exif_data = {}
+        self.test_foto_time = ''
 
     def get_image_row_keys(self, image_id):
         row_keys = []
@@ -121,7 +122,7 @@ class DataHelper(object):
             self.data[row_key]['status_display'] = delimeter.join([orig[0], _get_status_display(status_code)])
 
     def update_annotation(self, row_key, col_key, value, seq_info=None):
-
+        print('! update_annotation', row_key, col_key, value)
         item = self.data[row_key]
         image_id = item['image_id']
 
@@ -139,12 +140,12 @@ class DataHelper(object):
         if col_data.get('type', '') == 'listbox' and (value != '' and value not in choices):
             return False
 
+        original_species= adata[annotation_index].get('species', '')
+
         adata[annotation_index].update({
             annotation_col: value
         })
         json_data = json.dumps(adata)
-
-        #is_cloned = True if '-' in row_key else False
 
         sql = ''
         if seq_info:
@@ -152,35 +153,75 @@ class DataHelper(object):
             # 複製的不用連拍補齊
             # print(row_key, '---')
             if row_key.endswith('-0') and tag_name:
-                sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
-                self.db.exec_sql(sql)
+                # print('*first', self.check_test_foto(item))
+                sql2 = ''
+                if self.check_test_foto(item) is True:
+                    if original_species != '測試':
+                        sql2 = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
+                else:
+                    sql2 = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
+                if sql2:
+                    self.db.exec_sql(sql2)
 
                 # related rows
                 keys = seq_info['map'][tag_name]['row_keys']
                 img_list = []
+                sql2 = ''
                 for k, v in keys.items():
                     if k != row_key and k.endswith('-0'):
                         tag_image_id = v['image_id']
                         tag_adata = self.annotation_data[tag_image_id]
+                        original_species2 = tag_adata[annotation_index].get('species', '')
                         tag_adata[0].update({
                             annotation_col: value
                         })
                         tag_json_data = json.dumps(tag_adata)
-                        sql = f"UPDATE image SET status='30', annotation='{tag_json_data}' WHERE image_id={tag_image_id}"
-                        self.db.exec_sql(sql)
+                        # print('*rel', self.check_test_foto(item))
+                        item2 = self.data[k]
+                        # print (original_species2, self.check_test_foto(item2))
+                        if self.check_test_foto(item2) is True:
+                            if original_species2 != '測試':
+                                sql2 = f"UPDATE image SET status='30', annotation='{tag_json_data}' WHERE image_id={tag_image_id}"
+                                self.db.exec_sql(sql2)
+                        else:
+                            sql2 = f"UPDATE image SET status='30', annotation='{tag_json_data}' WHERE image_id={tag_image_id}"
+                            self.db.exec_sql(sql2)
 
-                self.db.commit()
+                if sql2:
+                    self.db.commit()
 
             else:
                 # 勾了沒中或是複製列, 直接更新
-                sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
-                self.db.exec_sql(sql, True)
+                # print('*dir', self.check_test_foto(item))
+                if self.check_test_foto(item) is True:
+                    if original_species != '測試':
+                        sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
+                else:
+                    sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
         else:
             # 沒勾連拍, 直接更新
-            sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
+            # print('*normal', self.check_test_foto(item), original_species, value)
+            if self.check_test_foto(item) is True:
+                if original_species != '測試':
+                    # 測試照, 還沒設定測試
+                    sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
+            else:
+                # 非測試照, 都更新
+                sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
+
+        if sql:
             self.db.exec_sql(sql, True)
 
         return True
+
+    def check_test_foto(self, item):
+        if self.test_foto_time:
+            # 有設定測試照, 而且時間一樣
+            image_hms = datetime.fromtimestamp(item['time']).strftime('%H:%M:%S')
+            if image_hms == self.test_foto_time:
+                return True
+
+        return False
 
     def read_image_list(self, image_list):
         '''
