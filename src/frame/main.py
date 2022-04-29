@@ -377,7 +377,7 @@ class Main(tk.Frame):
             # },
             {
                 'type': 'menu',
-                'label': '地棲性鳥類清單',
+                'label': '鳥類清單',
                 'choices': species_extra_birds.split(','),
                 'command': self.handle_click_menu_species,
             },
