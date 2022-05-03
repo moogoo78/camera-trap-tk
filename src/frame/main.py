@@ -815,6 +815,7 @@ class Main(tk.Frame):
 
 
     def custom_set_data(self, row_key, col_key, value):
+        # print('-----', row_key, col_key, value)
         res = self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
         #if not res:
         #    self.refresh()
@@ -1001,6 +1002,7 @@ class Main(tk.Frame):
             sql = f"UPDATE source SET count={res[0]} WHERE source_id={self.source_id}"
             self.app.db.exec_sql(sql, True)
             self.app.frames['folder_list'].refresh_source_list()
+            self.refresh()
 
     def custom_paste_from_buffer(self, buf, rows):
         #print('paste !!', buf, rows)
