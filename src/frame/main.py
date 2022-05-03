@@ -304,8 +304,8 @@ class Main(tk.Frame):
             textvariable=self.trip_end_var,
             width=10,
         )
-        #self.trip_start_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_start'))
-        #self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
+        self.trip_start_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_start'))
+        self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
 
         self.test_foto_button = ttk.Button(
             self.ctrl_frame5,
@@ -664,6 +664,11 @@ class Main(tk.Frame):
             'image_list': image_list,
             'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
             'deployment_id': deployment_id,
+            'trip_start':self.trip_start_var.get(),
+            'trip_end': self.trip_end_var.get(),
+            'folder_name': self.source_data['source'][3],
+            'source_id': self.source_data['source'][0],
+            'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
         }
 
         if self.source_data['source'][6] == '40':
@@ -684,11 +689,11 @@ class Main(tk.Frame):
 
         account_id = self.app.config.get('Installation', 'account_id')
         # post to server
-        payload = {
-            'image_list': image_list,
-            'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
-            'deployment_id': deployment_id,
-        }
+        #payload = {
+        #    'image_list': image_list,
+        #    'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
+        #    'deployment_id': deployment_id,
+        #}
         res = self.app.server.post_annotation(payload)
         if res['error']:
             tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
