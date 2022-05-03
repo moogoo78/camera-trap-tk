@@ -201,13 +201,8 @@ class DataHelper(object):
         else:
             # 沒勾連拍, 直接更新
             # print('*normal', self.check_test_foto(item), original_species, value)
-            if self.check_test_foto(item) is True:
-                if original_species != '測試':
-                    # 測試照, 還沒設定測試
-                    sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
-            else:
-                # 非測試照, 都更新
-                sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
+            # 直接更新，不管是不是測試照
+            sql = f"UPDATE image SET status='30', annotation='{json_data}' WHERE image_id={image_id}"
 
         if sql:
             self.db.exec_sql(sql, True)
