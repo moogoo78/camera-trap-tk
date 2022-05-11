@@ -205,6 +205,7 @@ class UploadProgress(tk.Frame):
                     'timestamp': str(now),
                     'elapsed': exec_time,
                     'source_id': source_id,
+                    'deployment_journal_id': data['source'][12]
                 })
                 logging.info('task: upload_folder finally')
             else:
@@ -301,5 +302,8 @@ class UploadProgress(tk.Frame):
                 })
                 sql_update = "UPDATE source SET history='{}', status='40' WHERE source_id={}".format(json.dumps(history), item['source_id'])
                 self.app.db.exec_sql(sql_update, True)
+
+                # send finish upload status to server
+                self.app.server.post_upload_history(item['deployment_journal_id'], 'finished')
 
         self.app.after(1000, self.polling)

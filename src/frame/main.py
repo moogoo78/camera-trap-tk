@@ -700,6 +700,13 @@ class Main(tk.Frame):
             return
 
         server_image_map = res['data']
+
+        # inform server uploading start
+        if dj_id := res.get('deployment_journal_id'):
+            sql = f"UPDATE source SET deployment_journal_id={dj_id} WHERE source_id={source_id}"
+            self.app.db.exec_sql(sql, True)
+            self.app.server.post_upload_history(dj_id, 'uploading')
+
         if self.source_data['source'][6] == '10':
             sql = f"UPDATE source SET status='20' WHERE source_id={source_id}"
             self.app.db.exec_sql(sql, True)

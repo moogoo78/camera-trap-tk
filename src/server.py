@@ -76,6 +76,28 @@ class Server(object):
 
         return ret
 
+    def post_upload_history(self, deployment_journal_id, status):
+        '''
+        status: uploading/finished
+        deployment_journal_id:
+        '''
+        url = f"{self.config['host']}{self.config['update_upload_history_api']}"
+        payload = {
+            'deployment_journal_id': deployment_journal_id,
+            'status': status,
+        }
+        resp = requests.post(url, data=payload)
+
+        ret = {
+            'error': ''
+        }
+
+        if resp.status_code != 200:
+            print ('server.update_upload_history error: ', resp.text)
+            ret['error'] = 'server.update_upload_history: post error'
+
+        return ret
+
     def post_annotation(self, payload):
         url = f"{self.config['host']}{self.config['image_annotation_api']}"
         ret = {
@@ -91,7 +113,10 @@ class Server(object):
                 return ret
             try:
                 d = resp.json()
-                ret['data'] = d['saved_image_ids']
+                ret.update({
+                    'data': d['saved_image_ids'],
+                    'deployment_journal_id': d['deployment_journal_id']
+                })
             except:
                 #print ('source: load json error', 'xxxxx', resp.text)
                 ret['error'] = 'server.post_annotation: load json error => {}'.format(resp.text)

@@ -62,10 +62,9 @@ class Autocomplete(ttk.Frame):
 
         self.listbox.delete(0, tk.END)
         for i in filtered:
-            self.listbox.activate(0)
-            self.listbox.select_set(0)
             self.listbox.insert(tk.END, i)
-
+        self.listbox.activate(0)
+        self.listbox.select_set(0)
 
     def _update_entry(self, event):
         val = ''
@@ -82,7 +81,8 @@ class Autocomplete(ttk.Frame):
     def handle_listbox_arrow_key(self, event, direction):
         if not self.listbox:
             return
-
+        print('err', self.listbox, self.listbox.curselection())
+        '''
         if sel := self.listbox.curselection():
             select_index = sel[0]
             if direction == 'down':
@@ -97,7 +97,7 @@ class Autocomplete(ttk.Frame):
                 self.listbox.see(select_index-2)
                 self.listbox.activate(select_index)
                 self.listbox.select_set(select_index)
-
+        '''
 class Autocomplete2(ttk.Entry, object):
     def __init__(
             self,
