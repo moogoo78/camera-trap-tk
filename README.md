@@ -12,7 +12,6 @@ Note: Python 3.9.6 cannot be used on Windows 7 or earlier - [Python Releases for
 
 **Dependency**
 - Pillow
-- tksheet
 - requests
 - boto3
 - pyinstaller (for build win exe)
