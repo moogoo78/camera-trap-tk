@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [v0.1.7c] - 2022-05-03
+
+### Changed
+
+- fixed many bugs
+- upload payload add "行程" & "測試照時間"
+
 ## [v0.1.7b] - 2022-04-29
 
 ### Changed
