@@ -146,7 +146,7 @@ class DataGrid(tk.Frame):
         if func := self.state['custom_actions'].get('to_page'):
             func()
 
-    def refresh(self, new_data={}, keep_row_highlight=False, page=None):
+    def refresh(self, new_data={}, is_init_highlight=False, page=None):
         """now, only consider MainTable"""
         self.clear()
         #print(page, 'refresh')
@@ -203,7 +203,9 @@ class DataGrid(tk.Frame):
             self.row_index.render()
         self.column_header.render()
         self.footer.render()
-        self.main_table.init_highlight()
+
+        if is_init_highlight is True:
+            self.main_table.init_highlight()
 
     def clear(self):
         self.main_table.clear()

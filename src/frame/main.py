@@ -255,7 +255,7 @@ class Main(tk.Frame):
         self.seq_checkbox = ttk.Checkbutton(
             self.ctrl_frame3,
             text='連拍分組',
-	    command=lambda: self.refresh(keep_row_highlight=True),
+	    command=lambda: self.refresh(),
             variable=self.seq_checkbox_val,
 	    onvalue='Y',
             offvalue='N')
@@ -271,7 +271,7 @@ class Main(tk.Frame):
             #validatecommand=self.on_seq_interval_changed
         )
         self.seq_interval_entry.bind(
-            "<KeyRelease>", lambda _: self.refresh(keep_row_highlight=True))
+            "<KeyRelease>", lambda _: self.refresh())
         self.seq_interval_entry.grid(row=0, column=1, sticky='w')
 
         self.seq_unit = ttk.Label(self.ctrl_frame3,  text='分鐘 (相鄰照片間隔__分鐘，顯示分組)')
@@ -455,13 +455,12 @@ class Main(tk.Frame):
         self.current_image_data = {}
         self.data_grid.main_table.init_data()
 
-        self.refresh()
+        self.refresh(is_init_highlight=True)
 
 
-    def refresh(self, keep_row_highlight=False):
+    def refresh(self, is_init_highlight=False):
         logging.debug('refresh: {}'.format(self.source_id))
         #print (self.current_row, self.current_image_data, self.data_grid.main_table.selected)
-        #print (self.data_grid.main_table.get_selected_list(), 'a', self.data_grid.main_table.selected, keep_row_highlight)
 
         #self.data_helper.set_status_display(image_id=35, status_code='300')-
         # let project image group intervel entry off focus
@@ -534,7 +533,7 @@ class Main(tk.Frame):
             self.image_thumb_label.image = None
 
         self.data_grid.main_table.delete('row-img-seq')
-        self.data_grid.refresh(data, keep_row_highlight=keep_row_highlight)
+        self.data_grid.refresh(data, is_init_highlight=is_init_highlight)
         # draw img_seq
         for i, (iid, row) in enumerate(data.items()):
             tag_name = row.get('img_seq_tag_name', '')
