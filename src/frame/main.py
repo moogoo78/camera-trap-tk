@@ -289,7 +289,7 @@ class Main(tk.Frame):
         self.ctrl_frame5.grid_columnconfigure(2, weight=0)
         self.ctrl_frame5.grid(row=6, column=0, sticky='nw', pady=10)
 
-        self.trip_label = ttk.Label(self.ctrl_frame5,  text='行程 (YYYY-mm-dd)')
+        self.trip_label = ttk.Label(self.ctrl_frame5,  text='資料夾頭尾照片日期 (YYYY-mm-dd)')
         # self.trip_sep_label = ttk.Label(self.ctrl_frame3,  text=':')
         self.trip_start_var = tk.StringVar(self)
         self.trip_end_var = tk.StringVar(self)
