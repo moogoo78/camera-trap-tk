@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS image (
   upload_status TEXT,
   sys_note TEXT,
   object_id TEXT,
+  media_type TEXT,
   FOREIGN KEY (source_id) REFERENCES source(source_id)
 );'''
 

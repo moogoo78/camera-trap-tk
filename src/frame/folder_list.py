@@ -115,7 +115,7 @@ class FolderList(tk.Frame):
             self.source_list.append(source_button)
 
 
-    def insert_image_to_db(self, image_sql_list):
+    def exec_sql_list(self, image_sql_list):
         for i in image_sql_list:
             self.app.db.exec_sql(i)
         self.app.db.commit()
@@ -133,11 +133,10 @@ class FolderList(tk.Frame):
         self.app.frames['landing'].progress_bar['maximum'] = total
         image_sql_list = []
 
-        for i, v in enumerate(src.gen_import_image(source_id, image_list, folder_path)):
-            #self.app.db.exec_sql(v[1])
-            image_sql_list.append(v[1])
+        for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
+            image_sql_list.append(sql)
             self.app.frames['landing'].progress_bar['value'] = i+1
-            self.app.frames['landing'].thumb_label['text'] = '{} ({}/{})'.format(image_list[i].name, i+1, total)
+            self.app.frames['landing'].thumb_label['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, total)
             #progress_bar['value'] = i+1
             #self.update_idletasks()
 
@@ -145,7 +144,7 @@ class FolderList(tk.Frame):
         #progress_bar['value'] = 0
         #self.update_idletasks()
 
-        self.app.after(100, lambda: self.insert_image_to_db(image_sql_list))
+        self.app.after(100, lambda: self.exec_sql_list(image_sql_list))
 
 
     def add_folder(self):
@@ -162,8 +161,9 @@ class FolderList(tk.Frame):
 
         image_list = src.get_image_list(folder_path)
 
-        source_id = src.create_import_directory(image_list, folder_path)
+        source_id = src.create_import_directory(len(image_list), folder_path)
         threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
+
         #self.refresh_source_list()
         '''
 

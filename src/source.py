@@ -17,6 +17,7 @@ from utils import validate_datetime
 
 IGNORE_FILES = ['Thumbs.db', '']
 IMAGE_EXTENSIONS = ['.JPG', '.JPEG', '.PNG']
+MOVIE_EXTENSIONS = ['.MOV', '.AVI', '.M4V', '.MP4', '.WMV', '.MKV', '.WEBM']
 
 class Source(object):
     '''much like a helper'''
@@ -39,13 +40,13 @@ class Source(object):
         image_list = []
         for entry in folder_path.iterdir():
             if not entry.name.startswith('.') and \
-               entry.is_file() and \
-               self._check_image_filename(entry):
-                image_list.append(entry)
+               entry.is_file():
+                if type_ := self._check_filename(entry):
+                    image_list.append((entry, type_))
 
         return image_list
 
-    def create_import_directory(self, image_list, folder_path):
+    def create_import_directory(self, num_image_list, folder_path):
         db = self.db
         ts_now = int(time.time())
         dir_name = folder_path.stem # final path component
@@ -59,13 +60,13 @@ class Source(object):
                validate_datetime(end, '%Y%m%d'):
                 sql = "INSERT INTO source (source_type, path, name, count, created, status, trip_start, trip_end) VALUES('folder', '{}', '{}', {}, {}, '10', '{}', '{}')".format(folder_path, dir_name, len(image_list), ts_now, start, end)
         else:
-            sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '10')".format(folder_path, dir_name, len(image_list), ts_now)
+            sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '10')".format(folder_path, dir_name, num_image_list, ts_now)
 
         source_id = db.exec_sql(sql, True)
 
         return source_id
 
-    def gen_import_image(self, source_id, image_list, folder_path):
+    def gen_import_file(self, source_id, image_list, folder_path):
         ts_now = int(time.time())
         # mkdir thumbnails dir
         thumb_conf = 'thumbnails' # TODO config
@@ -77,17 +78,42 @@ class Source(object):
         if not thumb_source_path.exists():
             thumb_source_path.mkdir()
 
-        for i in image_list:
+        for entry, type_ in image_list:
+            img = None
             data = {
-                'path': i.as_posix(),
-                'name': i.name,
-                'img': ImageManager(i),
+                'path': entry.as_posix(),
+                'name': entry.name,
             }
-            sql = self._insert_image_db(data, ts_now, source_id, thumb_source_path)
+            if type_ == 'image':
+                data['img'] = ImageManager(entry)
+                sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
+            elif type_ == 'movie':
+                data['mov'] = entry
+                sql = self.prepare_movie_sql(data, ts_now, source_id, thumb_source_path)
+            yield (data, sql)
 
-            yield data, sql
 
-    def _insert_image_db(self, i, ts_now, source_id, thumb_source_path):
+    def prepare_movie_sql(self, i, ts_now, source_id, thumb_source_path):
+        db = self.db
+        stat = i['mov'].stat()
+        timestamp = int(stat.st_mtime)
+        via = 'mtime'
+
+        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, {}, '{}', 'movie')".format(
+            i['path'],
+            i['name'],
+            timestamp,
+            via,
+            '10',
+            '',
+            '[]',
+            ts_now,
+            source_id,
+            '{}',
+        )
+        return sql
+
+    def prepare_image_sql_and_thumb(self, i, ts_now, source_id, thumb_source_path):
         db = self.db
         timestamp = None
 
@@ -103,7 +129,7 @@ class Source(object):
             timestamp = int(stat.st_mtime)
             via = 'mtime'
 
-        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, exif, source_id, sys_note) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, '{}', {}, '{}')".format(
+        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, exif, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, '{}', {}, '{}', 'image')".format(
             i['path'],
             i['name'],
             timestamp,
@@ -123,11 +149,16 @@ class Source(object):
         return sql
 
     @staticmethod
-    def _check_image_filename(dirent):
+    def _check_filename(dirent):
+        """
+        return "image"|"movie"|""
+        """
         p = Path(dirent)
         if p.suffix.upper() in IMAGE_EXTENSIONS:
-            return True
-        return False
+            return 'image'
+        elif p.suffix.upper() in MOVIE_EXTENSIONS:
+            return 'movie'
+        return ''
 
     def get_source(self, source_id):
         db = self.db

@@ -12,8 +12,6 @@ from datetime import datetime
 from PIL import ImageTk, Image
 
 from helpers import (
-    FreeSolo,
-    TreeHelper,
     DataHelper,
 )
 from frame import (
@@ -58,7 +56,6 @@ class Main(tk.Frame):
         }
         self.thumb_basewidth = 500
 
-        self.tree_helper = TreeHelper()
         self.data_helper = DataHelper(self.app.db)
         self.annotation_entry_list = []
         self.species_copy = []
@@ -528,7 +525,8 @@ class Main(tk.Frame):
         if len(data) > 0:
             first_key = next(iter(data))
             first_item = data[first_key]
-            self.show_image(first_item['thumb'], first_item['path'], 'm')
+            if first_item['media_type'] == 'image':
+                self.show_image(first_item['thumb'], first_item['path'], 'm')
         else:
             self.image_thumb_label.image = None
 
@@ -902,22 +900,6 @@ class Main(tk.Frame):
     def custom_mouse_click(self, row_key, col_key):
         self.select_item(row_key, col_key)
 
-    # DEPRICATED
-    def begin_edit_annotation(self, iid):
-        record = self.tree.item(iid, 'values')
-        a_conf = self.tree_helper.get_conf('annotation')
-        for i, v in enumerate(self.annotation_entry_list):
-            a_index = a_conf[i][0]
-            v[1].set(record[a_index])
-            if a_conf[i][1][3]['widget'] == 'freesolo':
-                if v[0].listbox:
-                    v[0].remove_listbox()
-
-        # set first entry focus
-        #self.annotation_entry_list([0][0].focus()) # not work ?
-        # !!
-        #print (self.annotation_entry_list[0][0].set_focus())
-
     def show_image(self, thumb_path, image_path, size_key=''):
         if size_key:
             thumb_path = thumb_path.replace('-q.jpg', '-{}.jpg'.format(size_key))
@@ -937,11 +919,6 @@ class Main(tk.Frame):
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo
         self.update_idletasks()
-
-    def _get_alist(self, iid, iid_parent):
-        annotation_iid = iid if iid_parent == '' else iid_parent
-        row = self.tree_helper.get_data(annotation_iid)
-        return row.get('alist', [])
 
     def custom_clone_row(self):
         rows = self.data_grid.get_row_list()
