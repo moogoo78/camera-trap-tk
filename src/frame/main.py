@@ -30,10 +30,9 @@ SPECIES_COL_POS = 4 # species annotation column position
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.foo = 0
 
-        self.parent = parent
-        self.app = self.parent.app
+        self.app = parent #self.parent.app
+
         self.background_color = kwargs.get('background','')
 
         self.source_data = {}
@@ -76,11 +75,13 @@ class Main(tk.Frame):
         #self.grid_propagate(False)
         self.layout()
 
+        '''TODO_LAYOUT
         self.app.frames['image_viewer'] = ImageViewer(self)
         #self.app.frames['image_viewer'].grid(row=0, column=0, sticky='nsew')
         self.app.frames['landing'] = Landing(self, width=400, bg=self.background_color)
         self.app.frames['landing'].show()
         #self.landing.grid(row=0, column=0, sticky='nsew')
+        '''
 
         self.action_queue = queue.Queue()
         self.upload_status = 0 # 0: stop, 1: start, 2: pause
@@ -440,8 +441,10 @@ class Main(tk.Frame):
     def from_source(self, source_id=None):
         logging.debug('source_id: {}'.format(source_id))
 
+        '''TODO_LAYOUT
         #self.landing_frame.destroy()
         self.app.frames['landing'].show(False)
+        '''
 
         #self.app.begin_from_source()
         self.update_project_options()
@@ -793,7 +796,10 @@ class Main(tk.Frame):
 
         self.app.source.delete_folder(self.source_id)
         self.app.frames['folder_list'].refresh_source_list()
+
+        '''TODO_LAYOUT
         self.app.frames['landing'].show(True)
+        '''
 
     def custom_to_page(self):
 

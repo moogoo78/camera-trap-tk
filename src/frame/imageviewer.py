@@ -13,7 +13,9 @@ class ImageViewer(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent # main
-        self.app = parent.parent.app
+        #self.app = parent.parent.app
+        self.app = parent.app
+
         self.helper = parent.data_helper
 
         self.all_annotation_data = None

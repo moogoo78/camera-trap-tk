@@ -21,8 +21,7 @@ from image import get_thumb
 class UploadProgress(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, background='#2d3142', *args, **kwargs)
-        self.parent = parent
-        self.app = self.parent.app
+        self.app = parent
 
         self.start_button = ttk.Button(
             self,

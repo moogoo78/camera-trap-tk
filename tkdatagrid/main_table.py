@@ -457,6 +457,7 @@ class MainTable(tk.Canvas):
                         x_center,
                         y_center,
                         text=row.get(col_key, ''),
+                        fill='#000000',
                         tags=('cell', 'cell-text', cell_tag)
                     )
                 elif col_type == 'image':
