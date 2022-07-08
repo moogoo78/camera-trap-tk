@@ -41,7 +41,7 @@ class ColumnHeader(tk.Canvas):
 
     def __init__(self, parent, bg):
         self.height = 20
-        super().__init__(parent, bg=bg, width=500, height=self.height, bd=0)
+        super().__init__(parent, bg=bg, width=900, height=self.height, bd=0)
         self.ps = parent.state
         self.config(width=self.ps['width'])
 

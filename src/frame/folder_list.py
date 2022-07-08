@@ -23,6 +23,11 @@ class FolderList(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.app = parent
 
+        self.folder_importing = {}
+
+        self.layout()
+
+    def layout(self):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=0)
@@ -59,32 +64,25 @@ class FolderList(tk.Frame):
             fill=self.app.app_primary_color,
         )
 
-    def exec_sql_list(self, image_sql_list):
+    def exec_sql_list(self, image_sql_list, source_id):
         for i in image_sql_list:
             self.app.db.exec_sql(i)
         self.app.db.commit()
 
+        self.app.db.exec_sql(f"UPDATE source SET status='10' WHERE source_id={source_id}", True)
         self.refresh_source_list()
         showinfo(message='完成匯入資料夾')
 
     def add_folder_worker(self, src, source_id, image_list, folder_path):
-        '''
-        self.app.frames['landing'].show(True)
-        total = len(image_list)
-        self.app.frames['landing'].render_progress_bar(
-            length=400,
-            title='製作縮圖中，請稍後 ...',
-            sub_title1=f'目錄: {folder_path}')
-        self.app.frames['landing'].progress_bar['maximum'] = total
-        '''
         image_sql_list = []
         for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
             image_sql_list.append(sql)
             print(i, sql)
-            #self.app.frames['landing'].progress_bar['value'] = i+1
-            #self.app.frames['landing'].thumb_label['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, total)
+            print(self.folder_importing)
+            self.folder_importing[source_id]['prog_bar']['value'] = i+1
+            self.folder_importing[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
 
-        self.app.after(100, lambda: self.exec_sql_list(image_sql_list))
+        self.app.after(100, lambda: self.exec_sql_list(image_sql_list, source_id))
 
     def add_folder(self):
         directory = fd.askdirectory()
@@ -101,9 +99,14 @@ class FolderList(tk.Frame):
         image_list = src.get_image_list(folder_path)
 
         source_id = src.create_import_directory(len(image_list), folder_path)
+        self.refresh_source_list()
         threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
 
+        # show folder_list
+        self.app.on_folder_list()
+
     def refresh_source_list(self):
+        self.canvas.delete('prog_bar_win')
         db = self.app.db
 
         # reset source_list
@@ -139,21 +142,47 @@ class FolderList(tk.Frame):
                 tags=('card', source_tag),
             )
             gap = y + 16
-            self.canvas.create_text(
-                x+24,
-                gap,
-                anchor='nw',
-                text=r[3],
-                font=('Arial', 20),
-                fill=self.app.app_primary_color,
-            )
+            # change font size
+            title_font_size = 20
+            # if len(r[3]) > 32:
+            #    title_font_size = 14
+            # elif len(r[3]) > 27:
+            #    title_font_size = 17
+            # change line
+            limiter = 23
+            if len(r[3]) > limiter:
+                title1 = r[3][:limiter]
+                title2 = r[3][limiter:]
+                self.canvas.create_text(
+                    x+24,
+                    gap-10,
+                    anchor='nw',
+                    text=title1,
+                    font=(self.app.app_font, title_font_size),
+                    fill=self.app.app_primary_color)
+                self.canvas.create_text(
+                    x+24,
+                    gap+10,
+                    anchor='nw',
+                    text=title2,
+                    font=(self.app.app_font, title_font_size),
+                    fill=self.app.app_primary_color)
+            else:
+                self.canvas.create_text(
+                    x+24,
+                    gap,
+                    anchor='nw',
+                    text=r[3],
+                    font=(self.app.app_font, title_font_size),
+                    fill=self.app.app_primary_color)
+
             gap += 30
             self.canvas.create_text(
                 x+24,
                 gap,
                 anchor='nw',
                 text=f'首次上傳時間：{timestamp}',
-                font=('Arial', 14),
+                font=(self.app.app_font, 14),
                 fill='#464646',
             )
             gap += 22
@@ -162,7 +191,7 @@ class FolderList(tk.Frame):
                 gap,
                 anchor='nw',
                 text=f'上次上傳時間：',
-                font=('Arial', 14),
+                font=(self.app.app_font, 14),
                 fill='#464646',
             )
             gap += 22
@@ -171,16 +200,34 @@ class FolderList(tk.Frame):
                 gap,
                 anchor='nw',
                 text=f'上傳狀態：{r[6]}',
-                font=('Arial', 14),
+                font=(self.app.app_font, 14),
                 fill='#464646',
             )
+
+            if r[6] == '0':
+                # importing progress bar
+                box = tk.Frame(self, width=180, background='#FFFFFF')
+                prog_bar = ttk.Progressbar(box, orient=tk.HORIZONTAL, length=180, value=0, mode='determinate', maximum=r[4])
+                prog_bar.grid(row=0, column=0)
+                label = ttk.Label(box, text='', background='#FFFFFF')
+                label.grid(row=1, column=0)
+                self.folder_importing[r[0]] = {'prog_bar': prog_bar, 'label': label}
+                self.canvas.create_window(
+                    x+94,
+                    gap-1,
+                    width=180,
+                    window=box,
+                    anchor='nw',
+                    tags=('prog_bar_win')
+                )
+
             gap += 22
             self.canvas.create_text(
                 x+24,
                 gap,
                 anchor='nw',
                 text=f'照片張數：{r[4]}',
-                font=('Arial', 14),
+                font=(self.app.app_font, 14),
                 fill='#464646',
             )
 
@@ -194,184 +241,3 @@ class FolderList(tk.Frame):
             if i > 0 and (i+1) % 3 == 0:
                 shift_y += 162  # 150 + 12
                 shift_x = 0
-
-
-
-class FolderList_OLD(tk.Frame):
-
-    def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.parent = parent
-        self.app = self.parent.app
-
-        self.source_list = []
-
-        self.grid_rowconfigure(0, weight=0)
-        self.grid_rowconfigure(1, weight=0)
-        self.grid_rowconfigure(2, weight=1)
-        self.grid_rowconfigure(3, weight=0)
-        #self.grid_rowconfigure(4, weight=0)
-        self.grid_columnconfigure(0, weight=0)
-
-        add_button = ttk.Button(
-            self,
-            text='加入資料夾',
-            command=self.add_folder,
-            takefocus=0)
-        add_button.grid(row=0, column=0, pady=4, sticky='n')
-
-        separator = ttk.Separator(self, orient='horizontal')
-        separator.grid(row=1, column=0, sticky='ew', pady=2)
-
-        title = tk.Label(
-            self,
-            text='資料夾',
-            font=tk.font.Font(family='Microsoft JhengHei', size=12),
-            bg='#4f5d75')
-        title.grid(row=2, column=0, padx=4, pady=4, sticky='nw')
-
-        self.source_list_frame = tk.Frame(self, bg='#4f5d75')
-        self.source_list_frame.grid(row=2, column=0, pady=4, sticky='n')
-
-        #separator = ttk.Separator(self, orient='horizontal')
-        #separator.grid(row=3, column=0, sticky='ew', pady=2)
-
-        #upload_progress_button = ttk.Button(
-        #    self,
-        #    text='上傳進度',
-        #    command=self.toggle_upload_progress)
-        #upload_progress_button.grid(row=4, column=0, pady=4, sticky='s')
-
-
-        #add_button = ttk.Button(
-        #    self,
-        #    text='看大圖',
-        #    command=self.add_folder)
-        #add_button.grid(pady=4)
-
-        #self.image_sql_list = []
-
-        self.refresh_source_list()
-
-    # def toggle_upload_progress(self):
-    #     main = self.app.main
-    #     upload_progress = self.app.upload_progress
-    #     if main.winfo_viewable():
-    #         main.grid_remove()
-    #         upload_progress.grid(row=2, column=1, sticky='nsew')
-    #     else:
-    #         upload_progress.grid_remove()
-    #         main.grid(row=2, column=1, sticky='nsew')
-
-    def refresh_source_list(self):
-        db = self.app.db
-
-        # reset source_list
-        if a := self.source_list:
-            for i in a:
-                i.destroy()
-            self.source_list = []
-
-        # get all source from db
-        res = db.fetch_sql_all('SELECT * FROM source')
-
-        style = ttk.Style()
-        style.configure('my.TButton', font=('Verdana', 9))
-
-        for i in res:
-            #print (i)
-            '''
-            folder_frame = tk.Frame(self.source_list_frame)
-            folder_frame.grid(padx=4, pady=2, sticky='nw')
-
-            title = ttk.Label(folder_frame, text=i[3], font=tk.font.Font(family='Microsoft JhengHei', size=13, weight='bold'))
-            title.grid(row=0, column=0, sticky='nw')
-            path = ttk.Label(folder_frame, text=i[2], font=tk.font.Font(family='Microsoft JhengHei', size=8))
-            path.grid(row=1, column=0, sticky='nw')
-
-            num = ttk.Label(folder_frame, text=f'{i[4]} 張照片', font=tk.font.Font(family='Microsoft JhengHei', size=10))
-            num.grid(row=2, column=0, sticky='nw')
-            '''
-            uploaded_mark = '*' if i[6] == '40' else ''
-            source_button = ttk.Button(
-                self.source_list_frame,
-                text=f'{i[3]}{uploaded_mark} ({i[4]})',
-                style='my.TButton',
-                takefocus=0,
-                command=lambda x=i[0]: self.app.frames['main'].from_source(x))
-            source_button.grid(padx=4, pady=2, sticky='nw')
-
-            self.source_list.append(source_button)
-
-
-    def exec_sql_list(self, image_sql_list):
-        for i in image_sql_list:
-            self.app.db.exec_sql(i)
-        self.app.db.commit()
-
-        self.refresh_source_list()
-        showinfo(message='完成匯入資料夾')
-
-    def add_folder_worker(self, src, source_id, image_list, folder_path):
-        self.app.frames['landing'].show(True)
-        total = len(image_list)
-        self.app.frames['landing'].render_progress_bar(
-            length=400,
-            title='製作縮圖中，請稍後 ...',
-            sub_title1=f'目錄: {folder_path}')
-        self.app.frames['landing'].progress_bar['maximum'] = total
-        image_sql_list = []
-
-        for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
-            image_sql_list.append(sql)
-            self.app.frames['landing'].progress_bar['value'] = i+1
-            self.app.frames['landing'].thumb_label['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, total)
-            #progress_bar['value'] = i+1
-            #self.update_idletasks()
-
-        #self.app.db.commit()
-        #progress_bar['value'] = 0
-        #self.update_idletasks()
-
-        self.app.after(100, lambda: self.exec_sql_list(image_sql_list))
-
-
-    def add_folder(self):
-        directory = fd.askdirectory()
-        if not directory:
-            return False
-
-        src = self.app.source
-        folder_path = src.get_folder_path(directory)
-
-        if not folder_path:
-            tk.messagebox.showinfo('info', '已經加過此資料夾')
-            return False
-
-        image_list = src.get_image_list(folder_path)
-
-        source_id = src.create_import_directory(len(image_list), folder_path)
-        threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
-
-        #self.refresh_source_list()
-        '''
-
-        progress_bar = self.app.statusbar.progress_bar
-
-
-
-        progress_bar['maximum'] = len(image_list)
-        self.update_idletasks()
-
-        source_id = src.create_import_directory(image_list, folder_path)
-        threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
-        #for i, v in enumerate(src.gen_import_image(source_id, image_list, folder_path)):
-        #    self.app.db.exec_sql(v[1])
-        #    progress_bar['value'] = i+1
-        #    self.update_idletasks()
-
-        #progress_bar['value'] = 0
-        #self.update_idletasks()
-
-        #self.refresh_source_list()
-        '''

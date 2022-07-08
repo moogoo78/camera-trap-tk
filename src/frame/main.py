@@ -19,6 +19,7 @@ from frame import (
     Landing,
     ImageViewer,
 )
+from image_detail import ImageDetail
 from image import check_thumb
 from worker import UpdateAction
 
@@ -53,7 +54,7 @@ class Main(tk.Frame):
             'image_id': 0,
             'image_index': 0,
         }
-        self.thumb_basewidth = 500
+        self.thumb_basewidth = 550
 
         self.data_helper = DataHelper(self.app.db)
         self.annotation_entry_list = []
@@ -117,7 +118,7 @@ class Main(tk.Frame):
         self.panedwindow.grid_rowconfigure(0, weight=1)
         self.panedwindow.grid_columnconfigure(0, weight=1)
         #self.panedwindow.bind("<ButtonRelease-1>", self.handle_panedwindow_release)
-        self.top_paned_frame = tk.Frame(self.panedwindow) #bg='#2d3142'
+        self.top_paned_frame = tk.Frame(self.panedwindow, bg='#F2F2F2') #bg='#2d3142'
         self.bottom_paned_frame = tk.Frame(self.panedwindow, bg='gray')
 
         self.panedwindow.add(self.top_paned_frame)
@@ -135,7 +136,7 @@ class Main(tk.Frame):
         self.image_thumb_label.grid(row=0, column=0, sticky='ns', padx=4, pady=4)
 
 
-        self.ctrl_frame = tk.Frame(self.top_paned_frame, width=500, height=300)
+        self.ctrl_frame = tk.Frame(self.top_paned_frame, width=500, height=300, bg='#F2F2F2')
         self.ctrl_frame.grid(row=0, column=1, sticky='nw', padx=10)
         #self.ctrl_frame.grid_propagate(0)
         self.config_ctrl_frame()
@@ -175,23 +176,24 @@ class Main(tk.Frame):
         #self.ctrl_frame.grid_columnconfigure(0, weight=0)
         #self.ctrl_frame.grid_propagate(0)
 
-        self.label_folder = ttk.Label(
+        self.label_folder = tk.Label(
             self.ctrl_frame,
             text='',
-            font=self.app.nice_font['h2'])
+            font=('Arial', 30),
+            foreground=self.app.app_primary_color,
+            background='#F2F2F2',
+        )
 
         self.label_folder.grid(row=0, column=0, padx=4, pady=10, sticky='nw')
         image_viewer_button = ttk.Button(
             self.ctrl_frame,
             text='看大圖',
             #command=self.handle_image_viewer,
-            command=self.app.toggle_image_viewer,
+            #command=self.app.toggle_image_viewer,
+            command=self.show_image_detail,
             takefocus=0,
         )
         image_viewer_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
-
-        sep = ttk.Separator(self.ctrl_frame, orient='horizontal')
-        sep.grid(row=1, column=0, pady=(0, 8), sticky='ew')
 
         self.ctrl_frame2 = tk.Frame(self.ctrl_frame)
         self.ctrl_frame2.grid_rowconfigure(0, weight=0)
@@ -202,7 +204,7 @@ class Main(tk.Frame):
         self.ctrl_frame2.grid(row=2, column=0, sticky='ew')
 
         # project menu
-        self.label_project = ttk.Label(self.ctrl_frame2, text='計畫')
+        self.label_project = ttk.Label(self.ctrl_frame2, text='檢視計畫')
         self.label_project.grid(row=0, column=0)
         self.project_options = [x['name'] for x in self.projects]
         self.project_var = tk.StringVar(self)
@@ -398,6 +400,7 @@ class Main(tk.Frame):
             data={},
             columns=self.data_helper.columns,
             height=760-400,
+            width=1200,
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
             cols_on_fill_handle=['annotation_species', 'annotation_sex', 'annotation_antler', 'annotation_remark', 'annotation_lifestage'],
@@ -405,7 +408,8 @@ class Main(tk.Frame):
             custom_binding=custom_binding,
             num_per_page=num_per_page,
             rows_delete_type='CLONED',
-            remove_rows_key_ignore_pattern='-0'
+            remove_rows_key_ignore_pattern='-0',
+            column_header_bg= '#5B7464',
         )
         # TODO: 400 是湊出來的
         self.data_grid.update_state({
@@ -862,6 +866,7 @@ class Main(tk.Frame):
         if row_key is None or col_key is None:
             return
 
+        self.current_row = row_key  # for show_image_detail
         item = self.data_helper.data[row_key]
 
         if item:
@@ -1108,3 +1113,11 @@ class Main(tk.Frame):
             # save to db
             sql = "UPDATE source SET {}='{}' WHERE source_id={}".format(col, value, self.source_id)
             self.app.db.exec_sql(sql, True)
+
+    def show_image_detail(self):
+        row_key = self.current_row
+        #print(self.current_image_data)
+        if item := self.data_helper.data[row_key]:
+            image_path = item['thumb'].replace('-q.', '-x.')
+            ImageDetail(self, image_path)
+

@@ -26,6 +26,8 @@ from frame import (
     Footer,
     HelpPage,
 )
+from image_detail import ImageDetail
+
 import asyncio
 
 from database import Database
@@ -51,6 +53,7 @@ class Application(tk.Tk):
         self.app_primary_color = '#2A7F60'
         self.app_secondary_color = '#8AC731'
         self.app_comp_color = '#FF8C23'  # Complementary color
+        self.app_font = 'Arial'
 
         self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
@@ -136,7 +139,7 @@ class Application(tk.Tk):
 
         self.contents['main'] = Main(
             self,
-            background='#2d3142')
+            background='#F2F2F2')
 
         self.contents['upload_progress'] = UploadProgress(self)
         self.contents['help_page'] = HelpPage(self)
@@ -169,7 +172,7 @@ class Application(tk.Tk):
             v.update_idletasks()
             if v.winfo_viewable():
                 if exclude == '' or exclude != k:
-                    print('clear ', k)
+                    # print('clear ', k)
                     self.contents[k].grid_remove()
 
     def toggle_panel(self):
@@ -216,8 +219,11 @@ class Application(tk.Tk):
         if self.panel.is_viewable is True:
             self.panel.hide()
 
-
     def toggle_image_viewer(self, is_image_viewer=True):
+        window = ImageDetail
+
+
+    def toggle_image_viewer_DEPRICATED(self, is_image_viewer=True):
         # 先不 remove main , 蓋掉就好了
         #if not self.frames['main'].winfo_viewable():
         #self.frames['main'].grid(row=0, column=0, sticky='nsew')

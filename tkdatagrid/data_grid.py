@@ -28,7 +28,8 @@ class DataGrid(tk.Frame):
                  cols_on_ctrl_button_1=None,
                  cols_on_fill_handle=None,
                  rows_delete_type='ALL', # ALL: any rows can be delete, CLONED: delete cloned rows, NO: not delet any rows,
-                 remove_rows_key_ignore_pattern=''
+                 remove_rows_key_ignore_pattern='',
+                 column_header_bg='#336b87',
 
     ):
         """include MainTable, ColumnHeader, RowIndex"""
@@ -56,7 +57,7 @@ class DataGrid(tk.Frame):
                 'color': {
                     'bg': '#f7f7fa',
                     'row_index_bg': '#2a3132', #'#2A3132'
-                    'column_header_bg': '#336b87', #'#2c3e50', #'#336B87'
+                    'column_header_bg': column_header_bg,
                     'cell-border': '#d3d3d3',
                     'row-highlight': 'brown',
                     'box-highlight': '#e8edf7',
