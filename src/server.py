@@ -1,9 +1,30 @@
 import tkinter as tk
 import requests
+import logging
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen, Request
+import json
 
 # ping, via: https://stackoverflow.com/a/32684938/644070
 import platform    # For getting the operating system name
 import subprocess  # For executing a shell command
+
+# via: https://realpython.com/urllib-request/
+def make_request(url, headers=None, data=None):
+
+    request = Request(url, headers=headers or {}, data=data)
+    try:
+        with urlopen(request, timeout=10) as response:
+            method = 'GET' if data == None else 'POST'
+            logging.debug(f'{method} {url}:{response.status}')
+            return response.read(), response
+    except HTTPError as error:
+        print(error.status, error.reason)
+    except URLError as error:
+        print(error.reason)
+    except TimeoutError:
+        print("Request timed out")
+
 
 class Server(object):
     projects = []
@@ -52,11 +73,16 @@ class Server(object):
         project_api_prefix = f"{config['host']}{config['project_api']}"
         try:
             if source_id:
-                r = requests.get(f'{project_api_prefix}{source_id}/')
-                return r.json()
+                # r = requests.get(f'{project_api_prefix}{source_id}/')
+                # return r.json()
+                body, response = make_request(f'{project_api_prefix}{source_id}/')
+                return json.loads(body)
             else:
-                r = requests.get(project_api_prefix)
-                return r.json()['results']
+                # r = requests.get(project_api_prefix)
+                # return r.json()['results']
+                body, response = make_request(project_api_prefix)
+                data = json.loads(body)
+                return data['results']
 
         except BaseException as error:
             print('server error: ', error)
@@ -98,12 +124,28 @@ class Server(object):
 
         return ret
 
-    def post_annotation(self, payload):
+    def post_annotation(self, post_dict):
         url = f"{self.config['host']}{self.config['image_annotation_api']}"
         ret = {
             'data': {},
             'error': ''
         }
+        #url_encoded_data = urlencode(post_dict)
+        #body, response = make_request(url, data=post_data)
+        json_string = json.dumps(post_dict)
+        post_data = json_string.encode("utf-8")
+        body, response = make_request(
+            url,
+            data=post_data,
+            headers={"Content-Type": "application/json"})
+        d = body.decode('utf-8')
+        print(d)
+        ret.update({
+            'data': d['saved_image_ids'],
+            'deployment_journal_id': d['deployment_journal_id']
+        })
+        return ret
+        '''
         try:
             resp = requests.post(url, json=payload)
             if resp.status_code != 200:
@@ -124,6 +166,7 @@ class Server(object):
             ret['error'] = str(e)
 
         return ret
+        '''
 
     def ping(self, host='google.com'):
         """

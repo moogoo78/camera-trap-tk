@@ -39,8 +39,8 @@ class Footer(tk.Frame):
 
 class ColumnHeader(tk.Canvas):
 
-    def __init__(self, parent, bg):
-        self.height = 20
+    def __init__(self, parent, bg, height):
+        self.height = height
         super().__init__(parent, bg=bg, width=900, height=self.height, bd=0)
         self.ps = parent.state
         self.config(width=self.ps['width'])
@@ -70,7 +70,7 @@ class ColumnHeader(tk.Canvas):
                                       tag='header-border')
 
             self.create_text(
-                x_center + pad, self.ps['column_header_height']/2,
+                x_center + pad, self.height/2,
                 text=col['label'],
                 anchor='w',
                 fill='white',

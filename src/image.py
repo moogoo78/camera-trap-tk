@@ -51,6 +51,16 @@ def get_thumb(source_id, filename, image_path, size='l'):
             make_thumb(image_path, thumb_source_path)
         return thumb_path
 
+def aspect_ratio(size, height=0, width=0):
+    if width > 0:
+        ratio = width / float(size[0])
+        height = int(float(size[1]) * float(ratio))
+        return (width, height)
+    elif height > 0:
+        ratio = height / float(size[1])
+        width = int(float(size[0]) * float(ratio))
+        return (width, height)
+
 
 class ImageManager(object):
     exif = None

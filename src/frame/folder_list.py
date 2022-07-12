@@ -60,7 +60,7 @@ class FolderList(tk.Frame):
             20,
             anchor='nw',
             text='現有資料夾',
-            font=('Arial', 32),
+            font=(self.app.app_font, 32),
             fill=self.app.app_primary_color,
         )
 
@@ -69,7 +69,7 @@ class FolderList(tk.Frame):
             self.app.db.exec_sql(i)
         self.app.db.commit()
 
-        self.app.db.exec_sql(f"UPDATE source SET status='10' WHERE source_id={source_id}", True)
+        self.app.db.exec_sql(f"UPDATE source SET status='{self.app.source.STATUS_DONE_IMPORT}' WHERE source_id={source_id}", True)
         self.refresh_source_list()
         showinfo(message='完成匯入資料夾')
 
@@ -77,8 +77,8 @@ class FolderList(tk.Frame):
         image_sql_list = []
         for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
             image_sql_list.append(sql)
-            print(i, sql)
-            print(self.folder_importing)
+            # print(i, sql)
+            # print(self.folder_importing)
             self.folder_importing[source_id]['prog_bar']['value'] = i+1
             self.folder_importing[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
 
@@ -204,7 +204,7 @@ class FolderList(tk.Frame):
                 fill='#464646',
             )
 
-            if r[6] == '0':
+            if r[6] == self.app.source.STATUS_START_IMPORT:
                 # importing progress bar
                 box = tk.Frame(self, width=180, background='#FFFFFF')
                 prog_bar = ttk.Progressbar(box, orient=tk.HORIZONTAL, length=180, value=0, mode='determinate', maximum=r[4])

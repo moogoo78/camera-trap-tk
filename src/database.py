@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS source (
   trip_start TEXT,
   trip_end TEXT,
   test_foto_time TEXT,
-  deployment_journal_id INTEGER
+  deployment_journal_id INTEGER,
+  upload_created INTEGER,
+  upload_done INTEGER
 );'''
 
 SQL_INIT_IMAGE = '''

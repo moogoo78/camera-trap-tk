@@ -78,11 +78,11 @@ class Application(tk.Tk):
             handlers=[
                 file_handler,
                 stdout_handler],
-            format="%(asctime)s|%(levelname)s|%(filename)s:%(lineno)d|%(funcName)s => %(message)s",
+            format="%(asctime)s|%(levelname)s|%(filename)s:%(lineno)d|%(funcName)s 👉 %(message)s",
             datefmt="%Y-%m-%d:%H:%M:%S",
             level=log_level)
 
-        # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s 
+        # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s
         self.logger = logging.getLogger('ct-tk')
 
         # == helpers ==
@@ -208,6 +208,7 @@ class Application(tk.Tk):
     def on_upload_progress(self, event=None):
         logging.debug(f'{event}')
         self.show_content('upload_progress')
+        self.contents['upload_progress'].refresh()
 
         if self.panel.is_viewable is True:
             self.panel.hide()

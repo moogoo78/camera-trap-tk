@@ -30,6 +30,7 @@ class DataGrid(tk.Frame):
                  rows_delete_type='ALL', # ALL: any rows can be delete, CLONED: delete cloned rows, NO: not delet any rows,
                  remove_rows_key_ignore_pattern='',
                  column_header_bg='#336b87',
+                 column_header_height=20,
 
     ):
         """include MainTable, ColumnHeader, RowIndex"""
@@ -103,7 +104,7 @@ class DataGrid(tk.Frame):
         self.grid_rowconfigure(1, weight=1)
 
         self.main_table = MainTable(self)
-        self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'])
+        self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'], height=column_header_height)
         self.footer = Footer(self)
 
         if self.state['row_index_display']:

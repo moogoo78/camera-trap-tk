@@ -22,6 +22,14 @@ MOVIE_EXTENSIONS = ['.MOV', '.AVI', '.M4V', '.MP4', '.WMV', '.MKV', '.WEBM']
 class Source(object):
     '''much like a helper'''
 
+    STATUS_START_IMPORT = 'a1'
+    STATUS_DONE_IMPORT = 'a2'
+    STATUS_START_UPLOAD = 'b1'
+    STATUS_ANNOTATION_UPLOADED = 'b2'
+    STATUS_START_IMAGE_UPLOAD = 'b3'
+    STATUS_DONE_UPLOAD = 'b4'
+    STATUS_ARCHIVE = 'c'
+
     def __init__(self, app):
         self.db = app.db
         self.app = app
@@ -58,9 +66,9 @@ class Source(object):
             end = m.group(2)
             if validate_datetime(start, '%Y%m%d') and \
                validate_datetime(end, '%Y%m%d'):
-                sql = "INSERT INTO source (source_type, path, name, count, created, status, trip_start, trip_end) VALUES('folder', '{}', '{}', {}, {}, '0', '{}', '{}')".format(folder_path, dir_name, num_image_list, ts_now, start, end)
+                sql = "INSERT INTO source (source_type, path, name, count, created, status, trip_start, trip_end) VALUES('folder', '{}', '{}', {}, {}, 'a1', '{}', '{}')".format(folder_path, dir_name, num_image_list, ts_now, start, end)
         else:
-            sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '0')".format(folder_path, dir_name, num_image_list, ts_now)
+            sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, 'a1')".format(folder_path, dir_name, num_image_list, ts_now)
 
         source_id = db.exec_sql(sql, True)
 

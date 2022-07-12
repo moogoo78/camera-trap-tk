@@ -5,6 +5,8 @@ from PIL import (
     Image,
     ImageTk
 )
+from image import aspect_ratio
+
 
 class ImageDetail(tk.Toplevel):
     def __init__(self, parent, image_path):
@@ -89,11 +91,9 @@ class ImageDetail(tk.Toplevel):
 
         # aspect ratio
         tmp = self.orig_img
-        basewidth = event.width
-        print (basewidth, tmp.size)
-        self.resize_ratio = (basewidth/float(tmp.size[0]))
-        hsize = int((float(tmp.size[1])*float(self.resize_ratio)))
-        self.bg_img = ImageTk.PhotoImage(tmp.resize((basewidth,hsize)))
+        to_size = aspect_ratio(tmp.size, width=event.width)
+        self.resize_ratio = event.width / float(tmp.size[0])
+        self.bg_img = ImageTk.PhotoImage(tmp.resize(to_size))
         self.bg_img_id = self.canvas.create_image(
             0,
             0,

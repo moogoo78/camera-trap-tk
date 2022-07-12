@@ -20,7 +20,10 @@ from frame import (
     ImageViewer,
 )
 from image_detail import ImageDetail
-from image import check_thumb
+from image import (
+    check_thumb,
+    aspect_ratio,
+)
 from worker import UpdateAction
 
 sys.path.insert(0, '') # TODO: pip install -e .
@@ -54,7 +57,8 @@ class Main(tk.Frame):
             'image_id': 0,
             'image_index': 0,
         }
-        self.thumb_basewidth = 550
+        # self.thumb_basewidth = 550
+        self.thumb_height = 309 # fixed height
 
         self.data_helper = DataHelper(self.app.db)
         self.annotation_entry_list = []
@@ -132,11 +136,11 @@ class Main(tk.Frame):
 
         self.image_thumb_frame = tk.Frame(self.top_paned_frame, bg='gray')
         self.image_thumb_frame.grid(row=0, column=0, sticky='nswe')
-        self.image_thumb_label = ttk.Label(self.image_thumb_frame, border=2, relief='raised')
-        self.image_thumb_label.grid(row=0, column=0, sticky='ns', padx=4, pady=4)
+        self.image_thumb_label = ttk.Label(self.image_thumb_frame, border=0, relief='flat')
+        self.image_thumb_label.grid(row=0, column=0, sticky='ns')
 
 
-        self.ctrl_frame = tk.Frame(self.top_paned_frame, width=500, height=300, bg='#F2F2F2')
+        self.ctrl_frame = tk.Frame(self.top_paned_frame, width=500, height=self.thumb_height, bg='#F2F2F2')
         self.ctrl_frame.grid(row=0, column=1, sticky='nw', padx=10)
         #self.ctrl_frame.grid_propagate(0)
         self.config_ctrl_frame()
@@ -179,23 +183,29 @@ class Main(tk.Frame):
         self.label_folder = tk.Label(
             self.ctrl_frame,
             text='',
-            font=('Arial', 30),
+            font=(self.app.app_font, 30),
             foreground=self.app.app_primary_color,
             background='#F2F2F2',
         )
 
         self.label_folder.grid(row=0, column=0, padx=4, pady=10, sticky='nw')
-        image_viewer_button = ttk.Button(
-            self.ctrl_frame,
+        self.enlarge_icon = ImageTk.PhotoImage(file='./assets/enlarge.png')
+
+        self.image_viewer_button = tk.Button(
+            self,
             text='看大圖',
+            image=self.enlarge_icon,
             #command=self.handle_image_viewer,
             #command=self.app.toggle_image_viewer,
+            relief='flat',
+            background='#FFFFFF',
             command=self.show_image_detail,
             takefocus=0,
         )
-        image_viewer_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
+        #image_viewer_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
+        self.image_viewer_button.place(x=376, y=270, anchor='nw')
 
-        self.ctrl_frame2 = tk.Frame(self.ctrl_frame)
+        self.ctrl_frame2 = tk.Frame(self.ctrl_frame, background='#F2F2F2')
         self.ctrl_frame2.grid_rowconfigure(0, weight=0)
         self.ctrl_frame2.grid_rowconfigure(1, weight=0)
         self.ctrl_frame2.grid_rowconfigure(2, weight=0)
@@ -203,9 +213,21 @@ class Main(tk.Frame):
         self.ctrl_frame2.grid_columnconfigure(1, weight=1)
         self.ctrl_frame2.grid(row=2, column=0, sticky='ew')
 
+        label_grid = {
+            'sticky': 'w',
+            'padx': 14,
+            'pady': 3,
+        }
+        label_args = {
+            'font': (self.app.app_font, 16),
+            'background': '#F2F2F2'
+        }
         # project menu
-        self.label_project = ttk.Label(self.ctrl_frame2, text='檢視計畫')
-        self.label_project.grid(row=0, column=0)
+        self.label_project = ttk.Label(
+            self.ctrl_frame2,
+            text='檢視計畫',
+            **label_args)
+
         self.project_options = [x['name'] for x in self.projects]
         self.project_var = tk.StringVar(self)
         self.project_menu = tk.OptionMenu(
@@ -213,58 +235,100 @@ class Main(tk.Frame):
             self.project_var,
             '-- 選擇計畫 --',
             *self.project_options,
-            command=self.project_option_changed)
-        self.project_menu.grid(row=0, column=1, sticky=tk.W, padx=(6, 16))
+            command=self.project_option_changed,
+        )
+
+        self.label_project.grid(row=0, column=0, **label_grid)
+        self.project_menu.grid(row=0, column=1, sticky='w', padx=(30, 0))
 
         # studyarea menu
-        self.label_studyarea = ttk.Label(self.ctrl_frame2,  text='樣區')
-        self.label_studyarea.grid(row=1, column=0)
-        self.studyarea_var = tk.StringVar()
+        self.label_studyarea = ttk.Label(
+            self.ctrl_frame2,
+            text='樣區',
+            **label_args)
+
+        self.studyarea_var = tk.StringVar(self)
         self.studyarea_options = []
         self.studyarea_menu = tk.OptionMenu(
             self.ctrl_frame2,
             self.studyarea_var,
             '')
         self.studyarea_var.trace('w', self.studyarea_option_changed)
-        self.studyarea_menu.grid(row=1, column=1, sticky=tk.W,padx=(6, 20))
+
+        self.label_studyarea.grid(row=1, column=0, **label_grid)
+        self.studyarea_menu.grid(row=1, column=1, sticky='w', padx=(30, 0))
 
         # deployment menu
-        self.label_deployment = ttk.Label(self.ctrl_frame2,  text='相機位置')
-        self.label_deployment.grid(row=2, column=0)
+        self.label_deployment = ttk.Label(
+            self.ctrl_frame2,
+            text='相機位置',
+            **label_args)
+
         self.deployment_options = []
-        self.deployment_var = tk.StringVar(self.ctrl_frame)
+        self.deployment_var = tk.StringVar(self)
         self.deployment_var.trace('w', self.deployment_option_changed)
         self.deployment_menu = tk.OptionMenu(
             self.ctrl_frame2,
             self.deployment_var,
             '')
-        self.deployment_menu.grid(row=2, column=1, sticky=tk.W, padx=(6, 20))
 
-        sep2 = ttk.Separator(self.ctrl_frame, orient='horizontal')
-        sep2.grid(row=3, column=0, pady=6, sticky='ew')
+        self.label_deployment.grid(row=2, column=0, **label_grid)
+        self.deployment_menu.grid(row=2, column=1, sticky='w', padx=(30,0))
 
-        self.ctrl_frame3 = tk.Frame(self.ctrl_frame)
-        self.ctrl_frame3.grid_rowconfigure(0, weight=0)
-        self.ctrl_frame3.grid_columnconfigure(0, weight=0)
-        self.ctrl_frame3.grid_columnconfigure(1, weight=0)
-        self.ctrl_frame3.grid_columnconfigure(2, weight=0)
-        self.ctrl_frame3.grid(row=4, column=0, sticky='nw', pady=10)
+        # trip
+        self.trip_label = ttk.Label(
+            self.ctrl_frame2,
+            text='資料夾頭尾照片日期',
+            **label_args)
+        self.trip_label_sep = ttk.Label(
+            self.ctrl_frame2,
+            text='-',
+            **label_args)
+        self.trip_label_tip = ttk.Label(
+            self.ctrl_frame2,
+            text='format: YYYYmmdd',
+            **label_args)
+
+        self.trip_start_var = tk.StringVar(self)
+        self.trip_end_var = tk.StringVar(self)
+        self.trip_start_entry = ttk.Entry(
+            self.ctrl_frame2,
+            textvariable=self.trip_start_var,
+            width=10,
+        )
+        self.trip_end_entry = ttk.Entry(
+            self.ctrl_frame2,
+            textvariable=self.trip_end_var,
+            width=10,
+        )
+        self.trip_start_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_start'))
+        self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
+
+        self.trip_label.grid(row=3, column=0, **label_grid)
+        self.trip_start_entry.grid(row=3, column=1, sticky='w', padx=(28, 0))
+        self.trip_label_sep.grid(row=3, column=1, sticky='w', padx=(130, 20))
+        self.trip_end_entry.grid(row=3, column=1, sticky='w', padx=146)
+        self.trip_label_tip.grid(row=3, column=1, sticky='w', padx=(250, 0))
 
         # image sequence
+        self.seq_label = ttk.Label(
+            self.ctrl_frame2,
+            text='連拍補齊設定',
+            **label_args)
+
         self.seq_checkbox_val = tk.StringVar(self)
         self.seq_checkbox = ttk.Checkbutton(
-            self.ctrl_frame3,
+            self.ctrl_frame2,
             text='連拍分組',
 	    command=lambda: self.refresh(),
             variable=self.seq_checkbox_val,
 	    onvalue='Y',
             offvalue='N')
-        self.seq_checkbox.grid(row=0, column=0, padx=(4, 10), sticky='w')
 
         self.seq_interval_val = tk.StringVar(self)
         #self.seq_interval_val.trace('w', self.on_seq_interval_changed)
         self.seq_interval_entry = ttk.Entry(
-            self.ctrl_frame3,
+            self.ctrl_frame2,
             textvariable=self.seq_interval_val,
             width=4,
             #validate='focusout',
@@ -272,87 +336,73 @@ class Main(tk.Frame):
         )
         self.seq_interval_entry.bind(
             "<KeyRelease>", lambda _: self.refresh())
-        self.seq_interval_entry.grid(row=0, column=1, sticky='w')
 
-        self.seq_unit = ttk.Label(self.ctrl_frame3,  text='分鐘 (相鄰照片間隔__分鐘，顯示分組)')
-        self.seq_unit.grid(row=0, column=2, sticky='we')
+        self.seq_unit = ttk.Label(
+            self.ctrl_frame2,
+            text='分鐘分組 (相鄰照片間隔分鐘數，顯示分組)',
+            **label_args)
 
-        sep = ttk.Separator(self.ctrl_frame, orient='horizontal')
-        sep.grid(row=5, column=0, pady=6, sticky='ew')
+        self.seq_label.grid(row=4, column=0, **label_grid)
+        self.seq_checkbox.grid(row=4, column=1, sticky='w', padx=(28, 0))
+        self.seq_interval_entry.grid(row=4, column=1, sticky='w', padx=(112, 0))
+        self.seq_unit.grid(row=4, column=1, sticky='w', padx=(154, 0))
 
-        # trip & test photo
-        self.ctrl_frame5 = tk.Frame(self.ctrl_frame)
-        self.ctrl_frame5.grid_rowconfigure(0, weight=0)
-        self.ctrl_frame5.grid_rowconfigure(1, weight=0)
-        self.ctrl_frame5.grid_columnconfigure(0, weight=0)
-        self.ctrl_frame5.grid_columnconfigure(1, weight=0)
-        self.ctrl_frame5.grid_columnconfigure(2, weight=0)
-        self.ctrl_frame5.grid(row=6, column=0, sticky='nw', pady=10)
-
-        self.trip_label = ttk.Label(self.ctrl_frame5,  text='資料夾頭尾照片日期 (YYYY-mm-dd)')
-        # self.trip_sep_label = ttk.Label(self.ctrl_frame3,  text=':')
-        self.trip_start_var = tk.StringVar(self)
-        self.trip_end_var = tk.StringVar(self)
-
-        self.trip_start_entry = ttk.Entry(
-            self.ctrl_frame5,
-            textvariable=self.trip_start_var,
-            width=10,
-        )
-        self.trip_end_entry = ttk.Entry(
-            self.ctrl_frame5,
-            textvariable=self.trip_end_var,
-            width=10,
-        )
-        self.trip_start_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_start'))
-        self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
-
+        # test foto
+        self.test_foto_label = ttk.Label(
+            self.ctrl_frame2,
+            text='整點補齊設定',
+            **label_args)
+        self.test_foto_tip = ttk.Label(
+            self.ctrl_frame2,
+            text='的照片皆為補齊為測試照 format: HH:MM:SS',
+            **label_args)
         self.test_foto_button = ttk.Button(
-            self.ctrl_frame5,
+            self.ctrl_frame2,
             text='套用',
             command=self.set_test_foto_by_time,
             takefocus=0,
+            width=4,
         )
         self.test_foto_val = tk.StringVar(self)
-        self.test_foto_label = ttk.Label(self.ctrl_frame5,  text='測試照設定時間 (HH:MM:SS)')
+
         self.test_foto_entry = ttk.Entry(
-            self.ctrl_frame5,
+            self.ctrl_frame2,
             textvariable=self.test_foto_val,
             width=8,
         )
-        self.trip_label.grid(row=0, column=0, sticky='we')
-        #self.trip_sep_label.grid(row=1, column=0, sticky='we', pady=10)
-        self.trip_start_entry.grid(row=0, column=1, sticky='w')
-        self.trip_end_entry.grid(row=0, column=2, sticky='w')
-        self.test_foto_label.grid(row=1, column=0, sticky='w')
-        self.test_foto_entry.grid(row=1, column=1, sticky='w')
-        self.test_foto_button.grid(row=1, column=2, sticky='w')
 
-        # upload  button
-        self.ctrl_frame4 = tk.Frame(self.ctrl_frame)
-        self.ctrl_frame4.grid_rowconfigure(0, weight=0)
-        self.ctrl_frame4.grid_rowconfigure(1, weight=0)
-        self.ctrl_frame4.grid_columnconfigure(0, weight=0)
-        self.ctrl_frame4.grid(row=7, column=0, sticky='w')
+        self.test_foto_label.grid(row=5, column=0, **label_grid)
+        self.test_foto_entry.grid(row=5, column=1, sticky='w', padx=(28, 0))
+        self.test_foto_tip.grid(row=5, column=1, sticky='w', padx=(108, 0))
+        self.test_foto_button.grid(row=5, column=1, sticky='w', padx=(434, 0))
 
         # upload button
-        self.upload_button = ttk.Button(
-            self.ctrl_frame4,
-            text='上傳',
+        self.upload_button = tk.Button(
+            self.ctrl_frame2,
+            text='上傳資料夾',
             #command=self.handle_upload
             #command=lambda: self.foo_worker.do_work()
-            command=self.handle_upload2,
-            takefocus=0,
-        )
-        self.upload_button.grid(row=0, column=0, padx=20, pady=4, sticky='w')
+            # command=self.handle_upload2, TODO foo
+            command=self.handle_upload3,
+            foreground='#FFFFFF',
+            background=self.app.app_primary_color,
+            width=10,
+            height=2,
+            takefocus=0)
 
-        self.delete_button = ttk.Button(
-            self.ctrl_frame4,
+        self.delete_button = tk.Button(
+            self.ctrl_frame2,
             text='刪除資料夾',
             command=self.handle_delete,
-            takefocus=0)
-        self.delete_button.grid(row=1, column=0, padx=20, pady=4, sticky='w')
+            foreground='#FFFFFF',
+            background=self.app.app_comp_color,
+            width=10,
+            height=2,
+            takefocus=0,
+        )
 
+        self.upload_button.grid(row=6, column=1, sticky='e', padx=(0, 142), pady=(18,0))
+        self.delete_button.grid(row=6, column=1, sticky='e', padx=(20, 0), pady=(18, 0))
 
     def config_table_frame(self):
         self.table_frame.grid_columnconfigure(0, weight=0)
@@ -410,6 +460,7 @@ class Main(tk.Frame):
             rows_delete_type='CLONED',
             remove_rows_key_ignore_pattern='-0',
             column_header_bg= '#5B7464',
+            column_header_height=30,
         )
         # TODO: 400 是湊出來的
         self.data_grid.update_state({
@@ -514,7 +565,7 @@ class Main(tk.Frame):
             self.upload_button['text'] = '上傳*'
             self.delete_button['state'] = tk.NORMAL
         else:
-            self.upload_button['text'] = '上傳'
+            self.upload_button['text'] = '上傳資料夾'
             self.upload_button['state'] = tk.NORMAL
             self.delete_button['state'] = tk.NORMAL
 
@@ -637,6 +688,71 @@ class Main(tk.Frame):
             self.source_data = self.app.source.get_source(self.source_id)
             # TODO
             #tk.messagebox.showinfo('info', '已設定相機位置')
+
+    def handle_upload3(self):
+        # check deployment
+        deployment_id = ''
+        if descr := self.source_data['source'][7]:
+            d = json.loads(descr)
+            deployment_id = d.get('deployment_id', '')
+
+        if deployment_id == '':
+            tk.messagebox.showinfo('info', '末設定相機位置，無法上傳')
+            return False
+
+        image_list = self.source_data['image_list']
+        source_id = self.source_id
+        account_id = self.app.config.get('Installation', 'account_id')
+
+        payload = {
+            'image_list': image_list,
+            'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
+            'deployment_id': deployment_id,
+            'trip_start':self.trip_start_var.get(),
+            'trip_end': self.trip_end_var.get(),
+            'folder_name': self.source_data['source'][3],
+            'source_id': self.source_data['source'][0],
+            'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
+        }
+
+        if self.source_data['source'][6] == self.app.source.STATUS_DONE_UPLOAD:
+            ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
+            if ans == 'no':
+                return False
+            elif ans == 'yes':
+                res = self.app.server.post_annotation(payload)
+                print(res['data'])
+                if res['error']:
+                    tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
+                else:
+                    tk.messagebox.showinfo('info', '文字資料更新成功 !')
+                return
+
+        # 1. post annotation to server
+        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
+        self.app.db.exec_sql(sql, True)
+
+        res = self.app.server.post_annotation(payload)
+        if res['error']:
+            tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
+            return
+
+        server_image_map = res['data']
+        print(server_image_map)
+        '''
+        now = int(time.time())
+
+        image_list = self.source_data['image_list']
+        #sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
+        #self.app.db.exec_sql(sql, True)
+
+        sql = f"UPDATE source SET status='{self.app.source.STATUS_START_IMAGE_UPLOAD}' WHERE source_id={self.source_id}" # or b3a
+        self.app.db.exec_sql(sql, True)
+
+        sql = f"UPDATE source SET upload_created={now} WHERE source_id={self.source_id}"
+        self.app.db.exec_sql(sql, True)
+        self.app.on_upload_progress()
+        '''
 
     def handle_upload2(self):
         # check deployment
@@ -920,12 +1036,10 @@ class Main(tk.Frame):
 
         real_thumb_path = check_thumb(thumb_path, image_path)
         image = Image.open(real_thumb_path)
-        # aspect ratio
-        basewidth = self.thumb_basewidth
-        wpercent = (basewidth/float(image.size[0]))
-        hsize = int((float(image.size[1])*float(wpercent)))
-        img = image.resize((basewidth, hsize))
-        #img = image.resize((300,300), Image.ANTIALIAS)
+        #resize_to = aspect_ratio(image.size, width=self.thumb_basewidth)
+        resize_to = aspect_ratio(image.size, height=self.thumb_height)
+        img = image.resize(resize_to, Image.ANTIALIAS)
+
         photo = ImageTk.PhotoImage(img)
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo
