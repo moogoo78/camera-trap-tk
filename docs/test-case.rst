@@ -56,3 +56,5 @@ DataGrid
 
 Upload
 -------------------
+- 主機沒開: URLError
+- API error: HTTPError 500

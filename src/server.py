@@ -3,6 +3,7 @@ import requests
 import logging
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen, Request
+from http.client import HTTPResponse
 import json
 
 # ping, via: https://stackoverflow.com/a/32684938/644070
@@ -16,14 +17,16 @@ def make_request(url, headers=None, data=None):
     try:
         with urlopen(request, timeout=10) as response:
             method = 'GET' if data == None else 'POST'
-            logging.debug(f'{method} {url}:{response.status}')
-            return response.read(), response
+            logging.info(f'{method} {url}:{response.status}')
+            return response
     except HTTPError as error:
-        print(error.status, error.reason)
+        logging.error(f'HTTPError: {error.status} {error.reason}')
+        return error
     except URLError as error:
-        print(error.reason)
+        logging.error(f'URLError: {error.reason}')
+        return error
     except TimeoutError:
-        print("Request timed out")
+        logging.error('Request timed out')
 
 
 class Server(object):
@@ -71,22 +74,20 @@ class Server(object):
     def get_projects_server(self, source_id=0):
         config = self.config
         project_api_prefix = f"{config['host']}{config['project_api']}"
-        try:
-            if source_id:
-                # r = requests.get(f'{project_api_prefix}{source_id}/')
-                # return r.json()
-                body, response = make_request(f'{project_api_prefix}{source_id}/')
+        if source_id:
+            # r = requests.get(f'{project_api_prefix}{source_id}/')
+            # return r.json()
+            if res := make_request(f'{project_api_prefix}{source_id}/'):
+                body, response = res
                 return json.loads(body)
-            else:
-                # r = requests.get(project_api_prefix)
-                # return r.json()['results']
-                body, response = make_request(project_api_prefix)
-                data = json.loads(body)
-                return data['results']
+        else:
+            # r = requests.get(project_api_prefix)
+            # return r.json()['results']
+            body, response = make_request(project_api_prefix)
+            data = json.loads(body)
+            return data['results']
 
-        except BaseException as error:
-            print('server error: ', error)
-            return []
+        return []
 
     def post_image_status(self, payload):
         url = f"{self.config['host']}{self.config['image_update_api']}"
@@ -134,16 +135,20 @@ class Server(object):
         #body, response = make_request(url, data=post_data)
         json_string = json.dumps(post_dict)
         post_data = json_string.encode("utf-8")
-        body, response = make_request(
-            url,
-            data=post_data,
-            headers={"Content-Type": "application/json"})
-        data_str = body.decode('utf-8')
-        data = json.loads(data_str)
-        ret.update({
-            'data': data['saved_image_ids'],
-            'deployment_journal_id': data['deployment_journal_id']
-        })
+        if resp := make_request(
+                url,
+                data=post_data,
+                headers={"Content-Type": "application/json"}):
+            if isinstance(resp, HTTPResponse):
+                body = resp.read()
+                data_str = body.decode('utf-8')
+                data = json.loads(data_str)
+                ret.update({
+                    'data': data['saved_image_ids'],
+                    'deployment_journal_id': data['deployment_journal_id']
+                })
+            else:
+                ret['error'] = resp
         return ret
         ''' TODO
         try:

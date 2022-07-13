@@ -26,13 +26,32 @@ class Source(object):
     STATUS_DONE_IMPORT = 'a2'
     STATUS_START_UPLOAD = 'b1'
     STATUS_ANNOTATION_UPLOADED = 'b2'
-    STATUS_START_IMAGE_UPLOAD = 'b3'
-    STATUS_DONE_UPLOAD = 'b4'
+    STATUS_START_MEDIA_UPLOAD = 'b3'
+    STATUS_MEDIA_UPLOADING = 'b4'
+    STATUS_DONE_UPLOAD = 'b5'
     STATUS_ARCHIVE = 'c'
+
+    STATUS_LABELS = {
+        'STATUS_START_IMPORT': '',
+        'STATUS_DONE_IMPORT': '未編輯',
+        'STATUS_START_UPLOAD': '',
+        'STATUS_ANNOTATION_UPLOADED': '',
+        'STATUS_START_MEDIA_UPLOAD': '上傳中',
+        'STATUS_MEDIA_UPLOADING': '上傳中',
+        'STATUS_DONE_UPLOAD': '完成',
+        'STATUS_ARCHIVE': 'c',
+    }
 
     def __init__(self, app):
         self.db = app.db
         self.app = app
+
+    def get_status_label(self, code):
+        for k, v in self.STATUS_LABELS.items():
+            if status := getattr(self, k):
+                if status == code:
+                    return v
+        return ''
 
     def get_folder_path(self, folder):
         db = self.db

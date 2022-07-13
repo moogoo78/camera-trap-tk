@@ -2,8 +2,11 @@
 
 __pycache__
 .python-version
+venv
 
 config.ini
+
+tmp
 
 dist
 build

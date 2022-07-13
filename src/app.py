@@ -242,8 +242,7 @@ class Application(tk.Tk):
                 self.frames['image_viewer'].grid_remove()
 
     def quit(self):
-        #self.frames['upload_progress'].handle_stop()
-        #TODO
+        self.contents['upload_progress'].terminate_uploader()
         self.destroy()
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')

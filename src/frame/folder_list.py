@@ -49,6 +49,10 @@ class FolderList(tk.Frame):
         self.canvas.config(yscrollcommand=self.scrollbar.set)
 
         self.bg = ImageTk.PhotoImage(file='./assets/folder_list_vector.png')
+        self.fresh_icon = ImageTk.PhotoImage(file='./assets/source_status_fresh.png')
+        self.done_icon = ImageTk.PhotoImage(file='./assets/source_status_done.png')
+        self.uploading_icon = ImageTk.PhotoImage(file='./assets/source_status_uploading.png')
+
         self.canvas.create_image(
             620,
             330,
@@ -190,7 +194,7 @@ class FolderList(tk.Frame):
                 x+24,
                 gap,
                 anchor='nw',
-                text=f'上次上傳時間：',
+                text=f'上次上傳時間：{timestamp}',
                 font=(self.app.app_font, 14),
                 fill='#464646',
             )
@@ -199,7 +203,7 @@ class FolderList(tk.Frame):
                 x+24,
                 gap,
                 anchor='nw',
-                text=f'上傳狀態：{r[6]}',
+                text=f'上傳狀態：{self.app.source.get_status_label(r[6])}',
                 font=(self.app.app_font, 14),
                 fill='#464646',
             )
@@ -230,6 +234,20 @@ class FolderList(tk.Frame):
                 font=(self.app.app_font, 14),
                 fill='#464646',
             )
+            icon = None
+            if r[6] == self.app.source.STATUS_DONE_IMPORT:
+                icon = self.fresh_icon
+            elif r[6] == self.app.source.STATUS_DONE_UPLOAD:
+                icon = self.done_icon
+            elif r[6][0] == 'b': #TODO
+                icon = self.uploading_icon
+
+            self.canvas.create_image(
+                x+228,
+                gap-28,
+                image=icon,
+                anchor='nw',
+                tags=('item'))
 
             self.canvas.tag_bind(
                 source_tag,

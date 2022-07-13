@@ -380,9 +380,7 @@ class Main(tk.Frame):
         self.upload_button = tk.Button(
             self.ctrl_frame2,
             text='上傳資料夾',
-            #command=self.handle_upload
-            #command=lambda: self.foo_worker.do_work()
-            # command=self.handle_upload2, TODO foo
+            # command=self.handle_upload2
             command=self.handle_upload3,
             foreground='#FFFFFF',
             background=self.app.app_primary_color,
@@ -558,17 +556,22 @@ class Main(tk.Frame):
 
         # update upload_button
         source_status = self.source_data['source'][6]
-        if source_status == '20':
-            self.upload_button['text'] = '上傳中'
-            self.upload_button['state'] = tk.DISABLED
-            self.delete_button['state'] = tk.DISABLED
-        elif source_status == '40':
-            self.upload_button['text'] = '上傳*'
-            self.delete_button['state'] = tk.NORMAL
+        print(self.source_id, source_status)
+        if source_status == self.app.source.STATUS_DONE_UPLOAD:
+            self.upload_button['text'] = '更新文字資料'
         else:
             self.upload_button['text'] = '上傳資料夾'
-            self.upload_button['state'] = tk.NORMAL
-            self.delete_button['state'] = tk.NORMAL
+        # if source_status == '20':
+        #     self.upload_button['text'] = '上傳中'
+        #     self.upload_button['state'] = tk.DISABLED
+        #     self.delete_button['state'] = tk.DISABLED
+        # elif source_status == '40':
+        #     self.upload_button['text'] = '上傳*'
+        #     self.delete_button['state'] = tk.NORMAL
+        # else:
+        #     self.upload_button['text'] = '上傳資料夾'
+        #     self.upload_button['state'] = tk.NORMAL
+        #     self.delete_button['state'] = tk.NORMAL
 
         # data list
         data = self.data_helper.read_image_list(self.source_data['image_list'])
@@ -724,11 +727,11 @@ class Main(tk.Frame):
                 return False
             elif ans == 'yes':
                 res = self.app.server.post_annotation(payload)
-                print(res['data'])
                 if res['error']:
                     tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
                 else:
                     tk.messagebox.showinfo('info', '文字資料更新成功 !')
+
                 return
 
         # 1. post annotation to server
@@ -742,15 +745,15 @@ class Main(tk.Frame):
 
         server_image_map = res['data']
 
-
         sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
         self.app.db.exec_sql(sql, True)
 
         now = int(time.time())
-        sql = f"UPDATE source SET status='{self.app.source.STATUS_START_IMAGE_UPLOAD}', upload_created={now}  WHERE source_id={self.source_id}"
+        sql = f"UPDATE source SET status='{self.app.source.STATUS_START_MEDIA_UPLOAD}', upload_created={now} WHERE source_id={self.source_id}"
         self.app.db.exec_sql(sql, True)
 
         self.app.on_upload_progress()
+        self.app.contents['upload_progress'].handle_start(source_id)
 
 
     def handle_upload2(self):
