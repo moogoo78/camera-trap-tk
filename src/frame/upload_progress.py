@@ -60,7 +60,14 @@ class UploadProgress(tk.Frame):
                 if self.is_uploading:
                     counter += 1
                     logging.debug(f'🧵 uploading: {image[0]}')
-                    time.sleep(1)
+
+                    # time.sleep(1)
+                    object_id = image[14]
+                    thumb_paths = get_thumb(image[10], image[2], image[1], 'all')
+                    for x, path in thumb_paths.items():
+                        object_name = f'{object_id}-{x}.jpg'
+                        self.app.source.upload_to_s3(str(path), object_name)
+
                     self.queue_action.put({
                         'type':'update_image',
                         'source_id': source_id,
