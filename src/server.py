@@ -138,14 +138,14 @@ class Server(object):
             url,
             data=post_data,
             headers={"Content-Type": "application/json"})
-        d = body.decode('utf-8')
-        print(d)
+        data_str = body.decode('utf-8')
+        data = json.loads(data_str)
         ret.update({
-            'data': d['saved_image_ids'],
-            'deployment_journal_id': d['deployment_journal_id']
+            'data': data['saved_image_ids'],
+            'deployment_journal_id': data['deployment_journal_id']
         })
         return ret
-        '''
+        ''' TODO
         try:
             resp = requests.post(url, json=payload)
             if resp.status_code != 200:

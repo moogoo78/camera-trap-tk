@@ -64,7 +64,7 @@ class Main(tk.Frame):
         self.annotation_entry_list = []
         self.species_copy = []
         self.keyboard_shortcuts = {}
-
+        self.is_editing = False  # wrapping 'def refresh' to protect redundant entry update
         species_choices = self.app.config.get('AnnotationFieldSpecies', 'choices')
         antler_choices = self.app.config.get('AnnotationFieldAntler', 'choices')
         sex_choices = self.app.config.get('AnnotationFieldSex', 'choices')
@@ -514,6 +514,7 @@ class Main(tk.Frame):
 
 
     def refresh(self, is_init_highlight=False):
+        self.is_editing = False
         logging.debug('refresh: {}'.format(self.source_id))
         #print (self.current_row, self.current_image_data, self.data_grid.main_table.selected)
 
@@ -614,6 +615,8 @@ class Main(tk.Frame):
             self.trip_start_var.set(trip_start)
         if trip_end := self.source_data['source'][10]:
             self.trip_end_var.set(trip_end)
+
+        self.is_editing = True
 
     def project_option_changed(self, *args):
         name = self.project_var.get()
@@ -738,21 +741,17 @@ class Main(tk.Frame):
             return
 
         server_image_map = res['data']
-        print(server_image_map)
-        '''
+
+
+        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
+        self.app.db.exec_sql(sql, True)
+
         now = int(time.time())
-
-        image_list = self.source_data['image_list']
-        #sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
-        #self.app.db.exec_sql(sql, True)
-
-        sql = f"UPDATE source SET status='{self.app.source.STATUS_START_IMAGE_UPLOAD}' WHERE source_id={self.source_id}" # or b3a
+        sql = f"UPDATE source SET status='{self.app.source.STATUS_START_IMAGE_UPLOAD}', upload_created={now}  WHERE source_id={self.source_id}"
         self.app.db.exec_sql(sql, True)
 
-        sql = f"UPDATE source SET upload_created={now} WHERE source_id={self.source_id}"
-        self.app.db.exec_sql(sql, True)
         self.app.on_upload_progress()
-        '''
+
 
     def handle_upload2(self):
         # check deployment
@@ -1213,6 +1212,9 @@ class Main(tk.Frame):
                     tk.messagebox.showinfo('info', f'已設定測試照 - {time_str}')
 
     def handle_entry_change(self, *args):
+        if self.is_editing is False:
+            return
+
         trace_args = args[0]
         key = args[1]
         col = key
