@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 import logging
 import queue
+import csv
 from datetime import datetime
 
 from PIL import ImageTk, Image
@@ -202,8 +203,17 @@ class Main(tk.Frame):
             command=self.show_image_detail,
             takefocus=0,
         )
-        #image_viewer_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
         self.image_viewer_button.place(x=376, y=270, anchor='nw')
+
+        export_button = tk.Button(
+            self,
+            text='匯出csv',
+            #image=self.enlarge_icon,
+            relief='flat',
+            command=self.export_csv,
+            takefocus=0,
+        )
+        export_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
 
         self.ctrl_frame2 = tk.Frame(self.ctrl_frame, background='#F2F2F2')
         self.ctrl_frame2.grid_rowconfigure(0, weight=0)
@@ -1240,3 +1250,15 @@ class Main(tk.Frame):
             image_path = item['thumb'].replace('-q.', '-x.')
             ImageDetail(self, image_path)
 
+    def export_csv(self):
+        folder_name = self.source_data['source'][3]
+        with open(f'export-folder-{folder_name}.csv', 'w', newline='') as csvfile:
+            spamwriter = csv.writer(
+                csvfile,
+                delimiter=',',
+                quotechar='|',
+                quoting=csv.QUOTE_MINIMAL)
+            spamwriter.writerow([v['label'] for _, v in self.data_helper.columns.items()])
+            for _, v in self.data_helper.data.items():
+                spamwriter.writerow([v[k] for k, _ in self.data_helper.columns.items()])
+        tk.messagebox.showinfo('info', '匯出 csv 成功!')
