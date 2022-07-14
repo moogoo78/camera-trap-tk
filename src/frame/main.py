@@ -566,7 +566,6 @@ class Main(tk.Frame):
 
         # update upload_button
         source_status = self.source_data['source'][6]
-        print(self.source_id, source_status)
         if source_status == self.app.source.STATUS_DONE_UPLOAD:
             self.upload_button['text'] = '更新文字資料'
         else:
@@ -1252,7 +1251,11 @@ class Main(tk.Frame):
 
     def export_csv(self):
         folder_name = self.source_data['source'][3]
-        with open(f'export-folder-{folder_name}.csv', 'w', newline='') as csvfile:
+        save_as = tk.filedialog.asksaveasfilename(defaultextension='csv')
+        if not save_as:
+            return False
+
+        with open(f'{save_as}', 'w', newline='') as csvfile:
             spamwriter = csv.writer(
                 csvfile,
                 delimiter=',',
@@ -1261,4 +1264,4 @@ class Main(tk.Frame):
             spamwriter.writerow([v['label'] for _, v in self.data_helper.columns.items()])
             for _, v in self.data_helper.data.items():
                 spamwriter.writerow([v[k] for k, _ in self.data_helper.columns.items()])
-        tk.messagebox.showinfo('info', '匯出 csv 成功!')
+        tk.messagebox.showinfo('info', f'匯出 csv 成功! ({save_as})')

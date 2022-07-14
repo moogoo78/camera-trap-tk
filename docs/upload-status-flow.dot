@@ -1,0 +1,59 @@
+digraph G {
+  subgraph cluster_0 {
+    style=filled;
+    color=mediumseagreen;
+    node [style=filled,color=lightgoldenrod1];
+    label = "Import Folder & Editing";
+    a1 -> a2 -> a3;
+
+  }
+
+  subgraph cluster_1 {
+    color=gray;
+    node [style=filled, color=cornsilk2];
+    label = "Upload Folder's Annotations & Media";
+    b2 -> b1;
+    b4 -> b1;
+    b5 -> b1 [label="1.upload again", color=orange, style=dashed];
+    b5 -> b6 [color=orange, label="2. upload again done"];
+    b3;
+  }
+  subgraph cluster_2 {
+    color=royalblue4;
+    label = "CameraTrap Server";
+    serv_anno
+  }
+  subgraph cluster_3 {
+    color=royalblue4;
+    label = "AWS S3 Service";
+    serv_s3 -> b5;
+    serv_s3 -> b3 [label="upload all images in a folder"];
+}
+
+  start -> a1;
+  a3 -> b1;
+  a2 -> b1;
+  b5 -> end;
+  b4 -> a3 [label="update annotation, upload last failed files"];
+
+  b5 -> c -> end;
+  b6 -> c [color=orange];
+  b6 -> end;
+  b1 -> serv_anno -> b2;
+  b3 -> serv_s3 -> b4;
+  serv_anno -> b3;
+  serv_anno [shape=diamond, color=plum2, label="post annotation"];
+  serv_s3 [shape=diamond, color=plum2, label="upload to AWS"];
+  c [label="c:\narchive folder"];
+  b6 [label="b6:\nupload done\n[ 覆寫完成]", color=tan, style=filled];
+  b5 [label="b5:\nupload done\n[ 完成 ]"];
+  b4 [label="b4:\nupload media failed\n [上傳失敗 (檔案不完全) ]"];
+  b3 [label="b3:\nstart upload media files\n[ 上傳中 ]"];
+  b2 [label="b2:\nupload annotation failed\n[ 上傳失敗 ]"];
+  b1 [label="b1:\nstart upload"];
+  a3 [label="a3:\nstart annotate\n[ 編輯中 ]"];
+  a1 [label="a1:\nstart import"];
+  a2 [label="a2:\nimport done\n[ 未編輯 ]"];
+  start [shape=Mdiamond];
+  end [shape=Msquare];
+}
