@@ -36,15 +36,37 @@ class UploadProgress(tk.Frame):
 
         self.queue_upload = Queue()  # add for uploading
         self.queue_action = Queue()  # state to update
+        self.queue_image = Queue()
+        self.async_loop = asyncio.get_event_loop()
 
         self.uploader_thread = None
         # self.uploader_thread.start()
 
         # self.polling()
+        # self.bind('<<event_complete>>', self.event_complete)
+        self.bind('<<event_image_uploaded>>', self.event_image_uploaded)
+        # self.bind('<<event_source_uploaded>>', self.event_source_uploaded)
 
         self.refresh()
 
-    def uploader(self):
+    def event_image_uploaded(self, event):
+        print('-event-', '==============', self.queue_image.qsize())
+        for _ in range(self.queue_image.qsize()):
+            image_id = self.queue_image.get()
+            sql = f"UPDATE image SET upload_status='200' WHERE image_id={image_id}"
+            #res = self.app.db.exec_sql(sql, True)
+
+    def uploader2(self, async_loop):
+        async_loop.run_until_complete(self.uploader())
+
+    async def uploader(self):
+        logging.debug(f'🧵 uploader xxx start!!!')
+        for _ in range(10):
+            print ('gogogo', _)
+            await asyncio.sleep(1)
+
+        
+    async def uploaderx(self):
         logging.debug(f'🧵 uploader start!!!')
         for _ in range(self.queue_upload.qsize()):
             data = self.queue_upload.get()
@@ -61,13 +83,17 @@ class UploadProgress(tk.Frame):
                     counter += 1
                     logging.debug(f'🧵 uploading: {image[0]}')
 
-                    # time.sleep(1)
+
+                    #time.sleep(1)
                     object_id = image[14]
                     thumb_paths = get_thumb(image[10], image[2], image[1], 'all')
                     for x, path in thumb_paths.items():
                         object_name = f'{object_id}-{x}.jpg'
-                        self.app.source.upload_to_s3(str(path), object_name)
+                        time.sleep(0.5)
+                        #self.app.source.upload_to_s3(str(path), object_name)
 
+                    self.event_generate('<<event_image_uploaded>>', when='tail')
+                    self.queue_image.put(image[0])
                     self.queue_action.put({
                         'type':'update_image',
                         'source_id': source_id,
@@ -89,19 +115,24 @@ class UploadProgress(tk.Frame):
     def create_uploader(self):
         logging.debug('create uploader')
         self.is_uploading = True
-        self.uploader_thread = threading.Thread(target=self.uploader)
-        self.uploader_thread.start()
+        # self.uploader_thread = threading.Thread(target=self.uploader)
+        #threading.Thread(target=self.uploader).start()
+        threading.Thread(target=self._asyncio_thread, args=(self.async_loop,)).start()
+        #uploader_thread.start()
         self.polling()
 
     def terminate_uploader(self):
         logging.debug('terminate uploader')
         self.is_uploading = False
-        self.uploader_thread = None  # ?
+        #self.uploader_thread = None  # ?
         self.refresh()
 
     def polling(self):
-        # print(self.is_uploading, self.uploader_thread, self.uploader_thread.is_alive() if self.uploader_thread else 'xx', self.queue_upload.qsize(), self.queue_action.qsize())
-
+        print(self.is_uploading)
+        #print(self.is_uploading, self.uploader_thread, self.uploader_thread.is_alive() if self.uploader_thread else 'xx', self.queue_upload.qsize(), self.queue_action.qsize())
+        sql = f"UPDATE image SET upload_status='200' WHERE image_id={1}"
+        #res = self.app.db.exec_sql(sql, True)
+        print('range !!',)
         if self.is_uploading is False:
             return
 
@@ -115,8 +146,14 @@ class UploadProgress(tk.Frame):
 
                 sql = f"UPDATE image SET upload_status='200' WHERE image_id={image_id}"
                 res = self.app.db.exec_sql(sql, True)
+
                 index = self._find_source_index(source_id)
                 if index >= 0:
+                    # update status
+                    if status := self.source_list[index]['source_data'][6]:
+                        if status != self.app.source.STATUS_MEDIA_UPLOADING:
+                            self.app.source.update_status(source_id, 'MEDIA_UPLOADING')
+
                     total = self.source_list[index]['source_data'][4]
                     left = len(self.source_list[index]['left_images'])
                     value = total - left + counter
@@ -126,17 +163,16 @@ class UploadProgress(tk.Frame):
                     self.canvas.itemconfigure(f'{source_id}-step', text=f'({value}/{total})')
             elif action['type'] == 'upload_source':
                 source_id = action['source_id']
-                sql = f"UPDATE source SET status='{self.app.source.STATUS_MEDIA_UPLOADING}' WHERE source_id={source_id}"
-                res = self.app.db.exec_sql(sql, True)
+                self.app.source.update_status(source_id, 'START_MEDIA_UPLOAD')
                 self.refresh()
             elif action['type'] == 'done_source':
                 source_id = action['source_id']
-                sql = f"UPDATE source SET status='{self.app.source.STATUS_DONE_UPLOAD}' WHERE source_id={source_id}"
-                res = self.app.db.exec_sql(sql, True)
+                self.app.source.update_status(source_id, 'DONE_UPLOAD')
+
                 self.terminate_uploader()
                 self._find_next_source()
 
-        self.after(100, self.polling)
+        self.after(1000, self.polling)
 
     def _layout(self):
         self.grid_rowconfigure(0, weight=1)
@@ -287,20 +323,29 @@ class UploadProgress(tk.Frame):
         button_cmd = None
         action_label = ''
         step_label = ''
-        progressbar_value = 0
+        progressbar_value = total-left
 
+        '''
         if r[6] == self.app.source.STATUS_DONE_UPLOAD:
             status_text = '資料夾上傳完畢'
             button_text = '確認並歸檔'
             button_cmd = lambda source_id=source_id: self.handle_archive(source_id)
             progressbar_value = total
-        elif r[6] == self.app.source.STATUS_MEDIA_UPLOADING:
+        elif r[6] in [self.app.source.STATUS_START_MEDIA_UPLOAD, self.app.source.STATUS_MEDIA_UPLOADING]:
             status_text = '資料夾上傳中...'
             button_text = '暫停上傳'
             button_cmd = lambda source_id=source_id: self.handle_stop(source_id)
-        elif r[6] == self.app.source.STATUS_START_MEDIA_UPLOAD:
+        elif r[6] == self.app.source.STATUS_STOP_MEDIA_UPLOAD:
             status_text = '資料夾上傳中...'
             button_text = '重啟上傳'
+            button_cmd = lambda source_id=source_id: self.handle_start(source_id)
+        '''
+        status_text = '資料夾上傳中...'
+        if self.is_uploading:
+            button_text = 'pause'
+            button_cmd = lambda source_id=source_id: self.handle_stop(source_id)
+        else:
+            button_text = 'play'
             button_cmd = lambda source_id=source_id: self.handle_start(source_id)
 
         self.canvas.create_text(
@@ -329,7 +374,7 @@ class UploadProgress(tk.Frame):
                 fill=self.app.app_primary_color,
                 tags=('item', f'{source_id}-text'))
 
-            pb = ttk.Progressbar(self.canvas, orient=tk.HORIZONTAL, length=122, value=0, mode='determinate', maximum=total)
+            pb = ttk.Progressbar(self.canvas, orient=tk.HORIZONTAL, length=122, value=progressbar_value, mode='determinate', maximum=total)
             pb.grid(row=0, column=0)
             self.progress_bars[r[0]] = pb
             self.canvas.create_window(
@@ -375,7 +420,7 @@ class UploadProgress(tk.Frame):
 
     def _find_next_source(self, ):
         for i in self.source_list:
-            if i['source_data'][6] == self.app.source.STATUS_START_MEDIA_UPLOAD:
+            if i['source_data'][6] == self.app.source.STATUS_MEDIA_UPLOADING:
                 self.handle_start(i['source_data'][0])
 
     def handle_start(self, source_id):
@@ -389,11 +434,12 @@ class UploadProgress(tk.Frame):
 
     def handle_stop(self, source_id):
         logging.debug(f'source_id: {source_id}')
-
-        sql = f"UPDATE source SET status='{self.app.source.STATUS_START_MEDIA_UPLOAD}' WHERE source_id={source_id}"
-        self.app.db.exec_sql(sql, True)
-
+        #self.app.source.update_status(source_id, 'STOP_MEDIA_UPLOAD')
         self.terminate_uploader()
 
     def handle_archive(self, source_id):
         print('on archive', source_id)
+
+    def _asyncio_thread(self, async_loop):
+        async_loop.run_until_complete(self.uploader())
+        logging.info('asyncio loop complete')

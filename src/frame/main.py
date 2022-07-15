@@ -60,8 +60,8 @@ class Main(tk.Frame):
         }
         # self.thumb_basewidth = 550
         self.thumb_height = 309 # fixed height
-
-        self.data_helper = DataHelper(self.app.db)
+        annotate_status_list = (self.app.source.STATUS_DONE_IMPORT, self.app.source.STATUS_START_ANNOTATE)
+        self.data_helper = DataHelper(self.app.db, annotate_status_list)
         self.annotation_entry_list = []
         self.species_copy = []
         self.keyboard_shortcuts = {}
@@ -156,9 +156,7 @@ class Main(tk.Frame):
 
         #self.upload_progress = UploadProgress(self)
         #self.upload_progress.grid(row=0,column=0)
-        #self.notebook.add(self.panedwindow, text='輸入資料')
-        #self.notebook.add(self.upload_progress, text='上傳進度')
-        #self.notebook.bind('<<NotebookTabChanged>>', self.handle_notebook_change)
+
     def fo_species(self, event):
         #print (self.species_free.listbox, event)
         if self.species_free.listbox:
@@ -537,6 +535,8 @@ class Main(tk.Frame):
         #self.notebook.select(self.panedwindow)
 
         self.source_data = self.app.source.get_source(self.source_id)
+        if status := self.source_data['source'][6]:
+            self.data_helper.source_id_status = [self.source_id, status]
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
             # set init value
@@ -633,6 +633,9 @@ class Main(tk.Frame):
     def project_option_changed(self, *args):
         name = self.project_var.get()
         id_ = self.id_map['project'].get(name,'')
+        if id_ == '':
+            return
+
         # reset
         self.studyarea_options = []
         self.id_map['studyarea'] = {}
@@ -705,20 +708,38 @@ class Main(tk.Frame):
             #tk.messagebox.showinfo('info', '已設定相機位置')
 
     def handle_upload3(self):
-        # check deployment
+        # ==============
+        # check & notify
+        # =============
+
+        # check deployment has set
         deployment_id = ''
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
             deployment_id = d.get('deployment_id', '')
-
         if deployment_id == '':
-            tk.messagebox.showinfo('info', '末設定相機位置，無法上傳')
+            tk.messagebox.showwarning('注意', '末設定相機位置，無法上傳')
             return False
 
+        has_empty = self.data_helper.has_empty_species()
+        if has_empty:
+            tk.messagebox.showwarning('注意', '尚有照片未填寫物種，無法上傳')
+            return False
+
+        # ask check deployment/staudy area/project
+        is_ok = tk.messagebox.askokcancel('確認計畫', '請確認計畫、樣區、相機位置是否無誤？')
+        if not is_ok:
+            return False
+
+        # ======
+        # upload
+        # ======
         image_list = self.source_data['image_list']
         source_id = self.source_id
         account_id = self.app.config.get('Installation', 'account_id')
 
+        now = int(time.time())
+        self.app.source.update_status(source_id, 'START_UPLOAD', upload_created=now)
         payload = {
             'image_list': image_list,
             'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
@@ -730,6 +751,7 @@ class Main(tk.Frame):
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
         }
 
+        # check if re-post annotation
         if self.source_data['source'][6] == self.app.source.STATUS_DONE_UPLOAD:
             ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
             if ans == 'no':
@@ -737,6 +759,7 @@ class Main(tk.Frame):
             elif ans == 'yes':
                 res = self.app.server.post_annotation(payload)
                 if res['error']:
+                    self.app.source.update_status(source_id, 'ANNOTATION_UPLOAD_FAILED')
                     tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
                 else:
                     tk.messagebox.showinfo('info', '文字資料更新成功 !')
@@ -749,21 +772,33 @@ class Main(tk.Frame):
 
         res = self.app.server.post_annotation(payload)
         if res['error']:
+            self.app.source.update_status(source_id, 'ANNOTATION_UPLOAD_FAILED')
             tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
             return
 
         server_image_map = res['data']
+        '''
+        # inform server uploading start
+        deployment_journal_id = None
+        if dj_id := self.source_data['source'][12]:
+            deployment_journal_id = dj_id
+        else:
+            if dj_id := res.get('deployment_journal_id'):
+                sql = f"UPDATE source SET deployment_journal_id={dj_id} WHERE source_id={source_id}"
+                self.app.db.exec_sql(sql, True)
+                deployment_journal_id = dj_id
+
+        if deployment_journal_id != None:
+            self.app.server.post_upload_history(deployment_journal_id, 'uploading')
 
         sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
         self.app.db.exec_sql(sql, True)
+        '''
 
-        now = int(time.time())
-        sql = f"UPDATE source SET status='{self.app.source.STATUS_START_MEDIA_UPLOAD}', upload_created={now} WHERE source_id={self.source_id}"
-        self.app.db.exec_sql(sql, True)
+        self.app.source.update_status(source_id, 'MEDIA_UPLOADING')
 
         self.app.on_upload_progress()
         self.app.contents['upload_progress'].handle_start(source_id)
-
 
     def handle_upload2(self):
         # check deployment
@@ -859,11 +894,6 @@ class Main(tk.Frame):
         self.upload_button['text'] = '上傳中'
         self.upload_button['state'] = tk.DISABLED
         self.delete_button['state'] = tk.DISABLED
-
-    def handle_notebook_change(self, event):
-        tab = event.widget.tab('current')['text']
-        if tab == '輸入資料':
-            self.refresh()
 
     def handle_upload(self):
         #self.app.source.do_upload(self.source_data)

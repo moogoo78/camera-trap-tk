@@ -5,7 +5,6 @@ digraph G {
     node [style=filled,color=lightgoldenrod1];
     label = "Import Folder & Editing";
     a1 -> a2 -> a3;
-
   }
 
   subgraph cluster_1 {
@@ -13,47 +12,62 @@ digraph G {
     node [style=filled, color=cornsilk2];
     label = "Upload Folder's Annotations & Media";
     b2 -> b1;
-    b4 -> b1;
-    b5 -> b1 [label="1.upload again", color=orange, style=dashed];
-    b5 -> b6 [color=orange, label="2. upload again done"];
-    b3;
+    b3a -> b3b -> b3c -> b3a;
+    b3b -> b2a -> b1;
+    b3b -> b4;
+    /*
+    serv_anno -> b3a -> b3b -> b3c -> b3a;
+    b3b -> b3b;
+    b3b -> serv_s3 -> b4;
+
+
+    */
   }
   subgraph cluster_2 {
     color=royalblue4;
-    label = "CameraTrap Server";
-    serv_anno
+    label = "Servers";
+    serv_anno;
+    serv_s3;
+    serv_media;
   }
-  subgraph cluster_3 {
+ /* subgraph cluster_3 {
     color=royalblue4;
     label = "AWS S3 Service";
-    serv_s3 -> b5;
-    serv_s3 -> b3 [label="upload all images in a folder"];
-}
+
+  }*/
 
   start -> a1;
+  b1 -> serv_anno -> b2;
+  serv_anno -> b3a;
+  b1 -> serv_anno -> b2 -> b1 [color=orange, style=dashed, label="2. re-upload annotation"];
+  /*b3c -> end;*/
   a3 -> b1;
   a2 -> b1;
+  b3b -> serv_s3 -> b3b;
+  /*serv_s3 -> b5;*/
+  b4 -> end;
+  b4 -> c;
+  b4 -> a3;
+  a3 -> b1 [label="1. re-upload (modify annotation)", color=orange];
   b5 -> end;
-  b4 -> a3 [label="update annotation, upload last failed files"];
-
+  /*b4 -> a3 [label="update annotation, upload last failed files"];*/
   b5 -> c -> end;
-  b6 -> c [color=orange];
-  b6 -> end;
-  b1 -> serv_anno -> b2;
-  b3 -> serv_s3 -> b4;
-  serv_anno -> b3;
-  serv_anno [shape=diamond, color=plum2, label="post annotation"];
-  serv_s3 [shape=diamond, color=plum2, label="upload to AWS"];
-  c [label="c:\narchive folder"];
-  b6 [label="b6:\nupload done\n[ 覆寫完成]", color=tan, style=filled];
-  b5 [label="b5:\nupload done\n[ 完成 ]"];
-  b4 [label="b4:\nupload media failed\n [上傳失敗 (檔案不完全) ]"];
-  b3 [label="b3:\nstart upload media files\n[ 上傳中 ]"];
-  b2 [label="b2:\nupload annotation failed\n[ 上傳失敗 ]"];
-  b1 [label="b1:\nstart upload"];
-  a3 [label="a3:\nstart annotate\n[ 編輯中 ]"];
-  a1 [label="a1:\nstart import"];
-  a2 [label="a2:\nimport done\n[ 未編輯 ]"];
+  serv_anno -> b5 [color=orange, style=dashed];
+  serv_anno [shape=diamond, color=plum2, label="CameraTrap Server\npost annotation"];
+  serv_s3 [shape=diamond, color=plum2, label="AWS S3 Service\nupload to AWS"];
+  serv_media [shape=diamond, color=plum2, label="AWS Media Service\ntranscode movie files"];
+  c [label="archive folder\n(c)"];
+  b5 [label="override upload\n(b5) 覆寫完成", color=tan, style=filled];
+  b4 [label="upload done\n(b4) 完成"];
+  b2a [label="upload media failed\n (b2a) 上傳失敗 (檔案不完全)"];
+  b3c [label="stop (pause) upload media files\n(b3c) 上傳中"];
+  b3b [label="uploading media files\n(b3b) 上傳中"];
+  b3a [label="start upload media files\n(b3a) 上傳中"];
+  b2 [label="upload annotation failed\n(b2) 上傳失敗"];
+  b1 [label="start upload\n(b1)"];
+  a3 [label="start annotate\n(a3) 編輯中"];
+  a1 [label="start import\n(a1)"];
+  a2 [label="done import\n(a2) 未編輯"];
   start [shape=Mdiamond];
   end [shape=Msquare];
 }

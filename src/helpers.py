@@ -80,9 +80,11 @@ def _get_status_display(code):
 
 
 class DataHelper(object):
-    def __init__(self, db):
+    def __init__(self, db, annotate_status_list):
         #self.annotation_item = [4, 5, 6, 7, 8, 9] # index from sqlite
         self.db = db
+        self.annotate_status_list = annotate_status_list
+
         self.annotation_map = {
             4: 'annotation_species',
             5: 'annotation_lifestage',
@@ -103,6 +105,7 @@ class DataHelper(object):
         self.annotation_data = {}
         self.exif_data = {}
         self.test_foto_time = ''
+        self.source_id_status = []
 
     def get_image_row_keys(self, image_id):
         row_keys = []
@@ -123,6 +126,13 @@ class DataHelper(object):
 
     def update_annotation(self, row_key, col_key, value, seq_info=None):
         print('! update_annotation', row_key, col_key, value)
+
+        # update source status if start annotation
+        if self.source_id_status and \
+           self.source_id_status[1] == self.annotate_status_list[0]:
+            sql = f"UPDATE source SET status='{self.annotate_status_list[1]}' WHERE source_id={self.source_id_status[0]}"
+            self.db.exec_sql(sql, True)
+
         item = self.data[row_key]
         image_id = item['image_id']
 
@@ -344,6 +354,12 @@ class DataHelper(object):
             self.data[i]['img_seq_color'] = rgb_hex
         #print (seq_info)
         return seq_info
+
+    def has_empty_species(self):
+        for k,v in self.data.items():
+            if v.get('annotation_species', '') == '':
+                return True
+        return False
 '''
 key, label, type, choices in ini
 '''

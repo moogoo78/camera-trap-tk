@@ -52,6 +52,10 @@ class FolderList(tk.Frame):
         self.fresh_icon = ImageTk.PhotoImage(file='./assets/source_status_fresh.png')
         self.done_icon = ImageTk.PhotoImage(file='./assets/source_status_done.png')
         self.uploading_icon = ImageTk.PhotoImage(file='./assets/source_status_uploading.png')
+        self.failed_icon = ImageTk.PhotoImage(file='./assets/source_status_failed.png')
+        self.override_icon = ImageTk.PhotoImage(file='./assets/source_status_override.png')
+        self.editing_icon = ImageTk.PhotoImage(file='./assets/source_status_editing.png')
+
 
         self.canvas.create_image(
             620,
@@ -73,7 +77,7 @@ class FolderList(tk.Frame):
             self.app.db.exec_sql(i)
         self.app.db.commit()
 
-        self.app.db.exec_sql(f"UPDATE source SET status='{self.app.source.STATUS_DONE_IMPORT}' WHERE source_id={source_id}", True)
+        self.app.source.update_status(source_id, 'DONE_IMPORT')
         self.refresh_source_list()
         showinfo(message='完成匯入資料夾')
 
@@ -101,10 +105,12 @@ class FolderList(tk.Frame):
             return False
 
         image_list = src.get_image_list(folder_path)
-
-        source_id = src.create_import_directory(len(image_list), folder_path)
-        self.refresh_source_list()
-        threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
+        if num_images := len(image_list):
+            source_id = src.create_import_directory(num_images, folder_path)
+            self.refresh_source_list()
+            threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
+        else:
+            tk.messagebox.showinfo('info', '資料夾沒有照片')
 
         # show folder_list
         self.app.on_folder_list()
@@ -239,6 +245,10 @@ class FolderList(tk.Frame):
                 icon = self.fresh_icon
             elif r[6] == self.app.source.STATUS_DONE_UPLOAD:
                 icon = self.done_icon
+            elif r[6] == self.app.source.STATUS_ANNOTATION_UPLOAD_FAILED:
+                icon = self.failed_icon
+            elif r[6] == self.app.source.STATUS_START_ANNOTATE:
+                icon = self.editing_icon
             elif r[6][0] == 'b': #TODO
                 icon = self.uploading_icon
 

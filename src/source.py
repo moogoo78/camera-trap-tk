@@ -28,10 +28,12 @@ class Source(object):
     STATUS_START_UPLOAD = 'b1'
     STATUS_ANNOTATION_UPLOAD_FAILED = 'b2'
     # STATUS_ANNOTATION_UPLOADED = 'b3'
-    # STATUS_START_MEDIA_UPLOAD = 'b3'
-    STATUS_MEDIA_UPLOADING = 'b3'
-    STATUS_MEDIA_UPLOAD_FAILED = 'b4'
-    STATUS_DONE_UPLOAD = 'b5'
+    STATUS_START_MEDIA_UPLOAD = 'b3a'
+    STATUS_MEDIA_UPLOADING = 'b3b'
+    STATUS_STOP_MEDIA_UPLOAD = 'b3c'
+    STATUS_MEDIA_UPLOAD_FAILED = 'b2a'
+    STATUS_DONE_UPLOAD = 'b4'
+    STATUS_OVERRIDE_UPLOAD = 'b5'
     STATUS_ARCHIVE = 'c'
 
     STATUS_LABELS = {
@@ -52,9 +54,20 @@ class Source(object):
         self.db = app.db
         self.app = app
 
+    def update_status(self, source_id, key, **kwargs):
+        if value := getattr(self, f'STATUS_{key}', ''):
+            sql = f"UPDATE source SET status='{value}' WHERE source_id={source_id}"
+            if key == 'START_UPLOAD':
+                if upload_created := kwargs.get('upload_created', ''):
+                    sql = f"UPDATE source SET status='{value}', upload_created={upload_created} WHERE source_id={source_id}"
+
+            self.app.db.exec_sql(sql, True)
+            return True
+        return False
+
     def get_status_label(self, code):
         for k, v in self.STATUS_LABELS.items():
-            if status := getattr(self, k):
+            if status := getattr(self, k, ''):
                 if status == code:
                     return v
         return ''
@@ -91,9 +104,9 @@ class Source(object):
             end = m.group(2)
             if validate_datetime(start, '%Y%m%d') and \
                validate_datetime(end, '%Y%m%d'):
-                sql = "INSERT INTO source (source_type, path, name, count, created, status, trip_start, trip_end) VALUES('folder', '{}', '{}', {}, {}, 'a1', '{}', '{}')".format(folder_path, dir_name, num_image_list, ts_now, start, end)
+                sql = "INSERT INTO source (source_type, path, name, count, created, status, trip_start, trip_end) VALUES('folder', '{}', '{}', {}, {}, '{}', '{}', '{}')".format(folder_path, dir_name, num_image_list, ts_now, self.STATUS_START_IMPORT, start, end)
         else:
-            sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, 'a1')".format(folder_path, dir_name, num_image_list, ts_now)
+            sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '{}')".format(folder_path, dir_name, num_image_list, ts_now, self.STATUS_START_IMPORT)
 
         source_id = db.exec_sql(sql, True)
 
@@ -203,21 +216,6 @@ class Source(object):
             'source': source,
         }
 
-    # depricated
-    def upload_annotation(self, image_list, source_id, deployment_id):
-        '''set upload_status in local database and post data to server'''
-        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
-        self.db.exec_sql(sql, True)
-        #print ('- update all image status -')
-        account_id = self.app.config.get('Installation', 'account_id')
-        # post to server
-        payload = {
-            'image_list': image_list,
-            'key': f'{account_id}-{source_id}',
-            'deployment_id': deployment_id,
-        }
-        return self.app.server.post_annotation(payload)
-
     def upload_to_s3(self, file_path, object_name):
         key = self.app.config.get('AWSConfig', 'access_key_id')
         secret = self.app.config.get('AWSConfig', 'secret_access_key')
@@ -252,7 +250,6 @@ class Source(object):
         return ret
 
 
-
     def delete_folder(self, source_id):
         #print ('delete', source_id)
         sql = f"DELETE FROM source WHERE source_id = {source_id}"
@@ -261,9 +258,3 @@ class Source(object):
         self.db.exec_sql(sql, True)
 
         shutil.rmtree(Path(f'./thumbnails/{source_id}'), ignore_errors=True)
-
-############
-    def finish_upload_task(self, source_id):
-        #source_id = source_data['source'][0]
-        sql = f"UPDATE source SET status='30' WHERE source_id={source_id}"
-        self.db.exec_sql(sql, True)

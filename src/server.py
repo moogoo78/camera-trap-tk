@@ -10,24 +10,44 @@ import json
 import platform    # For getting the operating system name
 import subprocess  # For executing a shell command
 
+def to_json(body):
+    data_str = body.decode('utf-8')
+    return json.loads(data_str)
+
 # via: https://realpython.com/urllib-request/
-def make_request(url, headers=None, data=None):
+# modified return struct
+def make_request(url, headers=None, data=None, is_json=False):
+
+    if is_json is True:
+        if not headers:
+            headers = {}
+        headers.update({"Content-Type": "application/json"})
+
+        json_string = json.dumps(data)
+        data = json_string.encode("utf-8")
 
     request = Request(url, headers=headers or {}, data=data)
+    ret = {
+        'body': None,
+        'response': None,
+        'error': None
+    }
     try:
         with urlopen(request, timeout=10) as response:
             method = 'GET' if data == None else 'POST'
-            logging.info(f'{method} {url}:{response.status}')
-            return response
+            logging.info(f'{method} {url} | {response.status}')
+            ret['body'] = response.read() # 如果先 return response, read() 內容會不見
+            ret['response'] = response
     except HTTPError as error:
         logging.error(f'HTTPError: {error.status} {error.reason}')
-        return error
+        ret['error'] = error
     except URLError as error:
         logging.error(f'URLError: {error.reason}')
-        return error
+        ret['error'] = error
     except TimeoutError:
         logging.error('Request timed out')
-
+    finally:
+        return ret
 
 class Server(object):
     projects = []
@@ -77,15 +97,23 @@ class Server(object):
         if source_id:
             # r = requests.get(f'{project_api_prefix}{source_id}/')
             # return r.json()
-            if res := make_request(f'{project_api_prefix}{source_id}/'):
-                body, response = res
-                return json.loads(body)
-        else:
+            url = f'{project_api_prefix}{source_id}/'
+            resp = make_request(url)
+            if not resp['error']:
+                return to_json(resp['body'])
+            else:
+                # tk.messagebox.showerror('server error', resp['error'])
+                pass
+
+            if x:= resp.get('response'):
+                x.close()
+
+        # else: # TODO
             # r = requests.get(project_api_prefix)
             # return r.json()['results']
-            body, response = make_request(project_api_prefix)
-            data = json.loads(body)
-            return data['results']
+            #body, response = make_request(project_api_prefix)
+            #data = json.loads(body)
+            #return data['results']
 
         return []
 
@@ -133,23 +161,26 @@ class Server(object):
         }
         #url_encoded_data = urlencode(post_dict)
         #body, response = make_request(url, data=post_data)
-        json_string = json.dumps(post_dict)
-        post_data = json_string.encode("utf-8")
-        if resp := make_request(
-                url,
-                data=post_data,
-                headers={"Content-Type": "application/json"}):
-            if isinstance(resp, HTTPResponse):
-                body = resp.read()
-                data_str = body.decode('utf-8')
-                data = json.loads(data_str)
-                ret.update({
-                    'data': data['saved_image_ids'],
-                    'deployment_journal_id': data['deployment_journal_id']
-                })
-            else:
-                ret['error'] = resp
+        resp = make_request(
+            url,
+            data=post_dict,
+            is_json=True)
+
+        if not resp['error']:
+            data = to_json(resp['body'])
+            ret.update({
+                'data': data['saved_image_ids'],
+                'deployment_journal_id': data['deployment_journal_id']
+            })
+        else:
+            # tk.messagebox.showerror('server error', resp['error'])
+            ret['error'] = resp['error']
+
+        if x:= resp.get('response'):
+            x.close()
+
         return ret
+
         ''' TODO
         try:
             resp = requests.post(url, json=payload)
