@@ -55,7 +55,7 @@ class FolderList(tk.Frame):
         self.failed_icon = ImageTk.PhotoImage(file='./assets/source_status_failed.png')
         self.override_icon = ImageTk.PhotoImage(file='./assets/source_status_override.png')
         self.editing_icon = ImageTk.PhotoImage(file='./assets/source_status_editing.png')
-
+        self.override_icon = ImageTk.PhotoImage(file='./assets/source_status_override.png')
 
         self.canvas.create_image(
             620,
@@ -134,7 +134,9 @@ class FolderList(tk.Frame):
         shift_y = 0
         for i, r in enumerate(rows):
             # print(r)
-            timestamp = datetime.fromtimestamp(r[5]).strftime('%Y-%m-%d %H:%M')
+            upload_created = datetime.fromtimestamp(r[13]).strftime('%Y-%m-%d %H:%M') if r[13] else ''
+            upload_changed = datetime.fromtimestamp(r[14]).strftime('%Y-%m-%d %H:%M') if r[14] else ''
+
             x = start_x + shift_x
             y = start_y + shift_y
             xlist = [x, x + 300, x + 300, x]
@@ -191,7 +193,7 @@ class FolderList(tk.Frame):
                 x+24,
                 gap,
                 anchor='nw',
-                text=f'首次上傳時間：{timestamp}',
+                text=f'首次上傳時間：{upload_created}',
                 font=(self.app.app_font, 14),
                 fill='#464646',
             )
@@ -200,7 +202,7 @@ class FolderList(tk.Frame):
                 x+24,
                 gap,
                 anchor='nw',
-                text=f'上次上傳時間：{timestamp}',
+                text=f'上次上傳時間：{upload_changed}',
                 font=(self.app.app_font, 14),
                 fill='#464646',
             )
@@ -249,6 +251,8 @@ class FolderList(tk.Frame):
                 icon = self.failed_icon
             elif r[6] == self.app.source.STATUS_START_ANNOTATE:
                 icon = self.editing_icon
+            elif r[6] == self.app.source.STATUS_DONE_OVERRIDE_UPLOAD:
+                icon = self.override_icon
             elif r[6][0] == 'b': #TODO
                 icon = self.uploading_icon
 

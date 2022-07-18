@@ -35,29 +35,6 @@ from source import Source
 from server import Server
 from config import Config
 
-# via: https://beenje.github.io/blog/posts/logging-to-a-tkinter-scrolledtext-widget/
-class TextHandler(logging.Handler):
-    """This class allows you to log to a Tkinter Text or ScrolledText widget"""
-
-    def __init__(self, text):
-        # run the regular Handler __init__
-        logging.Handler.__init__(self)
-        # Store a reference to the Text it will log to
-        self.text = text
-
-    def emit(self, record):
-        msg = self.format(record)
-
-        def append():
-            self.text.configure(state='normal')
-            self.text.insert(tk.END, msg + '\n')
-            self.text.configure(state='disabled')
-            # Autoscroll to the bottom
-            self.text.yview(tk.END)
-        # This is necessary because we can't modify the Text from other threads
-        self.text.after(0, append)
-
-
 class Application(tk.Tk):
 
     def __init__(self, config, *args, **kwargs):
@@ -87,11 +64,6 @@ class Application(tk.Tk):
         style.theme_use('clam') # clam, classic
 
         # == logging ===
-
-        log_window = tk.Toplevel(self)
-        text = tk.Text(log_window,width=100,height=50)
-        text.grid()
-
         log_level = logging.INFO
         if ll := config.get('Mode', 'log_level'):
             ll = ll.upper()
@@ -101,12 +73,11 @@ class Application(tk.Tk):
             filename='ct-log.txt',
             encoding='utf-8', mode='a+')
         stdout_handler = logging.StreamHandler(sys.stdout)
-        text_handler = TextHandler(text)
+        #text_handler = TextHandler(text)
         logging.basicConfig(
             handlers=[
                 file_handler,
                 stdout_handler,
-                text_handler,
             ],
             format="%(asctime)s|%(levelname)s|%(filename)s:%(lineno)d|%(funcName)s 👉 %(message)s",
             datefmt="%Y-%m-%d:%H:%M:%S",
@@ -191,6 +162,8 @@ class Application(tk.Tk):
         #    self,
         #    background='#bfc0c0')
 
+        # self.on_upload_progress() # for quick test
+
     def show_content(self, name):
         self.clear_contents(exclude=name)
         if not self.contents[name].winfo_viewable():
@@ -237,8 +210,9 @@ class Application(tk.Tk):
             self.panel.hide()
 
     def on_upload_progress(self, event=None):
-        logging.debug(f'{event}')
+        logging.debug(f'event: {event}')
         self.show_content('upload_progress')
+        #if not self.contents['upload_progress'].check_running():
         self.contents['upload_progress'].refresh()
 
         if self.panel.is_viewable is True:
@@ -273,7 +247,7 @@ class Application(tk.Tk):
                 self.frames['image_viewer'].grid_remove()
 
     def quit(self):
-        self.contents['upload_progress'].terminate_uploader()
+        self.contents['upload_progress'].terminate_upload_task()
         self.destroy()
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')

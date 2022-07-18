@@ -721,15 +721,14 @@ class Main(tk.Frame):
             tk.messagebox.showwarning('注意', '末設定相機位置，無法上傳')
             return False
 
-        has_empty = self.data_helper.has_empty_species()
-        if has_empty:
-            tk.messagebox.showwarning('注意', '尚有照片未填寫物種，無法上傳')
+        # ask check deployment/staudy area/project
+        if not tk.messagebox.askokcancel('確認計畫', '請確認計畫、樣區、相機位置是否無誤？'):
             return False
 
-        # ask check deployment/staudy area/project
-        is_ok = tk.messagebox.askokcancel('確認計畫', '請確認計畫、樣區、相機位置是否無誤？')
-        if not is_ok:
-            return False
+        has_empty = self.data_helper.has_empty_species()
+        if has_empty:
+            if not tk.messagebox.askokcancel('注意', '尚有照片未填寫物種'):
+                return False
 
         # ======
         # upload
@@ -737,9 +736,18 @@ class Main(tk.Frame):
         image_list = self.source_data['image_list']
         source_id = self.source_id
         account_id = self.app.config.get('Installation', 'account_id')
+        is_first_upload = False
+
+        if not self.source_data['source'][13] and \
+           not self.source_data['source'][14]:
+            is_first_upload = True
 
         now = int(time.time())
-        self.app.source.update_status(source_id, 'START_UPLOAD', upload_created=now)
+        if is_first_upload:
+            self.app.source.update_status(source_id, 'START_UPLOAD', now=now)
+        else:
+            self.app.source.update_status(source_id, 'START_OVERRIDE_UPLOAD', now=now)
+
         payload = {
             'image_list': image_list,
             'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
@@ -759,9 +767,10 @@ class Main(tk.Frame):
             elif ans == 'yes':
                 res = self.app.server.post_annotation(payload)
                 if res['error']:
-                    self.app.source.update_status(source_id, 'ANNOTATION_UPLOAD_FAILED')
+                    self.app.source.update_status(source_id, 'OVERRIDE_ANNOTATION_UPLOAD_FAILED')
                     tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
                 else:
+                    self.app.source.update_status(source_id, 'DONE_OVERRIDE_UPLOAD')
                     tk.messagebox.showinfo('info', '文字資料更新成功 !')
 
                 return
@@ -795,7 +804,7 @@ class Main(tk.Frame):
         self.app.db.exec_sql(sql, True)
         '''
 
-        self.app.source.update_status(source_id, 'MEDIA_UPLOADING')
+        # self.app.source.update_status(source_id, 'WAIT_MEDIA_UPLOAD')
 
         self.app.on_upload_progress()
         self.app.contents['upload_progress'].handle_start(source_id)

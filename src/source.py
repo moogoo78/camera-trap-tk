@@ -27,14 +27,16 @@ class Source(object):
     STATUS_START_ANNOTATE = 'a3'
     STATUS_START_UPLOAD = 'b1'
     STATUS_ANNOTATION_UPLOAD_FAILED = 'b2'
-    # STATUS_ANNOTATION_UPLOADED = 'b3'
-    STATUS_START_MEDIA_UPLOAD = 'b3a'
+    STATUS_MEDIA_UPLOAD_PENDING = 'b3a' # mod
+    #STATUS_START_MEDIA_UPLOAD = 'b3b' #mod
     STATUS_MEDIA_UPLOADING = 'b3b'
-    STATUS_STOP_MEDIA_UPLOAD = 'b3c'
-    STATUS_MEDIA_UPLOAD_FAILED = 'b2a'
-    STATUS_DONE_UPLOAD = 'b4'
-    STATUS_OVERRIDE_UPLOAD = 'b5'
-    STATUS_ARCHIVE = 'c'
+    #STATUS_STOP_MEDIA_UPLOAD = 'b3d' # mod
+    STATUS_MEDIA_UPLOAD_FAILED = 'b3c' # mod
+    STATUS_DONE_UPLOAD = 'b3d' # mod
+    STATUS_START_OVERRIDE_UPLOAD = 'c1'
+    STATUS_OVERRIDE_ANNOTATION_UPLOAD_FAILED = 'c2'
+    STATUS_DONE_OVERRIDE_UPLOAD = 'c3'
+    STATUS_ARCHIVE = 'd'
 
     STATUS_LABELS = {
         'STATUS_START_IMPORT': '',
@@ -42,12 +44,16 @@ class Source(object):
         'STATUS_START_ANNOTATE': '編輯中',
         'STATUS_START_UPLOAD': '',
         'STATUS_ANNOTATION_UPLOAD_FAILED': '上傳失敗',
-        'STATUS_MEDIA_UPLOAD_FAILED': '上傳不完全',
-        #'STATUS_ANNOTATION_UPLOADED': '',
+        'STATUS_WAIT_MEDIA_UPLOAD': '上傳中',
         'STATUS_START_MEDIA_UPLOAD': '上傳中',
         'STATUS_MEDIA_UPLOADING': '上傳中',
+        'STATUS_STOP_MEDIA_UPLOAD': '上傳中',
+        'STATUS_MEDIA_UPLOAD_FAILED': '上傳不完全',
         'STATUS_DONE_UPLOAD': '完成',
-        'STATUS_ARCHIVE': 'c',
+        'STATUS_START_OVERRIDE_UPLOAD': '上傳覆寫',
+        'STATUS_OVERRIDE_ANNOTATION_UPLOAD_FAILED': '上傳失敗',
+        'STATUS_DONE_OVERRIDE_UPLOAD': '覆寫完成',
+        'STATUS_ARCHIVE': '歸檔',
     }
 
     def __init__(self, app):
@@ -57,9 +63,13 @@ class Source(object):
     def update_status(self, source_id, key, **kwargs):
         if value := getattr(self, f'STATUS_{key}', ''):
             sql = f"UPDATE source SET status='{value}' WHERE source_id={source_id}"
+            # 特別處理 "首次上傳時間/上次上傳時間"
             if key == 'START_UPLOAD':
-                if upload_created := kwargs.get('upload_created', ''):
-                    sql = f"UPDATE source SET status='{value}', upload_created={upload_created} WHERE source_id={source_id}"
+                if now := kwargs.get('now', ''):
+                    sql = f"UPDATE source SET status='{value}', upload_created={now}, upload_changed={now} WHERE source_id={source_id}"
+            if key == 'START_OVERRIDE_UPLOAD':
+                if now := kwargs.get('now', ''):
+                    sql = f"UPDATE source SET status='{value}', upload_changed={now} WHERE source_id={source_id}"
 
             self.app.db.exec_sql(sql, True)
             return True
