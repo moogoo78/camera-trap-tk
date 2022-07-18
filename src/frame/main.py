@@ -786,8 +786,8 @@ class Main(tk.Frame):
             return
 
         server_image_map = res['data']
-        '''
-        # inform server uploading start
+
+        # push info to server uploading start
         deployment_journal_id = None
         if dj_id := self.source_data['source'][12]:
             deployment_journal_id = dj_id
@@ -798,13 +798,14 @@ class Main(tk.Frame):
                 deployment_journal_id = dj_id
 
         if deployment_journal_id != None:
-            self.app.server.post_upload_history(deployment_journal_id, 'uploading')
+            res = self.app.server.post_upload_history(deployment_journal_id, 'uploading')
+            if err := res['error']:
+                tk.messagebox.showerror('server error', err)
 
-        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
-        self.app.db.exec_sql(sql, True)
-        '''
-
-        # self.app.source.update_status(source_id, 'WAIT_MEDIA_UPLOAD')
+        for image_id, [server_image_id, server_image_uuid] in server_image_map.items():
+            sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id}, object_id='{server_image_uuid}' WHERE image_id={image_id}"
+            self.app.db.exec_sql(sql)
+        self.app.db.commit()
 
         self.app.on_upload_progress()
         self.app.contents['upload_progress'].handle_start(source_id)

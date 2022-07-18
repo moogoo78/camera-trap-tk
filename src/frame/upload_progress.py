@@ -107,7 +107,7 @@ class UploadProgress(tk.Frame):
 
         for source_data in rows:
             # TODO
-            sql_images = f"SELECT image_id, upload_status  FROM image WHERE source_id={source_data[0]} AND upload_status != '200' ORDER BY image_id"
+            sql_images = f"SELECT image_id, path, name, upload_status, object_id, server_image_id FROM image WHERE source_id={source_data[0]} AND upload_status != '200' ORDER BY image_id"
             #sql_images = f"SELECT image_id, upload_status FROM image WHERE source_id={source_data[0]} ORDER BY image_id"
             result_images = self.app.db.fetch_sql_all(sql_images)
 
@@ -404,6 +404,16 @@ class UploadProgress(tk.Frame):
             if item['state'] == self.STATE_RUNNING:
                 print(f'🧵 uploading: {source_id}-{counter}/{num}')
                 counter = i + 1
+                path = v[1]
+                name = v[2]
+                object_id = v[4]
+                server_image_id = v[5]
+                thumb_paths = get_thumb(source_id, name, path, 'all')
+                for x, path in thumb_paths.items():
+                    object_name = f'{object_id}-{x}.jpg'
+                    # print (object_name)
+                    #time.sleep(1) # fake upload
+                    self.app.source.upload_to_s3(str(path), object_name)
                 self.action_queue.put({
                     'type':'update_image',
                     'source_id': source_id,
@@ -411,7 +421,13 @@ class UploadProgress(tk.Frame):
                     'counter': counter,
                 })
                 self.event_generate('<<event_action>>', when='tail')
-                time.sleep(1)
+
+                self.app.server.post_image_status({
+                    # 'file_url': f'{uploaded_object_id}.jpg',
+                    'has_storage': 'Y',
+                    'pk': server_image_id,
+                })
+
             else:
                 print(f'🧵 skip {source_id}-{counter}/{num}')
 
@@ -500,6 +516,6 @@ class UploadProgress(tk.Frame):
 
     def terminate_upload_task(self):
         for item in self.source_list:
-            if item['state'] in [self.STATE.RUNNING, self.STATE_PAUSE]:
+            if item['state'] in [self.STATE_RUNNING, self.STATE_PAUSE]:
                 item['state'] = self.STATE_INIT
 

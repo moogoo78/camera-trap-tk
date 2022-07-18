@@ -1,5 +1,5 @@
 import tkinter as tk
-import requests
+# import requests
 import logging
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen, Request
@@ -119,15 +119,22 @@ class Server(object):
 
     def post_image_status(self, payload):
         url = f"{self.config['host']}{self.config['image_update_api']}"
-        resp = requests.post(url, json=payload)
+        # resp = requests.post(url, json=payload)
+        resp = make_request(
+            url,
+            data=payload,
+            is_json=True)
 
         ret = {
             'error': ''
         }
 
-        if resp.status_code != 200:
-            print ('server.post_image_status error: ', resp.text)
-            ret['error'] = 'server.post_image_status: post error'
+        # if resp.status_code != 200:
+        #    print ('server.post_image_status error: ', resp.text)
+        #    ret['error'] = 'server.post_image_status: post error'
+        if err := resp['error']:
+            ret['error'] = err
+            logging.error(f'error: {err}')
 
         return ret
 
@@ -141,15 +148,23 @@ class Server(object):
             'deployment_journal_id': deployment_journal_id,
             'status': status,
         }
-        resp = requests.post(url, data=payload)
+        # resp = requests.post(url, data=payload)
+        resp = make_request(
+            url,
+            data=payload,
+            is_json=True)
 
         ret = {
             'error': ''
         }
 
-        if resp.status_code != 200:
-            print ('server.update_upload_history error: ', resp.text)
-            ret['error'] = 'server.update_upload_history: post error'
+        if err := resp['error']:
+            ret['error'] = err
+            logging.error(f'error: {err}')
+
+        #if resp.status_code != 200:
+        #    print ('server.update_upload_history error: ', resp.text)
+        #    ret['error'] = 'server.update_upload_history: post error'
 
         return ret
 
@@ -175,6 +190,7 @@ class Server(object):
         else:
             # tk.messagebox.showerror('server error', resp['error'])
             ret['error'] = resp['error']
+            logging.error(f"error: {resp['error']}")
 
         if x:= resp.get('response'):
             x.close()
