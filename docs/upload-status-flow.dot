@@ -14,12 +14,12 @@ digraph G {
 
     b1a -> b1 [label="clicked upload button"];
     b1-> b2 [style=dashed];
-    b2 -> b3;
+    b2 -> b3 [label="create threading\n(Singlaton)"];
     b3 -> b4 [style=dashed];
     b4 -> b1 -> c1 [color=orange, label="1. re-upload (modify annotation)"];
     c1 -> c2 [color=orange, style=dashed];
     c1 -> c1a [color=orange, style=dashed];
-    b3a -> b1;
+    b3a -> b1 [label="re-upload"];
 
   }
   subgraph cluster_2 {
@@ -37,11 +37,12 @@ digraph G {
   start -> a1;
   a3 -> b1 [label="clicked upload button"];
   a2 -> b1;
-  b1 -> serv_anno -> b1a;
-  b1 -> b1a [style=dashed];
-  serv_anno -> b2;
-  b3 -> serv_s3 -> b4;
-  serv_s3 -> b3a;
+  b1 -> serv_anno [label="post annotation"];
+  serv_anno -> b1a;
+  b1 -> b1a [style=dashed, label="failed"];
+  serv_anno -> b2 [label="succeed"];
+  b3 -> serv_s3 -> b4 [label="succeed"];
+  serv_s3 -> b3a [label="failed"];
   serv_anno -> c1a [color=orange];
   b1 -> serv_anno [color=orange];
   b3 -> serv_media -> b4;
@@ -67,9 +68,9 @@ digraph G {
 
   serv_anno -> b5 [color=orange, style=dashed];
   */
-  serv_anno [shape=diamond, color=plum2, label="CameraTrap Server\npost annotation"];
-  serv_s3 [shape=diamond, color=plum2, label="AWS S3 Service\nupload to AWS"];
-  serv_media [shape=diamond, color=plum2, label="AWS Media Service\ntranscode movie files"];
+  serv_anno [shape=diamond, color=plum2, label="save annotation\nto database"];
+  serv_s3 [shape=diamond, color=plum2, label="upload to AWS S3"];
+  serv_media [shape=diamond, color=plum2, label="transcode\nmovie files"];
 
   d [label="archive folder\n(d)"];
   c2 [label="override upload\n(c2) 覆寫完成", color=tan, style=filled];
