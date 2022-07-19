@@ -16,7 +16,8 @@ digraph G {
     b1-> b2 [style=dashed];
     b2 -> b3 [label="create threading\n(Singlaton)"];
     b3 -> b4 [style=dashed];
-    b4 -> b1 -> c1 [color=orange, label="1. re-upload (modify annotation)"];
+    b4 -> b1;
+    b1 -> c1 [color=orange, label="1. re-upload (modify annotation)", style=dashed];
     c1 -> c2 [color=orange, style=dashed];
     c1 -> c1a [color=orange, style=dashed];
     b3a -> b1 [label="re-upload"];
