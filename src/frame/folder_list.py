@@ -1,5 +1,6 @@
 import threading
 from datetime import datetime
+import logging
 
 import tkinter as tk
 from tkinter import (
@@ -56,7 +57,9 @@ class FolderList(tk.Frame):
         self.override_icon = ImageTk.PhotoImage(file='./assets/source_status_override.png')
         self.editing_icon = ImageTk.PhotoImage(file='./assets/source_status_editing.png')
         self.override_icon = ImageTk.PhotoImage(file='./assets/source_status_override.png')
-
+        self.status_all_icon = ImageTk.PhotoImage(file='./assets/folder-list-status-all.png')
+        self.status_pending_icon = ImageTk.PhotoImage(file='./assets/folder-list-status-pending.png')
+        self.status_uploaded_icon = ImageTk.PhotoImage(file='./assets/folder-list-status-uploaded.png')
         self.canvas.create_image(
             620,
             330,
@@ -72,6 +75,40 @@ class FolderList(tk.Frame):
             fill=self.app.app_primary_color,
         )
 
+        self.canvas.create_image(
+            580,
+            20,
+            anchor='nw',
+            image=self.status_pending_icon,
+            tags=('status_pending'))
+
+        self.canvas.create_image(
+            745,
+            20,
+            anchor='nw',
+            image=self.status_uploaded_icon,
+            tags=('status_uploaded'))
+
+        self.canvas.create_image(
+            910,
+            20,
+            anchor='nw',
+            image=self.status_all_icon,
+            tags=('status_all'))
+
+        self.canvas.tag_bind(
+            'status_pending',
+            '<Button-1>',
+            lambda _: self.refresh_source_list('pending'))
+        self.canvas.tag_bind(
+            'status_uploaded',
+            '<Button-1>',
+            lambda _: self.refresh_source_list('uploaded'))
+        self.canvas.tag_bind(
+            'status_all',
+            '<Button-1>',
+            lambda _: self.refresh_source_list('all'))
+
     def exec_sql_list(self, image_sql_list, source_id):
         for i in image_sql_list:
             self.app.db.exec_sql(i)
@@ -85,8 +122,6 @@ class FolderList(tk.Frame):
         image_sql_list = []
         for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
             image_sql_list.append(sql)
-            # print(i, sql)
-            # print(self.folder_importing)
             self.folder_importing[source_id]['prog_bar']['value'] = i+1
             self.folder_importing[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
 
@@ -115,27 +150,36 @@ class FolderList(tk.Frame):
         # show folder_list
         self.app.on_folder_list()
 
-    def refresh_source_list(self):
-        self.canvas.delete('prog_bar_win')
-        db = self.app.db
+    def refresh_source_list(self, filter_status='all'):
+        logging.debug(f'refresh filter_status: {filter_status}')
 
-        # reset source_list
-        #if a := self.source_list:
-        #    for i in a:
-        #        i.destroy()
-        #    #self.source_list = []
+        # clear items
+        self.canvas.delete('item')
+        for _, item in self.folder_importing.items():
+            item['prog_bar'].destroy()
+            item['label'].destroy()
+        self.folder_importing = {}
+        row_count = 0
 
         # get all source from db
-        rows = db.fetch_sql_all('SELECT * FROM source')
+        rows = self.app.db.fetch_sql_all('SELECT * FROM source')
 
         start_x = 124 # begin
         start_y = 124
         shift_x = 0 # shift
         shift_y = 0
         for i, r in enumerate(rows):
-            # print(r)
+            # print(r[0],r[6],  'xxxxxxxxxxxxxxxxxxxx')
             upload_created = datetime.fromtimestamp(r[13]).strftime('%Y-%m-%d %H:%M') if r[13] else ''
             upload_changed = datetime.fromtimestamp(r[14]).strftime('%Y-%m-%d %H:%M') if r[14] else ''
+            status_cat = 'other'
+            if filter_status != 'all':
+                if filter_status == 'uploaded' and \
+                   r[6] != self.app.source.STATUS_DONE_UPLOAD:
+                    continue
+                elif filter_status == 'pending' and \
+                     r[6][0] == 'b':
+                    continue
 
             x = start_x + shift_x
             y = start_y + shift_y
@@ -151,7 +195,7 @@ class FolderList(tk.Frame):
                 #width=1,
                 #outline="#82B366",
                 fill='#FFFFFF',
-                tags=('card', source_tag),
+                tags=('item', source_tag, status_cat),
             )
             gap = y + 16
             # change font size
@@ -171,14 +215,18 @@ class FolderList(tk.Frame):
                     anchor='nw',
                     text=title1,
                     font=(self.app.app_font, title_font_size),
-                    fill=self.app.app_primary_color)
+                    fill=self.app.app_primary_color,
+                    tags=('item', status_cat)
+                )
                 self.canvas.create_text(
                     x+24,
                     gap+10,
                     anchor='nw',
                     text=title2,
                     font=(self.app.app_font, title_font_size),
-                    fill=self.app.app_primary_color)
+                    fill=self.app.app_primary_color,
+                    tags=('item', status_cat)
+                )
             else:
                 self.canvas.create_text(
                     x+24,
@@ -186,7 +234,9 @@ class FolderList(tk.Frame):
                     anchor='nw',
                     text=r[3],
                     font=(self.app.app_font, title_font_size),
-                    fill=self.app.app_primary_color)
+                    fill=self.app.app_primary_color,
+                    tags=('item', status_cat)
+                )
 
             gap += 30
             self.canvas.create_text(
@@ -196,6 +246,7 @@ class FolderList(tk.Frame):
                 text=f'首次上傳時間：{upload_created}',
                 font=(self.app.app_font, 14),
                 fill='#464646',
+                tags=('item', status_cat)
             )
             gap += 22
             self.canvas.create_text(
@@ -205,6 +256,7 @@ class FolderList(tk.Frame):
                 text=f'上次上傳時間：{upload_changed}',
                 font=(self.app.app_font, 14),
                 fill='#464646',
+                tags=('item', status_cat)
             )
             gap += 22
             self.canvas.create_text(
@@ -214,6 +266,7 @@ class FolderList(tk.Frame):
                 text=f'上傳狀態：{self.app.source.get_status_label(r[6])}',
                 font=(self.app.app_font, 14),
                 fill='#464646',
+                tags=('item', status_cat)
             )
 
             if r[6] == self.app.source.STATUS_START_IMPORT:
@@ -230,7 +283,7 @@ class FolderList(tk.Frame):
                     width=180,
                     window=box,
                     anchor='nw',
-                    tags=('prog_bar_win')
+                    tags=('item', 'prog_bar_win', status_cat)
                 )
 
             gap += 22
@@ -241,6 +294,7 @@ class FolderList(tk.Frame):
                 text=f'照片張數：{r[4]}',
                 font=(self.app.app_font, 14),
                 fill='#464646',
+                tags=('item', status_cat)
             )
             icon = None
             if r[6] == self.app.source.STATUS_DONE_IMPORT:
@@ -261,15 +315,20 @@ class FolderList(tk.Frame):
                 gap-28,
                 image=icon,
                 anchor='nw',
-                tags=('item'))
+                tags=('item', status_cat))
 
             self.canvas.tag_bind(
                 source_tag,
-                '<ButtonPress-1>',
+                '<Button-1>',
                 lambda event, tag=source_tag: self.app.on_folder_detail(event, tag)
             )
 
             shift_x += 316  # 300 + 16
             if i > 0 and (i+1) % 3 == 0:
+                row_count += 1
                 shift_y += 162  # 150 + 12
                 shift_x = 0
+
+        # reset scrollregion
+        if row_count > 2:
+            self.canvas.configure(scrollregion=(0,0,self.app.app_width, (row_count*300)))

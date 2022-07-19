@@ -44,7 +44,7 @@ class Panel(tk.Frame):
         )
         self.canvas.tag_bind(
             'import_folder',
-            '<ButtonPress-1>',
+            '<Button-1>',
             self.app.on_add_folder
         )
         self.canvas.create_text(
@@ -57,7 +57,7 @@ class Panel(tk.Frame):
         )
         self.canvas.tag_bind(
             'list_folder',
-            '<ButtonPress-1>',
+            '<Button-1>',
             self.app.on_folder_list
         )
 
@@ -71,7 +71,7 @@ class Panel(tk.Frame):
         )
         self.canvas.tag_bind(
             'upload_progress',
-            '<ButtonPress-1>',
+            '<Button-1>',
             self.app.on_upload_progress
         )
 
