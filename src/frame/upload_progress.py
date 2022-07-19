@@ -102,7 +102,7 @@ class UploadProgress(tk.Frame):
             prev_states[row['source_data'][0]] = row['state']
 
         self.source_list = []
-        rows = self.app.db.fetch_sql_all("SELECT * FROM source WHERE status LIKE 'b3%' ORDER BY upload_created") # wait... start media upload
+        rows = self.app.db.fetch_sql_all("SELECT * FROM source WHERE status LIKE 'b%' ORDER BY upload_created") # wait... start media upload
         #rows = self.app.db.fetch_sql_all("SELECT * FROM source ORDER BY upload_created") # wait... start media upload
 
         for source_data in rows:
@@ -412,7 +412,7 @@ class UploadProgress(tk.Frame):
                 for x, path in thumb_paths.items():
                     object_name = f'{object_id}-{x}.jpg'
                     # print (object_name)
-                    #time.sleep(1) # fake upload
+                    # time.sleep(1) # fake upload
                     self.app.source.upload_to_s3(str(path), object_name)
                 self.action_queue.put({
                     'type':'update_image',
@@ -441,6 +441,9 @@ class UploadProgress(tk.Frame):
         self.event_generate('<<event_action>>', when='tail')
 
     def event_action_callback(self, event):
+        '''
+        do actions: update database, refresh layout
+        '''
         for _ in range(self.action_queue.qsize()):
             action = self.action_queue.get_nowait()
             # print(f'do : {action}' )
@@ -479,10 +482,18 @@ class UploadProgress(tk.Frame):
                 self.canvas.itemconfigure(f'{source_id}-text', text='{:.2f}%'.format((value / total) * 100.0))
                 self.canvas.itemconfigure(f'{source_id}-step', text=f'({value}/{total})')
 
+                # update main table layout
+                main = self.app.contents['main']
+                row_keys = main.data_helper.get_image_row_keys(image_id)
+                for k in row_keys:
+                    main.data_helper.set_status_display(k, '200')
+                    main.data_grid.main_table.render()
+
             elif action['type'] == 'done_source':
                 source_id = action['source_id']
                 is_complete = action['is_complete']
                 name = action['name']
+                deployment_journal_id = item['source_data'][12]
                 if is_complete:
                     self.app.source.update_status(source_id, 'DONE_UPLOAD')
                     tk.messagebox.showinfo('info', f'資料夾 {name}: 上傳成功')
@@ -490,6 +501,10 @@ class UploadProgress(tk.Frame):
                     if item['state'] != self.STATE_PAUSE:
                         self.app.source.update_status(source_id, 'MEDIA_UPLOAD_FAILED')
                         tk.messagebox.showinfo('info', f'資料夾 {name}: 上傳照片不完整')
+
+                # send finish upload status to server
+
+                self.app.server.post_upload_history(deployment_journal_id, 'finished')
 
                 if item['state'] != self.STATE_PAUSE:
                     item['state'] = self.STATE_DONE

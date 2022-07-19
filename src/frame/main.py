@@ -966,7 +966,7 @@ class Main(tk.Frame):
             return False
 
         self.app.source.delete_folder(self.source_id)
-        self.app.frames['folder_list'].refresh_source_list()
+        #self.app.frames['folder_list'].refresh_source_list()\
 
         '''TODO_LAYOUT
         self.app.frames['landing'].show(True)
