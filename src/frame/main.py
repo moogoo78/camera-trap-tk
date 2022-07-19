@@ -1152,6 +1152,15 @@ class Main(tk.Frame):
                 adata = {idx: values for idx, values in enumerate(alist)}
                 tmp[str(image_id)] = adata
 
+        # if tmp = {} ( no clone, do nothing, not to remove)
+        # print(tmp, deleted_row_keys)
+
+        if len(deleted_row_keys) > 0:
+            ok = tk.messagebox.askokcancel('確認刪除', '確認要刪除複製出來的照片?')
+            if not ok:
+                self.refresh() # DataGrid will delete row when in CLONE mode, do refresh can hide this effect
+                return
+
         # delete adata
         for row_key in deleted_row_keys:
             rk = row_key.split('-')
@@ -1172,7 +1181,7 @@ class Main(tk.Frame):
         if res:
             sql = f"UPDATE source SET count={res[0]} WHERE source_id={self.source_id}"
             self.app.db.exec_sql(sql, True)
-            self.app.frames['folder_list'].refresh_source_list()
+            # self.app.frames['folder_list'].refresh_source_list()
             self.refresh()
 
     def custom_paste_from_buffer(self, buf, rows):

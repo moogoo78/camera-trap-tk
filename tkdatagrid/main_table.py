@@ -910,7 +910,7 @@ class MainTable(tk.Canvas):
         #self.popup_menu.add_command(label='複製一列', command=lambda: self.clone_row(res_rc['row_key']))
         self.popup_menu.add_command(label='複製一列', command=self.clone_rows)
 
-        if self.ps['rows_delete_type'] in ['ALL', 'CLONED']:
+        if self.ps['rows_delete_type'] in ['ALL', 'CLONED', 'ASK-CLONED']:
             self.popup_menu.add_command(label='刪除列', command=self.remove_rows)
 
         # custom menus
@@ -1068,7 +1068,6 @@ class MainTable(tk.Canvas):
                 if ignore == '':
                     if delimeter in row_key:
                         # cloned rows has "{CLONE_ROWS_KEY_DELIMETER}" in row_key
-                        print (row_key, 'uuu', delimeter)
                         deleted_row_keys.append(row_key)
                         del self.ps['data'][row_key]
                 else:
@@ -1079,6 +1078,9 @@ class MainTable(tk.Canvas):
             elif self.ps['rows_delete_type'] == 'ALL':
                 deleted_row_keys.append(row_key)
                 del self.ps['data'][row_key]
+            elif self.ps['rows_delete_type'] == 'ASK-CLONED':
+                # TODO
+                pass
 
         self.parent.refresh(self.ps['data'])
         logging.debug(f"actual remove_rows: {deleted_row_keys} (mode: {self.ps['rows_delete_type']})")

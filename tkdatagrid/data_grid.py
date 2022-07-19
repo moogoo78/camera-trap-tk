@@ -27,7 +27,7 @@ class DataGrid(tk.Frame):
                  custom_binding=None,
                  cols_on_ctrl_button_1=None,
                  cols_on_fill_handle=None,
-                 rows_delete_type='ALL', # ALL: any rows can be delete, CLONED: delete cloned rows, NO: not delet any rows,
+                 rows_delete_type='ALL', # ALL: any rows can be delete, CLONED: delete cloned rows, NO: not delete any rows, ASK-CLONED: ask to delete only cloned,
                  remove_rows_key_ignore_pattern='',
                  column_header_bg='#336b87',
                  column_header_height=20,
