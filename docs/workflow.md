@@ -4,7 +4,8 @@
 
 ### Source (Folder) Upload Status
 
-![upload-status](./docs/upload-status-flow_220719.png)
+![upload-status](./upload-status-flow_220719.png)
+[Graphviz DOT source](./upload-status-flow.dot)
 
 Status Code:
 
