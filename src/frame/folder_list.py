@@ -71,7 +71,7 @@ class FolderList(tk.Frame):
             20,
             anchor='nw',
             text='現有資料夾',
-            font=(self.app.app_font, 32),
+            font=self.app.get_font('display-2'),
             fill=self.app.app_primary_color,
         )
 
@@ -214,7 +214,7 @@ class FolderList(tk.Frame):
                     gap-10,
                     anchor='nw',
                     text=title1,
-                    font=(self.app.app_font, title_font_size),
+                    font=self.app.get_font('display-3'),
                     fill=self.app.app_primary_color,
                     tags=('item', status_cat)
                 )
@@ -223,7 +223,7 @@ class FolderList(tk.Frame):
                     gap+10,
                     anchor='nw',
                     text=title2,
-                    font=(self.app.app_font, title_font_size),
+                    font=self.app.get_font('display-3'),
                     fill=self.app.app_primary_color,
                     tags=('item', status_cat)
                 )
@@ -233,7 +233,7 @@ class FolderList(tk.Frame):
                     gap,
                     anchor='nw',
                     text=r[3],
-                    font=(self.app.app_font, title_font_size),
+                    font=self.app.get_font('display-3'),
                     fill=self.app.app_primary_color,
                     tags=('item', status_cat)
                 )
@@ -244,7 +244,7 @@ class FolderList(tk.Frame):
                 gap,
                 anchor='nw',
                 text=f'首次上傳時間：{upload_created}',
-                font=(self.app.app_font, 14),
+                font=self.app.get_font('display-4'),
                 fill='#464646',
                 tags=('item', status_cat)
             )
@@ -254,7 +254,7 @@ class FolderList(tk.Frame):
                 gap,
                 anchor='nw',
                 text=f'上次上傳時間：{upload_changed}',
-                font=(self.app.app_font, 14),
+                font=self.app.get_font('display-4'),
                 fill='#464646',
                 tags=('item', status_cat)
             )
@@ -264,7 +264,7 @@ class FolderList(tk.Frame):
                 gap,
                 anchor='nw',
                 text=f'上傳狀態：{self.app.source.get_status_label(r[6])}',
-                font=(self.app.app_font, 14),
+                font=self.app.get_font('display-4'),
                 fill='#464646',
                 tags=('item', status_cat)
             )
@@ -292,7 +292,7 @@ class FolderList(tk.Frame):
                 gap,
                 anchor='nw',
                 text=f'照片張數：{r[4]}',
-                font=(self.app.app_font, 14),
+                font=self.app.get_font('display-4'),
                 fill='#464646',
                 tags=('item', status_cat)
             )

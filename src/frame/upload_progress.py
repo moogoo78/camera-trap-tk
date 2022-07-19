@@ -90,7 +90,7 @@ class UploadProgress(tk.Frame):
             20,
             anchor='nw',
             text='上傳進度',
-            font=(self.app.app_font, 32),
+            font=self.app.get_font('display-2'),
             fill=self.app.app_primary_color,
         )
         self.upload_folder_image = ImageTk.PhotoImage(file='./assets/upload_folder.png')
@@ -193,7 +193,7 @@ class UploadProgress(tk.Frame):
                 gap-10,
                 anchor='nw',
                 text=title1,
-                font=(self.app.app_font, title_font_size),
+                font=self.app.get_font('display-3'),
                 fill=self.app.app_primary_color,
                 tags=('item'))
             self.canvas.create_text(
@@ -201,7 +201,7 @@ class UploadProgress(tk.Frame):
                 gap+10,
                 anchor='nw',
                 text=title2,
-                font=(self.app.app_font, title_font_size),
+                font=self.app.get_font('display-3'),
                 fill=self.app.app_primary_color,
                 tags=('item'))
         else:
@@ -210,7 +210,7 @@ class UploadProgress(tk.Frame):
                 gap,
                 anchor='nw',
                 text=r[3],
-                font=(self.app.app_font, title_font_size),
+                font=self.app.get_font('display-3'),
                 fill=self.app.app_primary_color,
                 tags=('item'))
 
@@ -249,7 +249,7 @@ class UploadProgress(tk.Frame):
             gap,
             anchor='nw',
             text=status_text,
-            font=(self.app.app_font, 16),
+            font=self.app.get_font('display-4'),
             fill='#464646',
             tags=('item'))
 
@@ -266,7 +266,7 @@ class UploadProgress(tk.Frame):
                 gap,
                 anchor='ne',
                 text='{:.2f}%'.format(((progressbar_value) / total) * 100.0),
-                font=(self.app.app_font, 16),
+                font=self.app.get_font('display-4'),
                 fill=self.app.app_primary_color,
                 tags=('item', f'{source_id}-text'))
 
@@ -289,7 +289,7 @@ class UploadProgress(tk.Frame):
             gap,
             anchor='nw',
             text=f'({progressbar_value}/{total})',
-            font=(self.app.app_font, 16),
+            font=self.app.get_font('display-4'),
             fill='#464646',
             tags=('item', f'{source_id}-step'))
 

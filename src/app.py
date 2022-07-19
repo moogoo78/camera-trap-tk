@@ -52,7 +52,7 @@ class Application(tk.Tk):
         self.app_primary_color = '#2A7F60'
         self.app_secondary_color = '#8AC731'
         self.app_comp_color = '#FF8C23'  # Complementary color
-        self.app_font = 'Arial'
+        self.app_font = 'Microsoft JhengHei UI' #'Yu Gothic'  #'Arial'
 
         self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
@@ -94,7 +94,6 @@ class Application(tk.Tk):
         self.config = config
         self.source = Source(self)
         self.server = Server(dict(config['Server']))
-
 
         #print(list(tk.font.families()))
         #Yu Gothic
@@ -228,6 +227,16 @@ class Application(tk.Tk):
     def toggle_image_viewer(self, is_image_viewer=True):
         window = ImageDetail
 
+    def get_font(self, size_code='default'):
+        SIZE_MAP = {
+            'display-1': 32,
+            'display-2': 24,
+            'display-3': 18,
+            'display-4': 12,
+            'default': 10,
+        }
+        size = SIZE_MAP[size_code] if isinstance(size_code, str) else size_code
+        return (self.app_font, size)
 
     def toggle_image_viewer_DEPRICATED(self, is_image_viewer=True):
         # 先不 remove main , 蓋掉就好了

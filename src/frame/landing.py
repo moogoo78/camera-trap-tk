@@ -42,14 +42,16 @@ class Landing(tk.Frame):
         canvas.create_text(
             950,
             250,
-            text='台灣自動相機上傳系統',
-            font=('Arial', 32)
+            text='臺灣自動相機上傳系統',
+            fill='#FFFFFF',
+            font=self.app.get_font('display-1')
         )
         canvas.create_text(
             950,
             300,
             text='Camera Trap System',
-            font=('Arial', 32)
+            fill='#FFFFFF',
+            font=self.app.get_font('display-1')
         )
 
         self.btn1 = ttk.Button(
