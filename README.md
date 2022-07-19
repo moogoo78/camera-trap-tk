@@ -2,6 +2,12 @@
 
 tkinter GUI
 
+## Documentation
+
+- [System](./docs/system-design.rst)
+- [Workflow](./docs/workflow.md) (upload status)
+- [Test Case](./docs/test-case.rest)
+
 ## Development
 
 ### Requirements
