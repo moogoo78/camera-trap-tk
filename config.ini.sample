@@ -5,6 +5,7 @@ account_id = EXSAMPLE
 host = https://dev.camera-trap.tw
 image_annotation_api = /api/client/v1/image/annotation/
 image_update_api = /api/client/v1/image/update/
+upload_upload_history_api = /upload_upload_history/
 project_api = /api/client/v1/projects/
 project_option_list = 329::Project 2021教育訓練-總計畫
 
