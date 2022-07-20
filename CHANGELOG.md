@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.0a] - 2022-07-20
+
+### Changed
+
+- 套新的 Figma 版面
+- 重寫 source.status (上傳狀態) 的流程
+- 重寫 upload_progress.py 的 threading, event (不用 tk.after 的 polling機制)
+
 
 ## [v0.1.7c] - 2022-05-03
 
