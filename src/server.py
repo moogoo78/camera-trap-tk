@@ -46,6 +46,7 @@ def make_request(url, headers=None, data=None, is_json=False):
         ret['error'] = error
     except TimeoutError:
         logging.error('Request timed out')
+        ret['error'] = 'Request timed out'
     finally:
         return ret
 
@@ -102,8 +103,7 @@ class Server(object):
             if not resp['error']:
                 return to_json(resp['body'])
             else:
-                # tk.messagebox.showerror('server error', resp['error'])
-                pass
+                tk.messagebox.showerror('server error', resp['error'])
 
             if x:= resp.get('response'):
                 x.close()
