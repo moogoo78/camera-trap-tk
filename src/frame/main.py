@@ -182,7 +182,7 @@ class Main(tk.Frame):
         self.label_folder = tk.Label(
             self.ctrl_frame,
             text='',
-            font=(self.app.app_font, 30),
+            font=self.app.get_font('display-2'),
             foreground=self.app.app_primary_color,
             background='#F2F2F2',
         )
@@ -227,9 +227,10 @@ class Main(tk.Frame):
             'pady': 3,
         }
         label_args = {
-            'font': (self.app.app_font, 16),
+            'font': self.app.get_font('display-4'),
             'background': '#F2F2F2'
         }
+        left_spacing = -2  # macOS: 30
         # project menu
         self.label_project = ttk.Label(
             self.ctrl_frame2,
@@ -247,7 +248,7 @@ class Main(tk.Frame):
         )
 
         self.label_project.grid(row=0, column=0, **label_grid)
-        self.project_menu.grid(row=0, column=1, sticky='w', padx=(30, 0))
+        self.project_menu.grid(row=0, column=1, sticky='w', padx=(left_spacing+2, 0))
 
         # studyarea menu
         self.label_studyarea = ttk.Label(
@@ -264,7 +265,7 @@ class Main(tk.Frame):
         self.studyarea_var.trace('w', self.studyarea_option_changed)
 
         self.label_studyarea.grid(row=1, column=0, **label_grid)
-        self.studyarea_menu.grid(row=1, column=1, sticky='w', padx=(30, 0))
+        self.studyarea_menu.grid(row=1, column=1, sticky='w', padx=(left_spacing+2, 0))
 
         # deployment menu
         self.label_deployment = ttk.Label(
@@ -281,7 +282,7 @@ class Main(tk.Frame):
             '')
 
         self.label_deployment.grid(row=2, column=0, **label_grid)
-        self.deployment_menu.grid(row=2, column=1, sticky='w', padx=(30,0))
+        self.deployment_menu.grid(row=2, column=1, sticky='w', padx=(left_spacing+2, 0))
 
         # trip
         self.trip_label = ttk.Label(
@@ -313,10 +314,10 @@ class Main(tk.Frame):
         self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
 
         self.trip_label.grid(row=3, column=0, **label_grid)
-        self.trip_start_entry.grid(row=3, column=1, sticky='w', padx=(28, 0))
-        self.trip_label_sep.grid(row=3, column=1, sticky='w', padx=(130, 20))
-        self.trip_end_entry.grid(row=3, column=1, sticky='w', padx=146)
-        self.trip_label_tip.grid(row=3, column=1, sticky='w', padx=(250, 0))
+        self.trip_start_entry.grid(row=3, column=1, sticky='w', padx=(left_spacing+2, 0))
+        self.trip_label_sep.grid(row=3, column=1, sticky='w', padx=(left_spacing+102, 20))
+        self.trip_end_entry.grid(row=3, column=1, sticky='w', padx=left_spacing+118)
+        self.trip_label_tip.grid(row=3, column=1, sticky='w', padx=(left_spacing+222, 0))
 
         # image sequence
         self.seq_label = ttk.Label(
@@ -351,9 +352,9 @@ class Main(tk.Frame):
             **label_args)
 
         self.seq_label.grid(row=4, column=0, **label_grid)
-        self.seq_checkbox.grid(row=4, column=1, sticky='w', padx=(28, 0))
-        self.seq_interval_entry.grid(row=4, column=1, sticky='w', padx=(112, 0))
-        self.seq_unit.grid(row=4, column=1, sticky='w', padx=(154, 0))
+        self.seq_checkbox.grid(row=4, column=1, sticky='w', padx=(left_spacing+2, 0))
+        self.seq_interval_entry.grid(row=4, column=1, sticky='w', padx=(left_spacing+82, 0))
+        self.seq_unit.grid(row=4, column=1, sticky='w', padx=(left_spacing+122, 0))
 
         # test foto
         self.test_foto_label = ttk.Label(
@@ -380,9 +381,9 @@ class Main(tk.Frame):
         )
 
         self.test_foto_label.grid(row=5, column=0, **label_grid)
-        self.test_foto_entry.grid(row=5, column=1, sticky='w', padx=(28, 0))
-        self.test_foto_tip.grid(row=5, column=1, sticky='w', padx=(108, 0))
-        self.test_foto_button.grid(row=5, column=1, sticky='w', padx=(434, 0))
+        self.test_foto_entry.grid(row=5, column=1, sticky='w', padx=(left_spacing+2, 0))
+        self.test_foto_tip.grid(row=5, column=1, sticky='w', padx=(left_spacing+76, 0))
+        self.test_foto_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+402, 0))
 
         # upload button
         self.upload_button = tk.Button(
@@ -407,7 +408,7 @@ class Main(tk.Frame):
             takefocus=0,
         )
 
-        self.upload_button.grid(row=6, column=1, sticky='e', padx=(0, 142), pady=(18,0))
+        self.upload_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+110), pady=(18,0))
         self.delete_button.grid(row=6, column=1, sticky='e', padx=(20, 0), pady=(18, 0))
 
     def config_table_frame(self):
