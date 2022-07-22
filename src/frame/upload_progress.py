@@ -409,7 +409,7 @@ class UploadProgress(tk.Frame):
                 name = v[2]
                 object_id = v[4]
                 server_image_id = v[5]
-                thumb_paths = get_thumb(source_id, name, path, 'all')
+                thumb_paths = get_thumb(source_id, name, path, 'all-max-x')
                 for x, path in thumb_paths.items():
                     object_name = f'{object_id}-{x}.jpg'
                     # print (object_name)

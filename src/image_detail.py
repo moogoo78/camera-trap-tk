@@ -9,10 +9,14 @@ from image import aspect_ratio
 
 
 class ImageDetail(tk.Toplevel):
+    INIT_WIDTH = 1200
+    INIT_HEIGHT = 760
+
     def __init__(self, parent, image_path):
         super().__init__(parent)
+        self.parent = parent
 
-        self.geometry('900x600')
+        self.geometry(f'{self.INIT_WIDTH}x{self.INIT_HEIGHT}')
 
         self.title(f'Image Detail Window - {image_path}')
         self.bind('<Configure>', self.resize)
@@ -24,6 +28,8 @@ class ImageDetail(tk.Toplevel):
         self.zoom_step = 1
         self.delta_value = 0
         self.resize_ratio = 1
+
+        self.protocol('WM_DELETE_WINDOW', self.quit)
 
         self.layout()
 
@@ -42,14 +48,13 @@ class ImageDetail(tk.Toplevel):
         self.canvas.bind('<Enter>', self.enter)
         self.canvas.bind('<Motion>', self.motion)
 
-        self.bg = ImageTk.PhotoImage(file=self.image_path)
-        self.bg_img_id = self.canvas.create_image(
-            0,
-            0,
-            image=self.bg,
-            anchor='nw',
-        )
-
+        #self.bg = ImageTk.PhotoImage(file=self.image_path)
+        #self.bg_img_id = self.canvas.create_image(
+        #    0,
+        #    0,
+        #    image=self.bg,
+        #    anchor='nw',
+        #)
 
     # via: https://stackoverflow.com/questions/5436810/adding-zooming-in-and-out-with-a-tkinter-canvas-widget
     def set_zoom(self, event):
@@ -82,17 +87,19 @@ class ImageDetail(tk.Toplevel):
             image=self.zoom_img)
 
     def resize(self, event):
-        #print (event.height, event.width)
+        # print ('resize', event.height, event.width, event)
         if event.height < 10 or event.width < 10:
             return
 
         if self.bg_img_id:
             self.canvas.delete(self.bg_img_id)
 
-        # aspect ratio
+        self.fit_aspect_ratio(event.width)
+
+    def fit_aspect_ratio(self, to_width):
         tmp = self.orig_img
-        to_size = aspect_ratio(tmp.size, width=event.width)
-        self.resize_ratio = event.width / float(tmp.size[0])
+        to_size = aspect_ratio(tmp.size, width=to_width)
+        self.resize_ratio = to_width / float(tmp.size[0])
         self.bg_img = ImageTk.PhotoImage(tmp.resize(to_size))
         self.bg_img_id = self.canvas.create_image(
             0,
@@ -100,3 +107,7 @@ class ImageDetail(tk.Toplevel):
             image=self.bg_img,
             anchor='nw',
         )
+
+    def quit(self):
+        self.parent.data_grid.main_table.set_keyboard_control(True)
+        self.destroy()
