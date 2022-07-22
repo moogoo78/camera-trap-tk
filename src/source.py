@@ -149,6 +149,8 @@ class Source(object):
             elif type_ == 'movie':
                 data['mov'] = entry
                 sql = self.prepare_movie_sql(data, ts_now, source_id, thumb_source_path)
+                # HACK: if movie process too fast, folder_list.folder_importing will has empty value, cause error while update
+                time.sleep(0.5)
             yield (data, sql)
 
 

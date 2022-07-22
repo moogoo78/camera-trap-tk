@@ -122,8 +122,10 @@ class FolderList(tk.Frame):
         image_sql_list = []
         for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
             image_sql_list.append(sql)
-            self.folder_importing[source_id]['prog_bar']['value'] = i+1
-            self.folder_importing[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
+            #print(sql, self.folder_importing)
+            if source_id in self.folder_importing:
+                self.folder_importing[source_id]['prog_bar']['value'] = i+1
+                self.folder_importing[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
 
         self.app.after(100, lambda: self.exec_sql_list(image_sql_list, source_id))
 
