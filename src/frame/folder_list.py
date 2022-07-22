@@ -175,7 +175,9 @@ class FolderList(tk.Frame):
             status_cat = 'other'
             if filter_status != 'all':
                 if filter_status == 'uploaded' and \
-                   r[6] != self.app.source.STATUS_DONE_UPLOAD:
+                   r[6] not in [
+                       self.app.source.STATUS_DONE_UPLOAD,
+                       self.app.source.STATUS_DONE_OVERRIDE_UPLOAD]:
                     continue
                 elif filter_status == 'pending' and \
                      r[6][0] == 'b':

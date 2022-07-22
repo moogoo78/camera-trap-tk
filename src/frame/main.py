@@ -513,7 +513,6 @@ class Main(tk.Frame):
     def refresh(self, is_init_highlight=False):
         self.is_editing = False
         logging.debug(f'refresh: {self.source_id}, current_row_key: {self.current_row_key}')
-        print (self.data_grid.main_table.selected)
 
         #self.data_helper.set_status_display(image_id=35, status_code='300')-
         # let project image group intervel entry off focus
