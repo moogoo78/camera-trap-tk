@@ -352,8 +352,7 @@ class UploadProgress(tk.Frame):
             item = self._find_source(source_id)
             item['action_button'].configure(
                 text=self.LABEL_PAUSE,
-                command=lambda source_id=source_id: self.handle_stop(source_id),
-                state=tk.NORMAL)
+                command=lambda source_id=source_id: self.handle_stop(source_id))
 
             item['state'] = self.STATE_RUNNING
             self.app.source.update_status(source_id, 'MEDIA_UPLOADING')
@@ -365,10 +364,12 @@ class UploadProgress(tk.Frame):
     def handle_stop(self, source_id):
         logging.info(f'click pause: {source_id}')
         item = self._find_source(source_id)
+        item['state'] = self.STATE_PAUSE
         item['action_button'].configure(
             text=self.LABEL_PLAY,
-            command=lambda source_id=source_id: self.handle_start2(source_id))
-        item['state'] = self.STATE_PAUSE
+            state=tk.DISABLED,
+            command=lambda source_id=source_id: self.handle_start(source_id))
+
 
     def check_pending(self):
         has_pending = False
@@ -478,6 +479,7 @@ class UploadProgress(tk.Frame):
 
                 # print('***', total, num, counter)
                 # update layout
+                item['action_button'].configure(state=tk.NORMAL)
                 item['progressbar']['value'] = value
                 self.canvas.itemconfigure(f'{source_id}-text', text='{:.2f}%'.format((value / total) * 100.0))
                 self.canvas.itemconfigure(f'{source_id}-step', text=f'({value}/{total})')
@@ -497,14 +499,15 @@ class UploadProgress(tk.Frame):
                 if is_complete:
                     self.app.source.update_status(source_id, 'DONE_UPLOAD')
                     tk.messagebox.showinfo('info', f'資料夾 {name}: 上傳成功')
+                    # send finish upload status to server
+                    self.app.server.post_upload_history(deployment_journal_id, 'finished')
                 else:
-                    if item['state'] != self.STATE_PAUSE:
+                    if item['state'] == self.STATE_PAUSE:
+                        item = self._find_source(source_id)
+                        item['action_button'].configure(state=tk.NORMAL)
+                    else:
                         self.app.source.update_status(source_id, 'MEDIA_UPLOAD_FAILED')
                         tk.messagebox.showinfo('info', f'資料夾 {name}: 上傳照片不完整')
-
-                # send finish upload status to server
-
-                self.app.server.post_upload_history(deployment_journal_id, 'finished')
 
                 if item['state'] != self.STATE_PAUSE:
                     item['state'] = self.STATE_DONE
