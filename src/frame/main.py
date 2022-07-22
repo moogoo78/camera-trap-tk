@@ -89,7 +89,6 @@ class Main(tk.Frame):
         #self.landing.grid(row=0, column=0, sticky='nsew')
         '''
 
-        self.action_queue = queue.Queue()
         self.upload_status = 0 # 0: stop, 1: start, 2: pause
         #self.thread = threading.Thread(target=self.worker)
         #self.polling()
@@ -100,13 +99,6 @@ class Main(tk.Frame):
         self.thumb_basewidth = w - 36
         data = self.get_current_item('data')
 
-        '''210730
-        if data:
-            self.show_image(data['thumb'], data['path'])
-        elif self.tree_helper.data:
-            # when default no selection
-            self.show_thumb(self.tree_helper.data[0]['thumb'], self.tree_helper.data[0]['path'])
-        '''
 
     def layout(self):
         self.grid_rowconfigure(0, weight=0)
@@ -153,9 +145,6 @@ class Main(tk.Frame):
         self.table_frame.grid(row=0, column=0, sticky='news')
 
         self.config_table_frame()
-
-        #self.upload_progress = UploadProgress(self)
-        #self.upload_progress.grid(row=0,column=0)
 
     def fo_species(self, event):
         #print (self.species_free.listbox, event)
@@ -1060,19 +1049,6 @@ class Main(tk.Frame):
             self.data_helper.set_status_display(row_key, status_code='20')
             self.data_grid.main_table.render()
 
-
-            # 無用
-            #row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
-            #self.action_queue.put(sql)
-            #ua = UpdateAction(self.action_queue, self)
-            #ua.start()
-            #self.data_helper.set_status_display(row_key, status_code='20')
-            #item = self.data_helper.get_item(rc[0])
-            #tmp = item['status_display']
-            #status = tmp.split(' / ')
-            #self.data_grid.main_table.update_text((rc[0], 0), f'V / {status[1]}')
-
-
     def custom_arrow_key(self, row_key, col_key):
         self.select_item(row_key, col_key)
 
@@ -1095,6 +1071,7 @@ class Main(tk.Frame):
         photo = ImageTk.PhotoImage(img)
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo
+
         self.update_idletasks()
 
     def custom_clone_row(self):
