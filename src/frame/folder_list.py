@@ -317,11 +317,15 @@ class FolderList(tk.Frame):
                 anchor='nw',
                 tags=('item', status_cat))
 
+            # 點的或拖的都會觸發
             self.canvas.tag_bind(
                 source_tag,
-                '<Button-1>',
-                lambda event, tag=source_tag: self.app.on_folder_detail(event, tag)
-            )
+                '<B1-Motion>',
+                lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
+            self.canvas.tag_bind(
+                source_tag,
+                '<ButtonPress>',
+                lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
 
 
             shift_x += 316  # 300 + 16
@@ -333,3 +337,6 @@ class FolderList(tk.Frame):
         # reset scrollregion
         if row_count > 2:
             self.canvas.configure(scrollregion=(0,0,self.app.app_width, (row_count*300)))
+
+        # 不知道可不可以讓 卡片 點擊敏感一點?
+        self.update_idletasks()

@@ -196,6 +196,8 @@ class Application(tk.Tk):
 
     def on_folder_detail(self, event, tag):
         logging.debug(f'click on tag: {tag}')
+        if event:
+            logging.debug(f'evoked by {event}')
         source_id = tag.replace('source_', '')
 
         self.contents['main'].from_source(int(source_id))
