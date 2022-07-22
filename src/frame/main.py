@@ -1053,13 +1053,13 @@ class Main(tk.Frame):
             image_id = item['image_id']
             sql = f"UPDATE image SET status='20' WHERE image_id={image_id}"
             self.app.db.exec_sql(sql, True)
-            '''
-            row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
+
+            #row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
             #self.data_grid.main_table.set_data_value(row_key, col_key, 'vv')
             # update status_display
-            #self.data_helper.set_status_display(row_key, status_code='20')
+            self.data_helper.set_status_display(row_key, status_code='20')
             self.data_grid.main_table.render()
-            '''
+
 
             # 無用
             #row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
