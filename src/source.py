@@ -78,6 +78,13 @@ class Source(object):
                     return v
         return ''
 
+    def is_done_upload(self, status):
+        if status in [
+                self.STATUS_DONE_UPLOAD,
+                self.STATUS_DONE_OVERRIDE_UPLOAD]:
+            return True
+        return False
+
     def get_folder_path(self, folder):
         db = self.db
         folder_path = Path(folder)

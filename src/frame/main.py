@@ -556,7 +556,7 @@ class Main(tk.Frame):
 
         # update upload_button
         source_status = self.source_data['source'][6]
-        if source_status == self.app.source.STATUS_DONE_UPLOAD:
+        if self.app.source.is_done_upload(source_status):
             self.upload_button['text'] = '更新文字資料'
         else:
             self.upload_button['text'] = '上傳資料夾'
@@ -751,9 +751,9 @@ class Main(tk.Frame):
             'source_id': self.source_data['source'][0],
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
         }
-
+        print(self.source_data['source'][6])
         # check if re-post annotation
-        if self.source_data['source'][6] == self.app.source.STATUS_DONE_UPLOAD:
+        if self.app.source.is_done_upload(self.source_data['source'][6]):
             ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
             if ans == 'no':
                 return False
@@ -765,8 +765,7 @@ class Main(tk.Frame):
                 else:
                     self.app.source.update_status(source_id, 'DONE_OVERRIDE_UPLOAD')
                     tk.messagebox.showinfo('info', '文字資料更新成功 !')
-
-                return
+                    return # stop uploading images again
 
         # 1. post annotation to server
         sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
