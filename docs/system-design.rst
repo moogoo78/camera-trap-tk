@@ -4,6 +4,8 @@ System Design
 資料夾匯入
 ----------------
 
+做完 thumbnails 後，就跟原圖脫鉤，如果 thumbnails 刪掉要再重做嗎?
+=> 重新 import 比較實在
 
 照片編輯
 ----------------

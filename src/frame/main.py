@@ -502,17 +502,18 @@ class Main(tk.Frame):
         self.source_id = source_id
 
         # reset current_row
-        self.current_row = 0
+        self.current_row_key = ''
         self.current_image_data = {}
         self.data_grid.main_table.init_data()
 
+        self.current_row_key = ''
         self.refresh(is_init_highlight=True)
 
 
     def refresh(self, is_init_highlight=False):
         self.is_editing = False
-        logging.debug('refresh: {}'.format(self.source_id))
-        #print (self.current_row, self.current_image_data, self.data_grid.main_table.selected)
+        logging.debug(f'refresh: {self.source_id}, current_row_key: {self.current_row_key}')
+        print (self.data_grid.main_table.selected)
 
         #self.data_helper.set_status_display(image_id=35, status_code='300')-
         # let project image group intervel entry off focus
@@ -575,6 +576,7 @@ class Main(tk.Frame):
         # data list
         data = self.data_helper.read_image_list(self.source_data['image_list'])
         #print (data)
+
         self.seq_info = None
         seq_int = self.seq_interval_val.get()
         if self.seq_checkbox_val.get() == 'Y' and seq_int:
@@ -583,11 +585,13 @@ class Main(tk.Frame):
             self.data_grid.state['box_display_type'] = 'raise'
 
         # show first image if no select
+        if self.current_row_key == '':
+            self.current_row_key = next(iter(data))
+
         if len(data) > 0:
-            first_key = next(iter(data))
-            first_item = data[first_key]
-            if first_item['media_type'] == 'image':
-                self.show_image(first_item['thumb'], first_item['path'], 'm')
+            current_item = data[self.current_row_key]
+            if current_item['media_type'] == 'image':
+                self.show_image(current_item['thumb'], 'm')
         else:
             self.image_thumb_label.image = None
 
@@ -1023,7 +1027,7 @@ class Main(tk.Frame):
         if row_key is None or col_key is None:
             return
 
-        self.current_row = row_key  # for show_image_detail
+        self.current_row_key = row_key  # for show_image_detail
         item = self.data_helper.data[row_key]
 
         if item:
@@ -1036,7 +1040,7 @@ class Main(tk.Frame):
 
         # self.current_row = rc[0] NO_NEED_TO
 
-        self.show_image(item['thumb'], item['path'], 'm')
+        self.show_image(item['thumb'], 'm')
 
         if item['status'] == '10':
             image_id = item['image_id']
@@ -1055,15 +1059,17 @@ class Main(tk.Frame):
     def custom_mouse_click(self, row_key, col_key):
         self.select_item(row_key, col_key)
 
-    def show_image(self, thumb_path, image_path, size_key=''):
+    def show_image(self, thumb_path, size_key=''):
         if size_key:
             thumb_path = thumb_path.replace('-q.jpg', '-{}.jpg'.format(size_key))
 
-        if not Path(image_path).exists():
+        if not Path(thumb_path).exists():
             return None
 
-        real_thumb_path = check_thumb(thumb_path, image_path)
-        image = Image.open(real_thumb_path)
+        # 刪 thumbnail 就不重做 thumbnail 了 (盡量跟原圖脫鉤)
+        #real_thumb_path = check_thumb(thumb_path, image_path)
+        #image = Image.open(real_thumb_path)
+        image = Image.open(thumb_path)
         #resize_to = aspect_ratio(image.size, width=self.thumb_basewidth)
         resize_to = aspect_ratio(image.size, height=self.thumb_height)
         img = image.resize(resize_to, Image.ANTIALIAS)
@@ -1270,7 +1276,7 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
 
     def show_image_detail(self):
-        row_key = self.current_row
+        row_key = self.current_row_key
         #print(self.current_image_data)
         if item := self.data_helper.data[row_key]:
             image_path = item['thumb'].replace('-q.', '-x.')
