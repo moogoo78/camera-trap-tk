@@ -323,6 +323,7 @@ class FolderList(tk.Frame):
                 lambda event, tag=source_tag: self.app.on_folder_detail(event, tag)
             )
 
+
             shift_x += 316  # 300 + 16
             if i > 0 and (i+1) % 3 == 0:
                 row_count += 1

@@ -494,7 +494,6 @@ class MainTable(tk.Canvas):
         self.listbox.bind_all('<Escape>', lambda event: self.handle_listbox_click(event, row, col))
         self.listbox.bind_all('<Return>', lambda event: self.handle_listbox_click(event, row, col))
         #self.listbox.bind('<<ListboxSelect>>', lambda event: self.handle_listbox_click(event, row, col)) # virtual event: replace <Return> & <ButtonRelease-1> ?
-        #self.listbox.bind('<Escape>', lambda event: self.handle_listbox_click(event, row, col))
         self.listbox.bind_all('<Down>', lambda event: self.handle_listbox_arrow_key(event, 'down'))
         self.listbox.bind_all('<Up>', lambda event: self.handle_listbox_arrow_key(event, 'up'))
 
@@ -889,6 +888,8 @@ class MainTable(tk.Canvas):
         self.delete('entry_win')
         self.delete('autocomplete_win')
         self.delete('listbox_win')
+        # give keyboard control back to table (override widget's bind)
+        self.set_keyboard_control(True)
 
     def render_popup_menu(self, event):
         if hasattr(self, 'popup_menu'):
@@ -1150,7 +1151,8 @@ class MainTable(tk.Canvas):
 
     def handle_listbox_arrow_key(self, event, direction):
         # print(event, 'listbox')
-        if not self.listbox:
+        #if not self.listbox: # will cause error (python3.10)
+        if not hasattr(self, 'listbox'):
             return
 
         if sel := self.listbox.curselection():
@@ -1207,3 +1209,4 @@ class MainTable(tk.Canvas):
         self.selected = {}
         if to_refresh is True:
             self.parent.refresh(self.ps['data'])
+
