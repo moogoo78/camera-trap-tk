@@ -190,7 +190,7 @@ class Main(tk.Frame):
             command=self.show_image_detail,
             takefocus=0,
         )
-        self.image_viewer_button.place(x=376, y=270, anchor='nw')
+        self.image_viewer_button.place(x=416, y=270, anchor='nw')
 
         export_button = tk.Button(
             self,
@@ -445,7 +445,7 @@ class Main(tk.Frame):
             self.table_frame,
             data={},
             columns=self.data_helper.columns,
-            height=760-400,
+            height=760-480,
             width=1200,
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
