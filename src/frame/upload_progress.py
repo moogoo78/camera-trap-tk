@@ -9,6 +9,7 @@ import time
 from datetime import datetime
 import random
 import sys
+import pathlib
 
 import threading
 from queue import Queue
@@ -107,7 +108,7 @@ class UploadProgress(tk.Frame):
 
         for source_data in rows:
             # TODO
-            sql_images = f"SELECT image_id, path, name, upload_status, object_id, server_image_id FROM image WHERE source_id={source_data[0]} AND upload_status != '200' ORDER BY image_id"
+            sql_images = f"SELECT image_id, path, name, upload_status, object_id, server_image_id, media_type FROM image WHERE source_id={source_data[0]} AND upload_status != '200' ORDER BY image_id"
             #sql_images = f"SELECT image_id, upload_status FROM image WHERE source_id={source_data[0]} ORDER BY image_id"
             result_images = self.app.db.fetch_sql_all(sql_images)
 
@@ -409,12 +410,19 @@ class UploadProgress(tk.Frame):
                 name = v[2]
                 object_id = v[4]
                 server_image_id = v[5]
-                thumb_paths = get_thumb(source_id, name, path, 'all-max-x')
-                for x, path in thumb_paths.items():
-                    object_name = f'{object_id}-{x}.jpg'
-                    # print (object_name)
-                    # time.sleep(1) # fake upload
+                media_type = v[6]
+
+                # time.sleep(1) # fake upload
+                if media_type == 'image':
+                    thumb_paths = get_thumb(source_id, name, path, 'all-max-x')
+                    for x, path in thumb_paths.items():
+                        object_name = f'{object_id}-{x}.jpg'
+                        self.app.source.upload_to_s3(str(path), object_name)
+                elif media_type == 'video':
+                    src_path = pathlib.Path(path)
+                    object_name = f'video-original/{object_id}{src_path.suffix}'
                     self.app.source.upload_to_s3(str(path), object_name)
+
                 self.action_queue.put({
                     'type':'update_image',
                     'source_id': source_id,
