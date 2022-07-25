@@ -17,7 +17,7 @@ from utils import validate_datetime
 
 IGNORE_FILES = ['Thumbs.db', '']
 IMAGE_EXTENSIONS = ['.JPG', '.JPEG', '.PNG']
-MOVIE_EXTENSIONS = ['.MOV', '.AVI', '.M4V', '.MP4', '.WMV', '.MKV', '.WEBM']
+VIDEO_EXTENSIONS = ['.MOV', '.AVI', '.M4V', '.MP4', '.WMV', '.MKV', '.WEBM']
 
 class Source(object):
     '''much like a helper'''
@@ -146,21 +146,21 @@ class Source(object):
             if type_ == 'image':
                 data['img'] = ImageManager(entry)
                 sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
-            elif type_ == 'movie':
+            elif type_ == 'video':
                 data['mov'] = entry
-                sql = self.prepare_movie_sql(data, ts_now, source_id, thumb_source_path)
-                # HACK: if movie process too fast, folder_list.folder_importing will has empty value, cause error while update
+                sql = self.prepare_video_sql(data, ts_now, source_id, thumb_source_path)
+                # HACK: if video process too fast, folder_list.folder_importing will has empty value, cause error while update
                 time.sleep(0.5)
             yield (data, sql)
 
 
-    def prepare_movie_sql(self, i, ts_now, source_id, thumb_source_path):
+    def prepare_video_sql(self, i, ts_now, source_id, thumb_source_path):
         db = self.db
         stat = i['mov'].stat()
         timestamp = int(stat.st_mtime)
         via = 'mtime'
 
-        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, {}, '{}', 'movie')".format(
+        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, {}, '{}', 'video')".format(
             i['path'],
             i['name'],
             timestamp,
@@ -212,13 +212,13 @@ class Source(object):
     @staticmethod
     def _check_filename(dirent):
         """
-        return "image"|"movie"|""
+        return "image"|"video"|""
         """
         p = Path(dirent)
         if p.suffix.upper() in IMAGE_EXTENSIONS:
             return 'image'
-        elif p.suffix.upper() in MOVIE_EXTENSIONS:
-            return 'movie'
+        elif p.suffix.upper() in VIDEO_EXTENSIONS:
+            return 'video'
         return ''
 
     def get_source(self, source_id):

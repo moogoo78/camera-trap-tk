@@ -591,6 +591,8 @@ class Main(tk.Frame):
             current_item = data[self.current_row_key]
             if current_item['media_type'] == 'image':
                 self.show_image(current_item['thumb'], 'm')
+            elif current_item['media_type'] == 'video':
+                self.show_video_icon()
         else:
             self.image_thumb_label.image = None
 
@@ -1038,7 +1040,10 @@ class Main(tk.Frame):
 
         # self.current_row = rc[0] NO_NEED_TO
 
-        self.show_image(item['thumb'], 'm')
+        if item['media_type'] == 'image':
+            self.show_image(item['thumb'], 'm')
+        elif item['media_type'] == 'video':
+            self.show_video_icon()
 
         if item['status'] == '10':
             image_id = item['image_id']
@@ -1074,7 +1079,7 @@ class Main(tk.Frame):
 
         photo = ImageTk.PhotoImage(img)
         self.image_thumb_label.configure(image=photo)
-        self.image_thumb_label.image = photo
+        self.image_thumb_label.image = photo # 一定要用這樣設，圖片不然出不來
 
         self.update_idletasks()
 
@@ -1298,3 +1303,9 @@ class Main(tk.Frame):
             for _, v in self.data_helper.data.items():
                 spamwriter.writerow([v[k] for k, _ in self.data_helper.columns.items()])
         tk.messagebox.showinfo('info', f'匯出 csv 成功! ({save_as})')
+
+    def show_video_icon(self):
+        photo = ImageTk.PhotoImage(file='./assets/movie_big.png')
+        self.image_thumb_label.configure(image=photo)
+        self.image_thumb_label.image = photo
+        self.update_idletasks()

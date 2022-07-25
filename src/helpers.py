@@ -241,7 +241,12 @@ class DataHelper(object):
                 _get_status_display(i[5]),
                 _get_status_display(i[12]),
             )
-            thumb = f'./thumbnails/{i[10]}/{Path(i[2]).stem}-q.jpg'
+
+            if i[15] == 'image':
+                thumb = f'./thumbnails/{i[10]}/{Path(i[2]).stem}-q.jpg'
+            elif i[15] == 'video':
+                thumb = './assets/movie_small.png'
+
             alist = json.loads(i[7])
             if len(alist) == 0:
                 alist = [{}]
