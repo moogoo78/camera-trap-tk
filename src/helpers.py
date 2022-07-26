@@ -1,6 +1,4 @@
-import tkinter as tk
-from tkinter import ttk
-
+import re
 from pathlib import Path
 import json
 from datetime import datetime
@@ -27,7 +25,7 @@ USE_COLOR_LIST = True
 
 HEADER = {
     'status_display': {
-        'label': '標注/上傳狀態',
+        'label': '狀態',
         'width': 100,
         'type': 'text',
     },
@@ -80,17 +78,19 @@ HEADER = {
         'width': 80
     }
 }
+STATUS_MAP = {
+    '10': '未看',
+    '20': '已看',
+    '30': '已標',
+}
+UPLOAD_STATUS_MAP = {
+    '100': '上傳中*',
+    '110': '上傳中',
+    '200': '已上傳',
+}
 
-def _get_status_display(code):
-    status_map = {
-        '10': 'I',
-        '20': 'V',
-        '30': 'A',
-        '100': 'S',
-        '110': '-',
-        '200': 'D',
-    }
-    return status_map.get(code, '-')
+def make_status_display(status, upload_status):
+    return f'{status} ({upload_status})'
 
 
 class DataHelper(object):
@@ -129,14 +129,16 @@ class DataHelper(object):
         return row_keys
 
     def set_status_display(self, row_key='', status_code=''):
-        delimeter = ' / '
         orig = self.data[row_key]['status_display']
-        orig_list = orig.split(delimeter)
+        m = re.search(r'(.+)\((.+)\)', orig)
+        if m:
+            orig_status = m.group(1)
+            orig_upload_status = m.group(2)
 
         if len(status_code) == 2:
-            self.data[row_key]['status_display'] = delimeter.join([_get_status_display(status_code), orig[1]])
+            self.data[row_key]['status_display'] = make_status_display(STATUS_MAP.get(status_code, '-'), orig_upload_status)
         elif len(status_code) == 3:
-            self.data[row_key]['status_display'] = delimeter.join([orig[0], _get_status_display(status_code)])
+            self.data[row_key]['status_display'] = make_status_display(orig_status, UPLOAD_STATUS_MAP.get(status_code, '-'))
 
     def update_annotation(self, row_key, col_key, value, seq_info=None):
         print('! update_annotation', row_key, col_key, value)
@@ -251,10 +253,9 @@ class DataHelper(object):
         counter = 0
         for i_index, i in enumerate(image_list):
             image_id = i[0]
-            status_display = '{} / {}'.format(
-                _get_status_display(i[5]),
-                _get_status_display(i[12]),
-            )
+            status_display = make_status_display(
+                STATUS_MAP.get(i[5], '-'),
+                UPLOAD_STATUS.get(i[12]) if i[12] else '未上傳')
 
             if i[15] == 'image':
                 thumb = f'./thumbnails/{i[10]}/{Path(i[2]).stem}-q.jpg'
@@ -383,107 +384,4 @@ class DataHelper(object):
             if v.get('annotation_species', '') == '':
                 return True
         return False
-'''
-key, label, type, choices in ini
-'''
 
-HEADING = (
-    #('index', '#',
-    # {'width': 25, 'stretch': False}),
-    ('status_display', '標注/上傳狀態',
-     {'width': 40, 'stretch': False}),
-    ('filename', '檔名',
-     {'width': 120, 'stretch': False}),
-    ('datetime_display','日期時間',
-     {'width': 120, 'stretch': False}),
-    ('annotation_species', '物種',
-     {'width': 80, 'stretch': False},
-     {'widget': 'freesolo',
-      'config_section': 'AnnotationFieldSpecies'}),
-    ('annotation_lifestage', '年齡',
-     {'width': 50, 'stretch': False},
-     {'widget': 'freesolo',
-      'config_section': 'AnnotationFieldLifeStage'}),
-    ('annotation_sex', '性別',
-     {'width': 50, 'stretch': False},
-     {'widget': 'freesolo',
-      'config_section': 'AnnotationFieldSex'}),
-    ('annotation_antler', '角況',
-     {'width': 50, 'stretch': False},
-     {'widget': 'freesolo',
-      'config_section': 'AnnotationFieldAntler'}),
-    ('annotation_remark', '備註',
-     {'width': 50, 'stretch': False},
-     {'widget': 'entry',
-          'config_section': 'AnnotationFieldRemarks'}),
-    ('annotation_animal_id', '個體 ID',
-     {'width': 50, 'stretch': False},
-     {'widget': 'entry',
-      'config_section': 'AnnotationFieldAnimalID'}),
-)
-
-
-
-def data_to_tree_values(data):
-    rows = []
-    for i in data:
-        values = [i.get(h[0], '')for h in HEADING]
-        rows.append(values)
-    return rows
-
-def image_list_to_table(image_list):
-    rows = []
-    counter = 0
-    for i in image_list:
-        alist = json.loads(i[7])
-        path = i[1]
-        status_display = '{} / {}'.format(
-            _get_status_display(i[5]),
-            _get_status_display(i[12]),
-        )
-        basic_item = {
-            'status_display': status_display,
-            'filename': i[2],
-            'datetime_display': str(datetime.fromtimestamp(i[3])),
-        }
-        ctrl_item = {
-            'image_id': i[0],
-            'path': i[1],
-            'status': i[5],
-            'upload_status': i[12],
-            'time': i[3],
-            'seq': 0,
-        }
-        if len(alist) >= 1:
-            for j in alist:
-                counter += 1
-                basic_item['index'] = counter
-                annotation_item = {
-                    'species': j.get('species', ''),
-                    'lifestage': j.get('lifestage', ''),
-                    'sex': j.get('sex', ''),
-                    'antler':j.get('antler', ''),
-                    'animal_id':j.get('animal_id', ''),
-                    'remarks': j.get('remarks', ''),
-                }
-                rows.append({
-                    **basic_item,
-                    **annotation_item,
-                    **ctrl_item,
-                })
-        else:
-            counter += 1
-            annotation_item = {
-                'species': '',
-                'lifestage': '',
-                'sex': '',
-                'antler': '',
-                'animal_id': '',
-                'remarks': '',
-            }
-            rows.append({
-                **basic_item,
-                **annotation_item,
-                **ctrl_item,
-            })
-    return rows
