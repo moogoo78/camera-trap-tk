@@ -26,9 +26,7 @@ from frame import (
     Footer,
     HelpPage,
 )
-from image_detail import ImageDetail
 
-import asyncio
 
 from database import Database
 from source import Source
@@ -225,9 +223,6 @@ class Application(tk.Tk):
 
         if self.panel.is_viewable is True:
             self.panel.hide()
-
-    def toggle_image_viewer(self, is_image_viewer=True):
-        window = ImageDetail
 
     def get_font(self, size_code='default'):
         SIZE_MAP = {

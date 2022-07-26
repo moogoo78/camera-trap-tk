@@ -20,7 +20,10 @@ from frame import (
     Landing,
     ImageViewer,
 )
-from image_detail import ImageDetail
+from toplevel import (
+    ImageDetail,
+    ConfigureKeyboardShortcut,
+)
 from image import (
     check_thumb,
     aspect_ratio,
@@ -191,6 +194,15 @@ class Main(tk.Frame):
             takefocus=0,
         )
         self.image_viewer_button.place(x=416, y=270, anchor='nw')
+
+        conf_kb_shortcut_button = tk.Button(
+            self,
+            text='設定快捷鍵',
+            relief='flat',
+            command=lambda: ConfigureKeyboardShortcut(self.app),
+            takefocus=0,
+        )
+        conf_kb_shortcut_button.grid(row=0, column=0, padx=4, pady=34, sticky='ne')
 
         export_button = tk.Button(
             self,
@@ -427,7 +439,6 @@ class Main(tk.Frame):
         }
         for n in range(0, 10):
             self.keyboard_shortcuts[str(n)] = self.app.config.get('KeyboardShortcut', f'Control-Key-{n}')
-
             custom_binding['bind_list'].append(f'Control-Key-{n}')
 
         num_per_page = int(self.app.config.get('DataGrid', 'num_per_page'))
@@ -1261,3 +1272,16 @@ class Main(tk.Frame):
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo
         self.update_idletasks()
+
+    def rebind_keyboard_shortcut(self):
+        custom_binding = {
+            'bind_list': [],
+            'command': self.handle_keyboard_shortcut,
+        }
+        self.keyboard_shortcuts = {}
+        for n in range(0, 10):
+            self.keyboard_shortcuts[str(n)] = self.app.config.get('KeyboardShortcut', f'Control-Key-{n}')
+            custom_binding['bind_list'].append(f'Control-Key-{n}')
+
+        self.data_grid.main_table.apply_custom_binding(custom_binding)
+

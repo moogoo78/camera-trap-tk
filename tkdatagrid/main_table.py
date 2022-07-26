@@ -106,13 +106,19 @@ class MainTable(tk.Canvas):
         self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
         self.bind('<Shift-Button-1>', self.handle_shift_button_1)
 
-        # custom bindind
-        if custom_binding := self.ps['custom_binding']:
-            for bind_key in custom_binding['bind_list']:
-                # self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
-                self.bind_all(f'<{bind_key}>', custom_binding['command'])
+        self.apply_custom_binding(self.ps['custom_binding'])
 
         self.set_keyboard_control(True)
+
+    def apply_custom_binding(self, custom_binding, is_unbind=False):
+
+        if payload := custom_binding:
+            for bind_key in payload['bind_list']:
+                # self.parent.master.bind_all(f'<{bind_key}>', custom_binding['command'])
+                if is_unbind is False:
+                    self.bind_all(f'<{bind_key}>', payload['command'])
+                else:
+                    self.unbind_all(f'<{bind_key}>')
 
     def handle_key_press(self, event):
         print('key press', event)

@@ -23,4 +23,11 @@ class Config(configparser.ConfigParser):
                 f_init.write(sample_data)
                 f_init.close()
 
+    def overwrite(self):
+        if not self.ini_file:
+            return
 
+        with open(self.ini_file, 'w', encoding='utf-8') as orig_file:
+            self.write(orig_file)
+
+        # self.read(self.ini_file, encoding='utf-8')
