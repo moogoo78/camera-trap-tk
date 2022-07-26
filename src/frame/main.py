@@ -408,16 +408,6 @@ class Main(tk.Frame):
         species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         menus = [
             # {
-            #     'type': 'normal',
-            #     'label': '複製物種',
-            #     'command': self.copy_cloned_species,
-            # },
-            # {
-            #     'type': 'normal',
-            #     'label': '貼上物種',
-            #     'command': self.paste_cloned_species,
-            # },
-            # {
             #     'type': 'menu',
             #     'label': '物種清單',
             #     'choices': species_choices.split(','),
@@ -458,7 +448,7 @@ class Main(tk.Frame):
             column_header_bg= '#5B7464',
             column_header_height=30,
         )
-        # TODO: 400 是湊出來的
+
         self.data_grid.update_state({
             'cell_height': 35,
             'cell_image_x_pad': 3,
@@ -1039,7 +1029,7 @@ class Main(tk.Frame):
             return
 
         # self.current_row = rc[0] NO_NEED_TO
-
+        # print('!!', row_key, col_key)
         if item['media_type'] == 'image':
             self.show_image(item['thumb'], 'm')
         elif item['media_type'] == 'video':
@@ -1194,31 +1184,17 @@ class Main(tk.Frame):
             species = item['annotation_species']
             self.species_copy.append(species)
 
-    def paste_cloned_species(self):
-        rows = self.data_grid.row_index.get_selected_rows()
-        num_species_copy = len(self.species_copy)
-        for row in rows:
-            row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
-            #print self.data_helper.update_annotation(row_key, 'annotation_species', value)
-
-        for counter, row in enumerate(rows):
-            index = counter % num_species_copy
-            rc_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
-            self.data_helper.update_annotation(rc_key[0], rc_key[1], self.species_copy[index])
-
-        #self.species_copy = []
-        self.refresh()
-
     def handle_click_menu_species(self, species=''):
-        #print ('click', species, self.current_row)
+        logging.debug('add annotation from menu species: {species} ({self.current_row_key})')
         #if self.current_row < 0:
         #    return
 
-        #print (row_list, self.data_grid.main_table.selected, self.data_grid.row_index.selected)
         row_list = self.data_grid.get_row_list()
         for row in row_list:
-            row_key, col_key = self.data_helper.get_rc_key(row, SPECIES_COL_POS)
-            self.data_helper.update_annotation(row_key, col_key, species, self.seq_info)
+            # 要用 main_table.get_rc_key (有考慮pagination) 取得 row_key
+            row_key, _ = self.data_grid.main_table.get_rc_key(row, 0)
+            #row_key, _ = self.data_helper.get_rc_key(row, 0)
+            self.data_helper.update_annotation(row_key, 'annotation_species', species, self.seq_info)
         self.refresh()
 
     def handle_keyboard_shortcut(self, event):
