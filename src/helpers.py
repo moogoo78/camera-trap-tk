@@ -11,6 +11,20 @@ import colorsys
 #        'width': 50,
 #        'type': 'text',
 #    },
+IMG_SEQ_COLOR_LIST = [
+    '#FFD99F',
+    '#FFD781',
+    '#E6B98F',
+    '#E9E3AD',
+    '#CBC7A1',
+    '#CCFFFF',
+    '#AAE3E3',
+    '#99CCFF',
+    '#CCCCFF',
+    '#7373F3',
+]
+USE_COLOR_LIST = True
+
 HEADER = {
     'status_display': {
         'label': '標注/上傳狀態',
@@ -343,9 +357,13 @@ class DataHelper(object):
 
             rgb_hex = ''
             if tag_name:
-                rgb = colorsys.hls_to_rgb(seq_info['salt']*265, 0.8, 0.5)
-                rgb_hex = f'#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}'
-                #print (i, tag_name, seq_info['idx'])
+                if USE_COLOR_LIST:
+                    color_idx = seq_info['idx'] % len(IMG_SEQ_COLOR_LIST)
+                    rgb_hex = IMG_SEQ_COLOR_LIST[color_idx]
+                else:
+                    rgb = colorsys.hls_to_rgb(seq_info['salt']*265, 0.8, 0.5)
+                    rgb_hex = f'#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}'
+
                 if tag_name not in seq_info['map']:
                     seq_info['map'][tag_name] = {
                         'color': rgb_hex,

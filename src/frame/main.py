@@ -512,7 +512,6 @@ class Main(tk.Frame):
         if not self.source_id:
             return
 
-        #self.notebook.select(self.panedwindow)
 
         self.source_data = self.app.source.get_source(self.source_id)
         if status := self.source_data['source'][6]:
@@ -566,6 +565,12 @@ class Main(tk.Frame):
         data = self.data_helper.read_image_list(self.source_data['image_list'])
         #print (data)
 
+        # consider pagination
+        num = self.data_grid.state['pagination']['num_per_page']
+        cur_page = self.data_grid.state['pagination']['current_page']
+        start = (cur_page - 1) * num
+        end = cur_page * num
+
         self.seq_info = None
         seq_int = self.seq_interval_val.get()
         if self.seq_checkbox_val.get() == 'Y' and seq_int:
@@ -589,19 +594,22 @@ class Main(tk.Frame):
         self.data_grid.main_table.delete('row-img-seq')
         self.data_grid.refresh(data, is_init_highlight=is_init_highlight)
         # draw img_seq
+        # print(self.seq_info)
         for i, (iid, row) in enumerate(data.items()):
-            tag_name = row.get('img_seq_tag_name', '')
-            color = row.get('img_seq_color', '')
-            y1 = self.data_grid.state['cell_height'] * i
-            y2 = self.data_grid.state['cell_height'] * (i+1)
-            if tag_name and color:
-                self.data_grid.main_table.create_rectangle(
-                    0, y1, self.data_grid.main_table.width + self.data_grid.main_table.x_start, y2,
-                    fill=color,
-                    tags=('row-img-seq', 'row-img-seq_{}'.format(tag_name)))
+            if i >= start and i < end:
+                index = i - ((cur_page - 1) * num)
+                tag_name = row.get('img_seq_tag_name', '')
+                color = row.get('img_seq_color', '')
+                # print(index, tag_name, color)
+                y1 = self.data_grid.state['cell_height'] * index
+                y2 = self.data_grid.state['cell_height'] * (index+1)
+                if tag_name and color:
+                    self.data_grid.main_table.create_rectangle(
+                        0, y1, self.data_grid.main_table.width + self.data_grid.main_table.x_start, y2,
+                        fill=color,
+                        tags=('row-img-seq', 'row-img-seq_{}'.format(tag_name)))
 
         self.data_grid.main_table.tag_lower('row-img-seq')
-        #print (self.data_grid.main_table.get_selected_list()) # TODO
         self.data_grid.main_table.render_row_highlight()
 
         # folder name
@@ -957,39 +965,7 @@ class Main(tk.Frame):
         '''
 
     def custom_to_page(self):
-
-        if self.seq_info == None:
-            return
-
-        num = self.data_grid.state['pagination']['num_per_page']
-        cur_page = self.data_grid.state['pagination']['current_page']
-        start = (cur_page - 1) * num
-        end = cur_page * num
-
-        data = self.data_helper.read_image_list(self.source_data['image_list'])
-        seq_int = self.seq_interval_val.get()
-        if self.seq_checkbox_val.get() == 'Y' and seq_int:
-            self.seq_info = self.data_helper.group_image_sequence(seq_int)
-            # change DataGrid.main_table.render_box color
-            self.data_grid.state['box_display_type'] = 'raise'
-
-        self.data_grid.main_table.delete('row-img-seq')
-
-        for i, (iid, row) in enumerate(data.items()):
-            if i >= start and i <= end:
-                index = i - ((cur_page - 1) * num)
-                tag_name = row.get('img_seq_tag_name', '')
-                color = row.get('img_seq_color', '')
-                y1 = self.data_grid.state['cell_height'] * index
-                y2 = self.data_grid.state['cell_height'] * (index+1)
-                if tag_name and color:
-                    self.data_grid.main_table.create_rectangle(
-                        0, y1, self.data_grid.main_table.width + self.data_grid.main_table.x_start, y2,
-                        fill=color,
-                        tags=('row-img-seq', 'row-img-seq_{}'.format(tag_name)))
-        self.data_grid.main_table.tag_lower('row-img-seq')
-        self.data_grid.main_table.render_row_highlight()
-
+        self.refresh()
 
     def custom_set_data(self, row_key, col_key, value):
         # print('-----', row_key, col_key, value)
