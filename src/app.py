@@ -264,7 +264,7 @@ class Application(tk.Tk):
                 #main.data_grid.refresh()
                 pass
 
-        print ('resize', event.height, event.width, event)
+        #print ('resize', event.height, event.width, event)
          
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(
