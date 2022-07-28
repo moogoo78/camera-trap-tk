@@ -57,6 +57,7 @@ class Application(tk.Tk):
         #self.maxsize(1000, 400)
 
         self.protocol('WM_DELETE_WINDOW', self.quit)
+        self.bind('<Configure>', self.resize)
 
         style = ttk.Style()
         style.theme_use('clam') # clam, classic
@@ -164,7 +165,7 @@ class Application(tk.Tk):
     def show_content(self, name):
         self.clear_contents(exclude=name)
         if not self.contents[name].winfo_viewable():
-            self.contents[name].grid(row=1, column=0, sticky='ew')
+            self.contents[name].grid(row=1, column=0, sticky='nw')
 
         self.update_idletasks()
 
@@ -256,6 +257,15 @@ class Application(tk.Tk):
         self.contents['upload_progress'].terminate_upload_task()
         self.destroy()
 
+    def resize(self, event):
+        if main := self.contents['main']:
+            if main.data_grid and main.data_grid.state.get('data_all', ''):
+                #main.data_grid.update_state({'height': event.height-50-310})
+                #main.data_grid.refresh()
+                pass
+
+        print ('resize', event.height, event.width, event)
+         
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(
     '-i', '--ini',

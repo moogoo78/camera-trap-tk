@@ -53,6 +53,8 @@ class Main(tk.Frame):
         #     'sa_to_d': {}
         # }
         # self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
+        #self.bind('<Configure>', self.resize)
+
         self.projects = []
         self.update_project_options()
 
@@ -214,6 +216,15 @@ class Main(tk.Frame):
             takefocus=0,
         )
         export_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
+
+        # foo_button = tk.Button(
+        #     self,
+        #     text='resize',
+        #     relief='flat',
+        #     command=self.resize_datagrid,
+        #     takefocus=0,
+        # )
+        # foo_button.grid(row=0, column=0, padx=4, pady=34, sticky='ne')
 
         self.ctrl_frame2 = tk.Frame(self.ctrl_frame, background='#F2F2F2')
         self.ctrl_frame2.grid_rowconfigure(0, weight=0)
@@ -1143,3 +1154,6 @@ class Main(tk.Frame):
 
         self.data_grid.main_table.apply_custom_binding(custom_binding)
 
+    #def resize_datagrid(self):
+    #    self.data_grid.update_state({'height': 900})
+    #    self.data_grid.main_table.config(height=900)
