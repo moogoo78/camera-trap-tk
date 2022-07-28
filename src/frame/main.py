@@ -23,6 +23,7 @@ from frame import (
 from toplevel import (
     ImageDetail,
     ConfigureKeyboardShortcut,
+    VideoPlayer,
 )
 from image import (
     check_thumb,
@@ -1245,10 +1246,16 @@ class Main(tk.Frame):
         row_key = self.current_row_key
         #print(self.current_image_data)
         if item := self.data_helper.data[row_key]:
-            image_path = item['thumb'].replace('-q.', '-o.')
-            ImageDetail(self, image_path)
-            # stop tabel keyboard control
-            self.data_grid.main_table.set_keyboard_control(False)
+
+            if item['media_type'] == 'image':
+                # stop tabel keyboard control
+                self.data_grid.main_table.set_keyboard_control(False)
+
+                image_path = item['thumb'].replace('-q.', '-o.')
+                ImageDetail(self, image_path)
+            else:
+                VideoPlayer(self, item['path'])
+
 
     def export_csv(self):
         folder_name = self.source_data['source'][3]

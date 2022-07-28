@@ -255,7 +255,7 @@ class DataHelper(object):
             image_id = i[0]
             status_display = make_status_display(
                 STATUS_MAP.get(i[5], '-'),
-                UPLOAD_STATUS.get(i[12]) if i[12] else '未上傳')
+                UPLOAD_STATUS_MAP.get(i[12]) if i[12] else '未上傳')
 
             if i[15] == 'image':
                 thumb = f'./thumbnails/{i[10]}/{Path(i[2]).stem}-q.jpg'
