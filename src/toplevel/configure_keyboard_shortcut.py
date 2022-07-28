@@ -53,7 +53,7 @@ class ConfigureKeyboardShortcut(tk.Toplevel):
 
             item_row = i if i < 5 else i-5
             item_column = 0 if i < 5 else 1
-            item_frame.grid(row=item_row, column=item_column, padx=(0, 40), pady=20, sticky='w')
+            item_frame.grid(row=item_row, column=item_column, padx=(0, 40), pady=10, sticky='w')
 
             label = ttk.Label(
                 item_frame,
@@ -76,7 +76,7 @@ class ConfigureKeyboardShortcut(tk.Toplevel):
             text='儲存設定',
             command=self.handle_save,
         )
-        save_button.grid(row=2, column=0, sticky='nw', padx=20)
+        save_button.grid(row=2, column=0, sticky='nw', padx=20, pady=(20, 0))
 
     def handle_option_change(self, *args):
         values = args[0]
