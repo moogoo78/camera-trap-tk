@@ -763,7 +763,7 @@ class Main(tk.Frame):
             'source_id': self.source_data['source'][0],
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
         }
-        print(self.source_data['source'][6])
+        # print(self.source_data['source'][6])
         # check if re-post annotation
         if self.app.source.is_done_upload(self.source_data['source'][6]):
             ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
@@ -805,6 +805,7 @@ class Main(tk.Frame):
             res = self.app.server.post_upload_history(deployment_journal_id, 'uploading')
             if err := res['error']:
                 tk.messagebox.showerror('server error', err)
+                return
 
         for image_id, [server_image_id, server_image_uuid] in server_image_map.items():
             sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id}, object_id='{server_image_uuid}' WHERE image_id={image_id}"
@@ -813,156 +814,6 @@ class Main(tk.Frame):
 
         self.app.on_upload_progress()
         self.app.contents['upload_progress'].handle_start(source_id)
-
-    def handle_upload2(self):
-        # check deployment
-        deployment_id = ''
-        if descr := self.source_data['source'][7]:
-            d = json.loads(descr)
-            deployment_id = d.get('deployment_id', '')
-
-        if deployment_id == '':
-            tk.messagebox.showinfo('info', '末設定相機位置，無法上傳')
-            return False
-
-        image_list = self.source_data['image_list']
-        source_id = self.source_id
-        data = {
-            'source': self.source_data['source'],
-            'image_list': image_list,
-            'deployment_id': deployment_id
-        }
-        # test exif
-        #for x in data['image_list']:
-        #f = open('out.txt', 'w')
-        #f.write(json.dumps(data))
-        #f.close()
-
-        # prepare for upload
-        account_id = self.app.config.get('Installation', 'account_id')
-        payload = {
-            'image_list': image_list,
-            'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
-            'deployment_id': deployment_id,
-            'trip_start':self.trip_start_var.get(),
-            'trip_end': self.trip_end_var.get(),
-            'folder_name': self.source_data['source'][3],
-            'source_id': self.source_data['source'][0],
-            'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
-        }
-
-        if self.source_data['source'][6] == '40':
-            ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
-            if ans == 'no':
-                return False
-            elif ans == 'yes':
-                res = self.app.server.post_annotation(payload)
-                if res['error']:
-                    tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
-                else:
-                    tk.messagebox.showinfo('info', '文字資料更新成功 !')
-                return
-
-        # 1. post annotation to server
-        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
-        self.app.db.exec_sql(sql, True)
-
-        account_id = self.app.config.get('Installation', 'account_id')
-        # post to server
-        #payload = {
-        #    'image_list': image_list,
-        #    'key': f'{account_id}/{self.app.user_hostname}/{self.app.version}/{source_id}',
-        #    'deployment_id': deployment_id,
-        #}
-        res = self.app.server.post_annotation(payload)
-        if res['error']:
-            tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
-            return
-
-        server_image_map = res['data']
-
-        # inform server uploading start
-        deployment_journal_id = None
-        if dj_id := self.source_data['source'][12]:
-            deployment_journal_id = dj_id
-        else:
-            if dj_id := res.get('deployment_journal_id'):
-                sql = f"UPDATE source SET deployment_journal_id={dj_id} WHERE source_id={source_id}"
-                self.app.db.exec_sql(sql, True)
-                deployment_journal_id = dj_id
-
-        if deployment_journal_id != None:
-            self.app.server.post_upload_history(deployment_journal_id, 'uploading')
-
-        if self.source_data['source'][6] == '10':
-            sql = f"UPDATE source SET status='20' WHERE source_id={source_id}"
-            self.app.db.exec_sql(sql, True)
-
-        for image_id, [server_image_id, server_image_uuid] in server_image_map.items():
-            sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id}, object_id='{server_image_uuid}' WHERE image_id={image_id}"
-            self.app.db.exec_sql(sql)
-        self.app.db.commit()
-
-        self.app.frames['upload_progress'].handle_start()
-
-        self.upload_button['text'] = '上傳中'
-        self.upload_button['state'] = tk.DISABLED
-        self.delete_button['state'] = tk.DISABLED
-
-    def handle_upload(self):
-        #self.app.source.do_upload(self.source_data)
-        ans = tk.messagebox.askquestion('上傳確認', '確定要上傳?')
-        if ans == 'no':
-            return False
-
-        image_list = self.source_data['image_list']
-        source_id = self.source_data['source'][0]
-        deployment_id = ''
-
-        if descr := self.source_data['source'][7]:
-            d = json.loads(descr)
-            deployment_id = d.get('deployment_id', '')
-
-        if deployment_id == '':
-            tk.messagebox.showinfo('info', '末設定相機位置，無法上傳')
-            return False
-
-        pb = self.app.statusbar.progress_bar
-        start_val = len(image_list) * 0.05 # 5% for display pre s3 upload
-        pb['maximum'] = len(image_list) + start_val
-        pb['value'] = start_val
-        self.update_idletasks()
-
-        res = self.app.source.upload_annotation(image_list, source_id, deployment_id)
-
-        if res['error']:
-            tk.messagebox.showerror('上傳失敗', f"{res['error']}")
-            return False
-
-        saved_image_ids = res['data']
-        for i, v in enumerate(self.app.source.gen_upload_file(image_list, source_id, deployment_id, saved_image_ids)):
-            #print ('uploaded', i, v)
-            if v:
-                # update progress bar
-                pb['value'] = i+1
-                self.update_idletasks()
-
-                local_image_id = v[0]
-                server_image_id = v[1]
-                s3_key = v[2]
-                sql = 'UPDATE image SET upload_status="200", server_image_id={} WHERE image_id={}'.format(server_image_id, local_image_id)
-                self.app.db.exec_sql(sql, True)
-
-                # update server image status
-                self.app.server.post_image_status({
-                    'file_url': s3_key,
-                    'pk': server_image_id,
-                })
-
-        # finish upload
-        pb['value'] = 0
-        self.update_idletasks()
-        tk.messagebox.showinfo('info', '上傳成功')
 
     def handle_delete(self):
         ans = tk.messagebox.askquestion('確認', f"確定要刪除資料夾: {self.source_data['source'][3]}?")

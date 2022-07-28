@@ -36,6 +36,8 @@ def make_request(url, headers=None, data=None, is_json=False):
         with urlopen(request, timeout=10) as response:
             method = 'GET' if data == None else 'POST'
             logging.info(f'{method} {url} | {response.status}')
+            # if data:
+            #   logging.debug(f'POST payload: {data}') # print too many
             ret['body'] = response.read() # 如果先 return response, read() 內容會不見
             ret['response'] = response
     except HTTPError as error:
@@ -161,6 +163,13 @@ class Server(object):
         if err := resp['error']:
             ret['error'] = err
             logging.error(f'error: {err}')
+        else:
+            # server 傳 200, 但是是有錯
+            data = to_json(resp['body'])
+            if msg := data.get('messages', ''):
+                if msg != 'success':
+                    ret['error'] = msg
+                    logging.error(f'error: {msg}')
 
         #if resp.status_code != 200:
         #    print ('server.update_upload_history error: ', resp.text)
