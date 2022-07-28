@@ -49,7 +49,7 @@ class ConfigureKeyboardShortcut(tk.Toplevel):
         for i, key in enumerate(self.data):
             item_frame = tk.Frame(
                 container_frame,
-                background='yellow')
+                background='#FFFFFF')  # yellow
 
             item_row = i if i < 5 else i-5
             item_column = 0 if i < 5 else 1
@@ -57,7 +57,7 @@ class ConfigureKeyboardShortcut(tk.Toplevel):
 
             label = ttk.Label(
                 item_frame,
-                background='green',
+                background='#FFFFFF',  # green
                 font=self.app.get_font('display-3'),
                 text=f'Ctrl-{key}',
             )
@@ -68,7 +68,7 @@ class ConfigureKeyboardShortcut(tk.Toplevel):
                 # command=lambda *args, key=key: self.handle_option_change(args, key),
                 *species_choices
             )
-            label.grid(row=0, column=0, sticky='nw', padx=20)
+            label.grid(row=0, column=0, sticky='nw', padx=(20, 10))
             menu.grid(row=0, column=1, sticky='ns', padx=10)
 
         save_button = ttk.Button(
