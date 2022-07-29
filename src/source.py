@@ -232,6 +232,8 @@ class Source(object):
         }
 
     def add_media_convert(self, object_name):
+        key = self.app.config.get('AWSConfig', 'access_key_id')
+        secret = self.app.config.get('AWSConfig', 'secret_access_key')
         bucket_name = self.app.config.get('AWSConfig', 'bucket_name')
         region = self.app.config.get('AWSConfig', 'mediaconvert_region')
         endpoint = self.app.config.get('AWSConfig', 'mediaconvert_endpoint')
@@ -243,6 +245,8 @@ class Source(object):
 
         client = boto3.client(
             'mediaconvert',
+            aws_access_key_id=key,
+            aws_secret_access_key=secret,
             region_name=region,
             endpoint_url=endpoint,
             verify=False)
