@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.1b]
+
+### Changed:
+fix:
+- 連拍分組換資料夾不會跟著 reset
+- 影片播放改用系統的 Windows Media Player 播放影片 (目前只有測 Windows 11，不知道 Windows 7、Windows 10 路徑是不是一樣，需要再確認)
+- 上傳影片後自動觸發 AWS Media Convert 轉檔，網頁前台可以看到轉檔後的結果
+- 現有資料夾很難點進去的問題
+- [網頁] 棄用的相機位置在桌機版的下拉選單要拿掉
+
+style:
+-放大圖/播放影片的按鈕位置調整 (之前是固定，現在會因為圖片的寬度跟著移動到右下角)
+
 ## [v0.2.1a]
 
 ### Changed:
