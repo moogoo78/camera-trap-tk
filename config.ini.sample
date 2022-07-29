@@ -23,6 +23,13 @@ prefix = thumb-
 access_key_id =key
 secret_access_key = access
 bucket_name = camera-trap-21-dev
+mediaconvert_region = region
+mediaconvert_endpoint = endpoint
+mediaconvert_role = role
+mediaconvert_queue = queue
+mediaconvert_job_template = job_template
+# mediaconvert_input_folder = original
+mediaconvert_output_folder = target
 
 [DataGrid]
 num_per_page = 100

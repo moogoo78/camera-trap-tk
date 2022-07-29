@@ -397,14 +397,14 @@ class UploadProgress(tk.Frame):
         return False
 
     def upload_task(self, item):
-        print(f"🧵 upload source_id: {item['source_data'][0]}")
+        logging.debug(f"🧵 upload source_id: {item['source_data'][0]}")
 
         num = len(item['images'])
         source_id = item['source_data'][0]
         counter = 0
         for i, v in enumerate(item['images']):
             if item['state'] == self.STATE_RUNNING:
-                print(f'🧵 uploading: {source_id}-{counter}/{num}')
+                logging.debug(f'🧵 uploading: {source_id}-{counter}/{num}')
                 counter = i + 1
                 path = v[1]
                 name = v[2]
@@ -422,6 +422,7 @@ class UploadProgress(tk.Frame):
                     src_path = pathlib.Path(path)
                     object_name = f'video-original/{object_id}{src_path.suffix}'
                     self.app.source.upload_to_s3(str(path), object_name)
+                    self.app.source.add_media_convert(object_name)
 
                 self.action_queue.put({
                     'type':'update_image',
@@ -438,7 +439,7 @@ class UploadProgress(tk.Frame):
                 })
 
             else:
-                print(f'🧵 skip {source_id}-{counter}/{num}')
+                logging.debug(f'🧵 skip {source_id}-{counter}/{num}')
 
         logging.debug(f'🧵 done source: {source_id}')
         self.action_queue.put({

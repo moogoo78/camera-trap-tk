@@ -231,6 +231,74 @@ class Source(object):
             'source': source,
         }
 
+    def add_media_convert(self, object_name):
+        bucket_name = self.app.config.get('AWSConfig', 'bucket_name')
+        region = self.app.config.get('AWSConfig', 'mediaconvert_region')
+        endpoint = self.app.config.get('AWSConfig', 'mediaconvert_endpoint')
+        role = self.app.config.get('AWSConfig', 'mediaconvert_role')
+        queue = self.app.config.get('AWSConfig', 'mediaconvert_queue')
+        job_template = self.app.config.get('AWSConfig', 'mediaconvert_job_template')
+        #input_folder = self.app.config.get('AWSConfig', 'mediaconvert_input_folder')
+        output_folder = self.app.config.get('AWSConfig', 'mediaconvert_output_folder')
+
+        client = boto3.client(
+            'mediaconvert',
+            region_name=region,
+            endpoint_url=endpoint,
+            verify=False)
+
+        job_settings = {
+            'Inputs': [
+                {
+                    'AudioSelectors': {
+                        "Audio Selector 1": {
+                            "Offset": 0,
+                            "DefaultSelection": "DEFAULT",
+                            "SelectorType": "LANGUAGE_CODE",
+                            "ProgramSelection": 1,
+                            "LanguageCode": "ENM"
+                        },
+                    },
+                    'VideoSelector': {
+                        'ColorSpace': 'FOLLOW',
+                    },
+                    'FilterEnable': 'AUTO',
+                    'PsiControl': 'USE_PSI',
+                    'FilterStrength': 0,
+                    'DeblockFilter': 'DISABLED',
+                    'DenoiseFilter': 'DISABLED',
+                    'TimecodeSource': 'EMBEDDED',
+                    'FileInput': f's3://camera-trap-21-dev/{object_name}',
+                },
+            ],
+            'OutputGroups': [
+                {
+                    'Name': 'File Group',
+                    'OutputGroupSettings': {
+                        'Type': 'FILE_GROUP_SETTINGS',
+                        'FileGroupSettings': {
+                            'Destination': f's3://camera-trap-21-dev/{output_folder}/',
+                            'DestinationSettings': {
+                                'S3Settings': {
+                                    'AccessControl': {
+                                        'CannedAcl': 'PUBLIC_READ'
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    'Outputs': [],
+                },
+            ],
+        }
+
+        client.create_job(
+            JobTemplate = job_template,
+            Queue = queue,
+            Role = role,
+            Settings = job_settings,
+        )
+
     def upload_to_s3(self, file_path, object_name):
         key = self.app.config.get('AWSConfig', 'access_key_id')
         secret = self.app.config.get('AWSConfig', 'secret_access_key')

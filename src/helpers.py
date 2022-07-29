@@ -359,7 +359,7 @@ class DataHelper(object):
             rgb_hex = ''
             if tag_name:
                 if USE_COLOR_LIST:
-                    color_idx = seq_info['idx'] % len(IMG_SEQ_COLOR_LIST)
+                    color_idx = (seq_info['idx']-1) % len(IMG_SEQ_COLOR_LIST)
                     rgb_hex = IMG_SEQ_COLOR_LIST[color_idx]
                 else:
                     rgb = colorsys.hls_to_rgb(seq_info['salt']*265, 0.8, 0.5)
