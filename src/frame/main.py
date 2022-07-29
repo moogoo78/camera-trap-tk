@@ -9,6 +9,7 @@ import logging
 import queue
 import csv
 from datetime import datetime
+import subprocess
 
 from PIL import ImageTk, Image
 
@@ -921,6 +922,8 @@ class Main(tk.Frame):
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo # 一定要用這樣設，圖片不然出不來
 
+        self.image_viewer_button.place(x=resize_to[0]-46, y=270, anchor='nw')
+
         self.update_idletasks()
 
     def custom_clone_row(self):
@@ -1116,7 +1119,9 @@ class Main(tk.Frame):
                 image_path = item['thumb'].replace('-q.', '-o.')
                 ImageDetail(self, image_path)
             else:
-                VideoPlayer(self, item['path'])
+                # VideoPlayer(self, item['path'])
+                # pyinstaller build will caused imageoi-ffmpeg not found!
+                subprocess.run(['C:\Program Files\Windows Media Player\wmplayer.exe', item['path']])
 
 
     def export_csv(self):
@@ -1140,6 +1145,9 @@ class Main(tk.Frame):
         photo = ImageTk.PhotoImage(file='./assets/movie_big.png')
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo
+
+        self.image_viewer_button.place(x=421-46, y=270, anchor='nw')
+
         self.update_idletasks()
 
     def rebind_keyboard_shortcut(self):
