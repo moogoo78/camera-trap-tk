@@ -218,7 +218,7 @@ class FolderList(tk.Frame):
                     text=title1,
                     font=self.app.get_font('display-3'),
                     fill=self.app.app_primary_color,
-                    tags=('item', status_cat)
+                    tags=('item', status_cat, source_tag)
                 )
                 self.canvas.create_text(
                     x+24,
@@ -227,7 +227,7 @@ class FolderList(tk.Frame):
                     text=title2,
                     font=self.app.get_font('display-3'),
                     fill=self.app.app_primary_color,
-                    tags=('item', status_cat)
+                    tags=('item', status_cat, source_tag)
                 )
             else:
                 self.canvas.create_text(
@@ -237,7 +237,7 @@ class FolderList(tk.Frame):
                     text=r[3],
                     font=self.app.get_font('display-3'),
                     fill=self.app.app_primary_color,
-                    tags=('item', status_cat)
+                    tags=('item', status_cat, source_tag)
                 )
 
             gap += 30
@@ -248,7 +248,7 @@ class FolderList(tk.Frame):
                 text=f'首次上傳時間：{upload_created}',
                 font=self.app.get_font('display-4'),
                 fill='#464646',
-                tags=('item', status_cat)
+                tags=('item', status_cat, source_tag)
             )
             gap += 22
             self.canvas.create_text(
@@ -258,7 +258,7 @@ class FolderList(tk.Frame):
                 text=f'上次上傳時間：{upload_changed}',
                 font=self.app.get_font('display-4'),
                 fill='#464646',
-                tags=('item', status_cat)
+                tags=('item', status_cat, source_tag)
             )
             gap += 22
             self.canvas.create_text(
@@ -268,7 +268,7 @@ class FolderList(tk.Frame):
                 text=f'上傳狀態：{self.app.source.get_status_label(r[6])}',
                 font=self.app.get_font('display-4'),
                 fill='#464646',
-                tags=('item', status_cat)
+                tags=('item', status_cat, source_tag)
             )
 
             if r[6] == self.app.source.STATUS_START_IMPORT:
@@ -285,7 +285,7 @@ class FolderList(tk.Frame):
                     width=180,
                     window=box,
                     anchor='nw',
-                    tags=('item', 'prog_bar_win', status_cat)
+                    tags=('item', 'prog_bar_win', status_cat, source_tag)
                 )
 
             gap += 22
@@ -296,7 +296,7 @@ class FolderList(tk.Frame):
                 text=f'照片張數：{r[4]}',
                 font=self.app.get_font('display-4'),
                 fill='#464646',
-                tags=('item', status_cat)
+                tags=('item', status_cat, source_tag)
             )
             icon = None
             if r[6] == self.app.source.STATUS_DONE_IMPORT:
@@ -317,7 +317,7 @@ class FolderList(tk.Frame):
                 gap-28,
                 image=icon,
                 anchor='nw',
-                tags=('item', status_cat))
+                tags=('item', status_cat, source_tag))
 
             # 點的或拖的都會觸發
             self.canvas.tag_bind(
