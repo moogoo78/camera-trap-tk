@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.1a]
+
+### Changed:
+fix:
+- 分頁
+- 上傳流程 (暫停/重新上傳)
+- 狀態相關 bugs
+- 鍵盤上下左右鍵失靈
+- 分頁造成連拍補齊顯示錯誤
+
+style:
+- 連拍補齊套新配色
+
+### Added:
+- 影片上傳/播放
+- 快捷鍵設定視窗
+
 ## [v0.2.0a] - 2022-07-20
 
 ### Changed
