@@ -503,15 +503,9 @@ class Main(tk.Frame):
             self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
             logging.info('server: get project options')
 
-    def from_source(self, source_id=None):
+    def change_source(self, source_id=None):
         logging.debug('source_id: {}'.format(source_id))
 
-        '''TODO_LAYOUT
-        #self.landing_frame.destroy()
-        self.app.frames['landing'].show(False)
-        '''
-
-        #self.app.begin_from_source()
         self.update_project_options()
         self.source_id = source_id
 
@@ -519,6 +513,10 @@ class Main(tk.Frame):
         self.current_row_key = ''
         self.current_image_data = {}
         self.data_grid.main_table.init_data()
+
+        # clear image sequence checked
+        self.seq_interval_val.set('')
+        self.seq_checkbox_val.set('N')
 
         self.current_row_key = ''
         self.refresh(is_init_highlight=True)
@@ -535,7 +533,6 @@ class Main(tk.Frame):
 
         if not self.source_id:
             return
-
 
         self.source_data = self.app.source.get_source(self.source_id)
         if status := self.source_data['source'][6]:

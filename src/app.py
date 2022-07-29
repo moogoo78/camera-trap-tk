@@ -199,7 +199,7 @@ class Application(tk.Tk):
             logging.debug(f'evoked by {event}')
         source_id = tag.replace('source_', '')
 
-        self.contents['main'].from_source(int(source_id))
+        self.contents['main'].change_source(int(source_id))
         self.show_content('main')
 
     def on_add_folder(self, event=None):
@@ -265,7 +265,7 @@ class Application(tk.Tk):
                 pass
 
         #print ('resize', event.height, event.width, event)
-         
+
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(
     '-i', '--ini',
