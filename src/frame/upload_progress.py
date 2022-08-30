@@ -350,7 +350,7 @@ class UploadProgress(tk.Frame):
         item['state'] = self.STATE_PENDING
 
         if not self.check_running():
-            item = self._find_source(source_id)
+            # item = self._find_source(source_id)
             item['action_button'].configure(
                 text=self.LABEL_PAUSE,
                 command=lambda source_id=source_id: self.handle_stop(source_id))
@@ -470,6 +470,7 @@ class UploadProgress(tk.Frame):
                 # may refresh, changed the images num
                 has_pending = self.check_pending()
                 num_count = 0
+                '''
                 if has_pending is True:
                     sql_count = f"SELECT COUNT(*) FROM image WHERE source_id={source_id} AND upload_status != '200' ORDER BY image_id"
                     res_count = self.app.db.fetch_sql(sql_count)
@@ -485,6 +486,19 @@ class UploadProgress(tk.Frame):
                 else:
                     num = len(item['images'])
                     value = total - num + counter
+                '''
+                # update layout
+                item = self._find_source(source_id)
+                total = item['source_data'][4]
+
+                num = len(item['images'])
+                value = total - num + counter
+                if has_pending is True or value > total:
+                    # value > total 防止 超過 100% (cannot reproduce), 220829
+                    sql_count = f"SELECT COUNT(*) FROM image WHERE source_id={source_id} AND upload_status != '200' ORDER BY image_id"
+                    res_count = self.app.db.fetch_sql(sql_count)
+                    num = res_count[0]
+                    value = total - num
 
                 # print('***', total, num, counter)
                 # update layout
