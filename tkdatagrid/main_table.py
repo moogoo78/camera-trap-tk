@@ -105,6 +105,7 @@ class MainTable(tk.Canvas):
         self.bind_all('<Control-v>', self.handle_ctrl_v)
         self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
         self.bind('<Shift-Button-1>', self.handle_shift_button_1)
+        #self.bind("<Configure>", self.resize)
 
         self.apply_custom_binding(self.ps['custom_binding'])
 
@@ -392,6 +393,7 @@ class MainTable(tk.Canvas):
         self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
         self.render_grid()
         self.render_data()
+        #self.render_table_resize_grip()
 
     def render_grid(self):
         self.delete('cell-border')
@@ -472,6 +474,7 @@ class MainTable(tk.Canvas):
                         img = Image.open(img_path)
                         img = ImageTk.PhotoImage(img.resize((50, 33)))
                         x_pad = 0
+                        y_pad = 0
                         if foo:= self.ps.get('cell_image_x_pad', 0):
                             x_pad = int(foo)
                         if foo:= self.ps.get('cell_image_y_pad', 0):

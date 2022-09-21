@@ -15,8 +15,8 @@ class Landing(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.app = parent
 
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_columnconfigure(0, weight=0)
 
         canvas = tk.Canvas(
             self,

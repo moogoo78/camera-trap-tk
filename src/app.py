@@ -46,7 +46,9 @@ class Application(tk.Tk):
         #print (config)
         #self.iconbitmap('trees.ico')
         self.app_width = 1200
-        self.app_height = 760
+        self.app_height = int(config.get('Layout', 'app_height'))
+        self.app_width_resize_to = 0
+        self.app_height_resize_to = 0
         self.app_primary_color = '#2A7F60'
         self.app_secondary_color = '#8AC731'
         self.app_comp_color = '#FF8C23'  # Complementary color
@@ -54,7 +56,7 @@ class Application(tk.Tk):
 
         self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
-        #self.maxsize(1000, 400)
+        self.maxsize(1200, 2000)
 
         self.protocol('WM_DELETE_WINDOW', self.quit)
         self.bind('<Configure>', self.resize)
@@ -122,7 +124,7 @@ class Application(tk.Tk):
 
         self.contents = {}
         self.contents['landing'] = Landing(self)
-        self.contents['landing'].grid(row=1, column=0, sticky='ew')
+        self.contents['landing'].grid(row=1, column=0, sticky='nw')
 
         self.footer = Footer(
             self,
@@ -143,7 +145,6 @@ class Application(tk.Tk):
 
         self.contents['upload_progress'] = UploadProgress(self)
         self.contents['help_page'] = HelpPage(self)
-
 
         self.panel = Panel(
             self,
@@ -255,16 +256,20 @@ class Application(tk.Tk):
 
     def quit(self):
         self.contents['upload_progress'].terminate_upload_task()
+        if h:= self.app_height_resize_to:
+            try:
+                if int(h) >= 150:
+                    self.config.set('Layout', 'app_height', str(h))
+                    logging.info(f'save config - Layout.app_height: {h}')
+                    self.config.overwrite()
+            except:
+                pass
+
         self.destroy()
 
     def resize(self, event):
-        if main := self.contents['main']:
-            if main.data_grid and main.data_grid.state.get('data_all', ''):
-                #main.data_grid.update_state({'height': event.height-50-310})
-                #main.data_grid.refresh()
-                pass
+        self.app_height_resize_to = event.height
 
-        #print ('resize', event.height, event.width, event)
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(

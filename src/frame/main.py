@@ -54,7 +54,7 @@ class Main(tk.Frame):
         #     'sa_to_d': {}
         # }
         # self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
-        #self.bind('<Configure>', self.resize)
+        # self.bind('<Configure>', self.resize)
 
         self.projects = []
         self.update_project_options()
@@ -459,7 +459,7 @@ class Main(tk.Frame):
             self.table_frame,
             data={},
             columns=self.data_helper.columns,
-            height=760-480,
+            height=self.app.app_height-480, #760-480,
             width=1200,
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],

@@ -31,6 +31,10 @@ mediaconvert_job_template = job_template
 # mediaconvert_input_folder = original
 mediaconvert_output_folder = target
 
+[Layout]
+app_width = 1200
+app_height = 760
+
 [DataGrid]
 num_per_page = 100
 
