@@ -85,13 +85,15 @@ class ColumnHeader(tk.Canvas):
 
 class RowIndex(tk.Canvas):
 
-    def __init__(self, parent, width=60, bg=''):
+    def __init__(self, parent, width=60, height=200, bg=''):
 
-        super().__init__(parent, bg=bg, width=width, bd=0, relief='flat')
+        super().__init__(parent, bg=bg, width=width, height=height, bd=0, relief='flat')
 
         self.parent = parent
         self.ps = parent.state
         self.width=width
+        self.height=height
+
         # saved row index control action (unit: row number start from 0)
         self.selected = {
             'mode': '',

@@ -108,7 +108,7 @@ class DataGrid(tk.Frame):
         self.footer = Footer(self)
 
         if self.state['row_index_display']:
-            self.row_index = RowIndex(self, bg=self.state['style']['color']['row_index_bg'], width=row_index_width)
+            self.row_index = RowIndex(self, bg=self.state['style']['color']['row_index_bg'], width=row_index_width, height=height)
 
         self.scrollbar_y = AutoScrollbar(self,orient=tk.VERTICAL, command=self.handle_yviews)
         self.scrollbar_y.grid(row=1, column=2, rowspan=1, sticky='news',pady=0, ipady=0)
