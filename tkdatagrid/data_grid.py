@@ -135,6 +135,7 @@ class DataGrid(tk.Frame):
             self.refresh(data)
 
     def to_page(self, page):
+        logging.info(f'page: {page}')
         self.refresh(page=page)
         self.footer.render()
 

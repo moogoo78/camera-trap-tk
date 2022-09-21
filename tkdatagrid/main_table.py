@@ -393,7 +393,7 @@ class MainTable(tk.Canvas):
         self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
         self.render_grid()
         self.render_data()
-        #self.render_table_resize_grip()
+        #self.render_pagination() # mouse click cause column & rows highlight
 
     def render_grid(self):
         self.delete('cell-border')
@@ -490,6 +490,35 @@ class MainTable(tk.Canvas):
 
         self.lift('cell-image')
 
+
+    # def render_pagination(self):
+    #     tag = 'pagination'
+    #     color = '#D3ECAF'
+    #     self.delete(tag)
+    #     x1 = self.x_start + 4
+    #     y1 = self.y_start + self.ps['num_rows'] * self.ps['cell_height'] + 4;
+    #     leg = 30
+    #     shift_x = x1
+    #     for i in range(0, self.ps['pagination']['num_pages']):
+    #         page = i+1
+    #         self.create_oval(
+    #             shift_x + ( i*leg ), y1,
+    #             shift_x + ( page*leg ), y1 + leg,
+    #             width=1,
+    #             fill=color,
+    #             tags=(tag, f'{tag}-{page}'))
+
+    #         self.create_text(
+    #             shift_x + ( i*leg ) + leg/2,
+    #             y1 + leg/2,
+    #             text=page,
+    #             fill='#2A7F60',
+    #             tags=(tag, f'{tag}-{page}'))
+    #         shift_x += 10
+    #         self.tag_bind(
+    #             f'{tag}-{page}',
+    #             '<Button-1>',
+    #             lambda _, x=page: self.parent.to_page(x))
 
     def render_listbox(self, row, col, choices, default=0):
         self.remove_widgets()
