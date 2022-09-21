@@ -1133,9 +1133,13 @@ class Main(tk.Frame):
                 delimiter=',',
                 quotechar='|',
                 quoting=csv.QUOTE_MINIMAL)
-            spamwriter.writerow([v['label'] for _, v in self.data_helper.columns.items()])
+            header = []
+            for k, v in self.data_helper.columns.items():
+                if k != 'thumb':
+                    header.append(v['label'])
+            spamwriter.writerow(header)
             for _, v in self.data_helper.data.items():
-                spamwriter.writerow([v[k] for k, _ in self.data_helper.columns.items()])
+                spamwriter.writerow([v[k] for k, _ in self.data_helper.columns.items() if k != 'thumb'])
         tk.messagebox.showinfo('info', f'匯出 csv 成功! ({save_as})')
 
     def show_video_icon(self):
