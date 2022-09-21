@@ -71,7 +71,8 @@ class DemoApp(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self.frame = tk.Frame(self)
-
+        self.frame.grid_columnconfigure(0, weight=1)
+        self.frame.grid_rowconfigure(0, weight=1)
         self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=400, row_index_display='iid', num_per_page=NUM_PER_PAGE, cols_on_ctrl_button_1=['b'], cols_on_fill_handle=['c',], row_index_width=100, rows_delete_type='CLONED')
 
         # redraw another
@@ -97,6 +98,6 @@ class DemoApp(tk.Tk):
 
         self.frame.grid(row = 0, column = 0, sticky = "nswe")
         self.data_grid.grid(row = 0, column = 0, sticky = "nswe")
-2
+
 app=DemoApp()
 app.mainloop()

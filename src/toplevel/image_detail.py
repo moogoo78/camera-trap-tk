@@ -10,7 +10,7 @@ from image import aspect_ratio
 
 class ImageDetail(tk.Toplevel):
     INIT_WIDTH = 1200
-    INIT_HEIGHT = 760
+    INIT_HEIGHT = 900
 
     def __init__(self, parent, image_path):
         super().__init__(parent)
@@ -34,16 +34,18 @@ class ImageDetail(tk.Toplevel):
         self.layout()
 
     def layout(self):
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
         self.canvas = tk.Canvas(
             self,
-            width=1200,
-            height=760,
+            width=self.INIT_WIDTH,
+            height=self.INIT_HEIGHT,
             bg='#777777',
             bd=0,
             highlightthickness=0,
             relief='ridge',
         )
-        self.canvas.grid(row=0, column=0, sticky='ewns')
+        self.canvas.grid(sticky='ewns')
 
         self.canvas.bind('<Enter>', self.enter)
         self.canvas.bind('<Motion>', self.motion)

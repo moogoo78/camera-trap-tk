@@ -256,6 +256,7 @@ class Application(tk.Tk):
 
     def quit(self):
         self.contents['upload_progress'].terminate_upload_task()
+
         if h:= self.app_height_resize_to:
             try:
                 if int(h) >= 150:

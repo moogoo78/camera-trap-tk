@@ -108,8 +108,8 @@ class Main(tk.Frame):
 
 
     def layout(self):
-        self.grid_rowconfigure(0, weight=0)
-        self.grid_columnconfigure(0, weight=0)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
         #self.notebook = ttk.Notebook(self)
         #self.notebook.grid(row=0, column=0)
@@ -426,7 +426,7 @@ class Main(tk.Frame):
         self.delete_button.grid(row=6, column=1, sticky='e', padx=(20, 0), pady=(18, 0))
 
     def config_table_frame(self):
-        self.table_frame.grid_columnconfigure(0, weight=0)
+        self.table_frame.grid_columnconfigure(0, weight=1)
         self.table_frame.grid_rowconfigure(0, weight=1)
         #print (self.table_frame.grid_info(), self.table_frame.grid_bbox())
         species_choices = self.app.config.get('AnnotationFieldSpecies', 'choices')
@@ -459,7 +459,7 @@ class Main(tk.Frame):
             self.table_frame,
             data={},
             columns=self.data_helper.columns,
-            height=self.app.app_height-480, #760-480,
+            height= 1000,#760-480, #self.app.app_height-480, #760-480,
             width=1200,
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
