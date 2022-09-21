@@ -16,7 +16,7 @@ class ImageDetail(tk.Toplevel):
         super().__init__(parent)
         self.parent = parent
 
-        self.geometry(f'{self.INIT_WIDTH}x{self.INIT_HEIGHT}')
+        self.geometry(f'{self.INIT_WIDTH}x{self.INIT_HEIGHT}+100+100')
 
         self.title(f'Image Detail Window - {image_path}')
         self.bind('<Configure>', self.resize)
@@ -28,7 +28,7 @@ class ImageDetail(tk.Toplevel):
         self.zoom_step = 1
         self.delta_value = 0
         self.resize_ratio = 1
-
+        self.to_width = self.INIT_WIDTH
         self.protocol('WM_DELETE_WINDOW', self.quit)
 
         self.layout()
@@ -96,6 +96,7 @@ class ImageDetail(tk.Toplevel):
         if self.bg_img_id:
             self.canvas.delete(self.bg_img_id)
 
+        self.to_width = event.width
         self.fit_aspect_ratio(event.width)
 
     def fit_aspect_ratio(self, to_width):
@@ -113,3 +114,8 @@ class ImageDetail(tk.Toplevel):
     def quit(self):
         self.parent.data_grid.main_table.set_keyboard_control(True)
         self.destroy()
+
+    def change_image(self, image_path):
+        #print ('foo',image_path )
+        self.orig_img = Image.open(image_path)
+        self.fit_aspect_ratio(self.to_width)

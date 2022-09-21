@@ -896,7 +896,10 @@ class Main(tk.Frame):
 
     def custom_arrow_key(self, row_key, col_key):
         self.select_item(row_key, col_key)
-
+        if self.image_detail:
+            item = self.data_helper.data[row_key]
+            image_path = item['thumb'].replace('-q.', '-o.')
+            self.image_detail.change_image(image_path)
     def custom_mouse_click(self, row_key, col_key):
         self.select_item(row_key, col_key)
 
@@ -1111,10 +1114,10 @@ class Main(tk.Frame):
 
             if item['media_type'] == 'image':
                 # stop tabel keyboard control
-                self.data_grid.main_table.set_keyboard_control(False)
+                #self.data_grid.main_table.set_keyboard_control(False)
 
                 image_path = item['thumb'].replace('-q.', '-o.')
-                ImageDetail(self, image_path)
+                self.image_detail = ImageDetail(self, image_path)
             else:
                 # VideoPlayer(self, item['path'])
                 # pyinstaller build will caused imageoi-ffmpeg not found!
