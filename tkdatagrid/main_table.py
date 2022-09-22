@@ -1175,7 +1175,7 @@ class MainTable(tk.Canvas):
         self.render_row_highlight(rows)
 
     def handle_listbox_click(self, event, row, col):
-        if not self.listbox:
+        if not hasattr(self, 'listbox'):
             return
 
         cur_sel = self.listbox.curselection()

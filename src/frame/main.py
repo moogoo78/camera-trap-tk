@@ -84,6 +84,8 @@ class Main(tk.Frame):
         self.data_helper.columns['annotation_sex']['choices'] = sex_choices.split(',')
         self.data_helper.columns['annotation_lifestage']['choices'] = lifestage_choices.split(',')
 
+        self.image_detail = None
+
         # layout
         #self.grid_propagate(False)
         self.layout()
