@@ -116,6 +116,5 @@ class ImageDetail(tk.Toplevel):
         self.destroy()
 
     def change_image(self, image_path):
-        #print ('foo',image_path )
         self.orig_img = Image.open(image_path)
         self.fit_aspect_ratio(self.to_width)

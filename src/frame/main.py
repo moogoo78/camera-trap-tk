@@ -1126,7 +1126,8 @@ class Main(tk.Frame):
 
     def export_csv(self):
         folder_name = self.source_data['source'][3]
-        save_as = tk.filedialog.asksaveasfilename(defaultextension='csv')
+        save_as = tk.filedialog.asksaveasfilename(
+            defaultextension='csv', initialfile=f'export-{folder_name}')
         if not save_as:
             return False
 
