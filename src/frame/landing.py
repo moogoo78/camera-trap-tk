@@ -40,29 +40,69 @@ class Landing(tk.Frame):
         )
 
         canvas.create_text(
-            950,
+            920,
             250,
             text='臺灣自動相機上傳系統',
             fill='#FFFFFF',
             font=self.app.get_font('display-1')
         )
         canvas.create_text(
-            950,
+            900,
             300,
-            text='Camera Trap System',
+            text='Taiwan Camera Trap System',
             fill='#FFFFFF',
-            font=self.app.get_font('display-1')
+            font=self.app.get_font(29)
         )
 
-        self.btn1 = ttk.Button(
-            self,
+        canvas.create_rectangle(
+            660, 340,
+            900, 398,
+            fill=self.app.app_primary_color,
+            outline=self.app.app_primary_color,
+            tags=('button-folder-list'),
+        )
+        canvas.create_text(
+            785,
+            369,
             text='現有資料夾',
-            command=self.app.on_folder_list
+            fill='#FFFFFF',
+            font=self.app.get_font('display-3'),
+            tags=('button-folder-list'),
         )
-        self.btn1.place(x=800, y=360, anchor='nw')
-        self.btn2 = ttk.Button(
-            self,
+        canvas.create_rectangle(
+            920, 340,
+            1160, 398,
+            fill=self.app.app_primary_color,
+            outline=self.app.app_primary_color,
+            tags=('button-folder-add'),
+        )
+        canvas.create_text(
+            1040,
+            369,
             text='加入資料夾',
-            command=self.app.on_add_folder
+            fill='#FFFFFF',
+            font=self.app.get_font('display-3'),
+            tags=('button-folder-add'),
         )
-        self.btn2.place(x=950, y=360, anchor='nw')
+        canvas.tag_bind(
+            'button-folder-list',
+            '<ButtonPress>',
+            self.app.on_folder_list)
+
+        canvas.tag_bind(
+            'button-folder-add',
+            '<ButtonPress>',
+            self.app.on_add_folder)
+
+        # self.btn1 = ttk.Button(
+        #     self,
+        #     text='現有資料夾',
+        #     command=self.app.on_folder_list
+        # )
+        # self.btn1.place(x=800, y=360, anchor='nw')
+        # self.btn2 = ttk.Button(
+        #     self,
+        #     text='加入資料夾',
+        #     command=self.app.on_add_folder
+        # )
+        # self.btn2.place(x=950, y=360, anchor='nw')

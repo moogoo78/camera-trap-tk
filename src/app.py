@@ -234,8 +234,13 @@ class Application(tk.Tk):
             'display-4': 12,
             'default': 10,
         }
-        size = SIZE_MAP[size_code] if isinstance(size_code, str) else size_code
-        return (self.app_font, size)
+        if size_code in SIZE_MAP:
+            size = SIZE_MAP[size_code] if isinstance(size_code, str) else size_code
+            return (self.app_font, size)
+        elif int(size_code) > 0:
+            return (self.app_font, int(size_code))
+        else:
+            return (self.app_font, 10)
 
     def toggle_image_viewer_DEPRICATED(self, is_image_viewer=True):
         # 先不 remove main , 蓋掉就好了
@@ -257,14 +262,16 @@ class Application(tk.Tk):
     def quit(self):
         self.contents['upload_progress'].terminate_upload_task()
 
-        if h:= self.app_height_resize_to:
-            try:
-                if int(h) >= 150:
-                    self.config.set('Layout', 'app_height', str(h))
-                    logging.info(f'save config - Layout.app_height: {h}')
-                    self.config.overwrite()
-            except:
-                pass
+        # don't save
+        # if h:= self.app_height_resize_to:
+        #     try:
+        #         if int(h) >= 150:
+        #             self.config.set('Layout', 'app_height', str(h))
+        #             logging.info(f'save config - Layout.app_height: {h}')
+        #             self.config.overwrite()
+        #     except:
+        #         print('write error')
+        #         pass
 
         self.destroy()
 

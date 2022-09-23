@@ -34,6 +34,13 @@ class Panel(tk.Frame):
         )
         self.canvas.grid(row=0, column=0, sticky='ewns')
 
+        self.canvas.create_rectangle(
+            0, 24,
+            240, 74,
+            fill='#FFFFFF',
+            outline='#FFFFFF',
+            tags=('import_folder'),
+        )
         self.canvas.create_text(
             120,
             50,
@@ -47,9 +54,17 @@ class Panel(tk.Frame):
             '<Button-1>',
             self.app.on_add_folder
         )
+
+        self.canvas.create_rectangle(
+            0, 94,
+            240, 144,
+            fill='#FFFFFF',
+            outline='#FFFFFF',
+            tags=('list_folder'),
+        )
         self.canvas.create_text(
             120,
-            100,
+            120,
             text='現有資料夾',
             font=self.app.get_font('display-3'),
             fill=self.app.app_primary_color,
@@ -61,9 +76,16 @@ class Panel(tk.Frame):
             self.app.on_folder_list
         )
 
+        self.canvas.create_rectangle(
+            0, 164,
+            240, 214,
+            fill='#FFFFFF',
+            outline='#FFFFFF',
+            tags=('upload_progress'),
+        )
         self.canvas.create_text(
             120,
-            150,
+            190,
             text='上傳進度',
             font=self.app.get_font('display-3'),
             fill=self.app.app_primary_color,
@@ -75,9 +97,16 @@ class Panel(tk.Frame):
             self.app.on_upload_progress
         )
 
+        self.canvas.create_rectangle(
+            0, 234,
+            240, 284,
+            fill='#FFFFFF',
+            outline='#FFFFFF',
+            tags=('help_page'),
+        )
         self.canvas.create_text(
             120,
-            200,
+            260,
             text='教學說明',
             font=self.app.get_font('display-3'),
             fill=self.app.app_primary_color,

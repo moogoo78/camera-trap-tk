@@ -319,11 +319,6 @@ class FolderList(tk.Frame):
                 anchor='nw',
                 tags=('item', status_cat, source_tag))
 
-            # 點的或拖的都會觸發
-            self.canvas.tag_bind(
-                source_tag,
-                '<B1-Motion>',
-                lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
             self.canvas.tag_bind(
                 source_tag,
                 '<ButtonPress>',
