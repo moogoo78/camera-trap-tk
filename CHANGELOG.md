@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.2a]
+
+### Changed:
+
+fix:
+- 放大圖的比例跟顯示範圍調整，不然會被遮住
+- 編輯表格區域可以調整高度 (解析度太低的電腦也可以用)
+
+feat:
+- 放大圖可以商上下左右鍵控制
+
+style:
+- landing, panel, appbar 的按鈕換設計的 icon
+
 ## [v0.2.1b]
 
 ### Changed:
@@ -18,7 +32,7 @@ fix:
 - [網頁] 棄用的相機位置在桌機版的下拉選單要拿掉
 
 style:
--放大圖/播放影片的按鈕位置調整 (之前是固定，現在會因為圖片的寬度跟著移動到右下角)
+- 放大圖/播放影片的按鈕位置調整 (之前是固定，現在會因為圖片的寬度跟著移動到右下角)
 
 ## [v0.2.1a]
 
