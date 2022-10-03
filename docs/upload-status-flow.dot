@@ -1,0 +1,93 @@
+digraph G {
+  subgraph cluster_0 {
+    style=filled;
+    color=mediumseagreen;
+    node [style=filled,color=lightgoldenrod1];
+    label = "Import Folder & Editing";
+    a1 -> a2 -> a3;
+  }
+
+  subgraph cluster_1 {
+    color=gray;
+    node [style=filled, color=cornsilk2];
+    label = "Upload Folder's Annotations & Media";
+
+    b1a -> b1 [label="clicked upload button"];
+    b1-> b2 [style=dashed];
+    b2 -> b3 [label="create threading\n(Singlaton)"];
+    b3 -> b4 [style=dashed];
+    b4 -> b1;
+    b1 -> c1 [color=orange, label="1. re-upload (modify annotation)", style=dashed];
+    c1 -> c2 [color=orange, style=dashed];
+    c1 -> c1a [color=orange, style=dashed];
+    b3a -> b1 [label="re-upload"];
+
+  }
+  subgraph cluster_2 {
+    color=royalblue4;
+    label = "CameraTrap Server";
+    serv_anno;
+  }
+  subgraph cluster_3 {
+    color=royalblue4;
+    label = "AWS S3 Service";
+    serv_s3;
+    serv_media;
+  }
+
+  start -> a1;
+  a3 -> b1 [label="clicked upload button"];
+  a2 -> b1;
+  b1 -> serv_anno [label="post annotation"];
+  serv_anno -> b1a;
+  b1 -> b1a [style=dashed, label="failed"];
+  serv_anno -> b2 [label="succeed"];
+  b3 -> serv_s3 -> b4 [label="succeed"];
+  serv_s3 -> b3a [label="failed"];
+  serv_anno -> c1a [color=orange];
+  b1 -> serv_anno [color=orange];
+  b3 -> serv_media -> b4;
+  serv_anno -> c2 [color=orange];
+  c2 -> end;
+  b4 -> end;
+  b4 -> d -> end;
+  c2 -> d;
+  /*
+  b1 -> serv_anno -> b2 -> b1 [color=orange, style=dashed, label="2. re-upload annotation"];
+  b3c -> end;
+
+  a2 -> b1;
+  b3b -> serv_s3 -> b3b;
+  serv_s3 -> b5;
+  b4 -> end;
+  b4 -> c;
+  b4 -> a3;
+  a3 -> b1 [label="1. re-upload (modify annotation)", color=orange];
+  b5 -> end;
+  b4 -> a3 [label="update annotation, upload last failed files"];
+  b5 -> c -> end;
+
+  serv_anno -> b5 [color=orange, style=dashed];
+  */
+  serv_anno [shape=diamond, color=plum2, label="save annotation\nto database"];
+  serv_s3 [shape=diamond, color=plum2, label="upload to AWS S3"];
+  serv_media [shape=diamond, color=plum2, label="transcode\nmovie files"];
+
+  d [label="archive folder\n(d)"];
+  c2 [label="override upload\n(c2) 覆寫完成", color=tan, style=filled];
+  c1a [label="override upload failed\n(c1a) 上傳失敗", color=tan, style=filled];
+  c1 [label="start override upload\n(c1)", color=tan, style=filled];
+
+  b4 [label="upload done\n(b4) 完成"];
+  b3a [label="upload media failed\n (b3a) 上傳失敗 (檔案不完全)"];
+  b3 [label="uploading media files\n(b3) 上傳中"];
+  b2 [label="pending upload media files\n(b2) 上傳中"];
+  b1a [label="upload annotation failed\n(b1a) 上傳失敗"];
+  b1 [label="start upload\n(b1)"];
+
+  a3 [label="start annotate\n(a3) 編輯中"];
+  a2 [label="done import\n(a2) 未編輯"];
+  a1 [label="start import\n(a1)"];
+  start [shape=Mdiamond];
+  end [shape=Msquare];
+}

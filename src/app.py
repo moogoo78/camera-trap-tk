@@ -15,20 +15,23 @@ import socket
 from version import __version__
 from frame import (
     #Toolbar,
+    AppBar,
     FolderList,
     #Statusbar,
     #ImageViewer,
     UploadProgress,
     Panel,
     Main,
+    Landing,
+    Footer,
+    HelpPage,
 )
-import asyncio
+
 
 from database import Database
 from source import Source
 from server import Server
 from config import Config
-
 
 class Application(tk.Tk):
 
@@ -42,19 +45,26 @@ class Application(tk.Tk):
             self.user_hostname = '--'
         #print (config)
         #self.iconbitmap('trees.ico')
-        self.WIDTH = 1200
-        self.HEIGHT = 760
-        self.geometry(f'{self.WIDTH}x{self.HEIGHT}+40+20')
+        self.app_width = 1200
+        self.app_height = int(config.get('Layout', 'app_height'))
+        self.app_width_resize_to = 0
+        self.app_height_resize_to = 0
+        self.app_primary_color = '#2A7F60'
+        self.app_secondary_color = '#8AC731'
+        self.app_comp_color = '#FF8C23'  # Complementary color
+        self.app_font = 'Microsoft JhengHei UI' #'Yu Gothic'  #'Arial'
+
+        self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
-        #self.maxsize(1000, 400)
+        self.maxsize(1200, 2000)
 
         self.protocol('WM_DELETE_WINDOW', self.quit)
-        s = ttk.Style()
-        s.theme_use('clam')
+        self.bind('<Configure>', self.resize)
 
-        self.config = config
+        style = ttk.Style()
+        style.theme_use('clam') # clam, classic
 
-        # logging
+        # == logging ===
         log_level = logging.INFO
         if ll := config.get('Mode', 'log_level'):
             ll = ll.upper()
@@ -64,24 +74,27 @@ class Application(tk.Tk):
             filename='ct-log.txt',
             encoding='utf-8', mode='a+')
         stdout_handler = logging.StreamHandler(sys.stdout)
+        #text_handler = TextHandler(text)
         logging.basicConfig(
             handlers=[
                 file_handler,
-                stdout_handler],
-            format="%(asctime)s|%(levelname)s|%(filename)s:%(lineno)d|%(funcName)s => %(message)s",
+                stdout_handler,
+            ],
+            format="%(asctime)s|%(levelname)s|%(filename)s:%(lineno)d|%(funcName)s 👉 %(message)s",
             datefmt="%Y-%m-%d:%H:%M:%S",
             level=log_level)
 
-        # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s 
+        # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s
         self.logger = logging.getLogger('ct-tk')
 
+
+        # == helpers ==
         self.db = Database(config.get('SQLite', 'dbfile'))
         self.db.init()
 
-        # helpers
+        self.config = config
         self.source = Source(self)
         self.server = Server(dict(config['Server']))
-
 
         #print(list(tk.font.families()))
         #Yu Gothic
@@ -94,14 +107,51 @@ class Application(tk.Tk):
             'h4': tk.font.Font(family='Yu Gotic', size=10),
         }
 
+        self.layout()
+
+    def layout(self):
         self.grid_rowconfigure(0, weight=0)
-        self.grid_columnconfigure(0, weight=0)
-        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(2, weight=0)
+        self.grid_columnconfigure(0, weight=1)
 
-        self.panel = Panel(self, background='#DEDEDE', width=32) # background='#ef8354'
-        self.panel.grid(row=0, column=0, sticky='ns')
+        self.appbar = AppBar(
+            self,
+            background=self.app_primary_color,
+            width=self.app_width,
+            height='50')
+        self.appbar.grid(row=0, column=0, sticky='ew')
 
-        self.frames = {}
+        self.contents = {}
+        self.contents['landing'] = Landing(self)
+        self.contents['landing'].grid(row=1, column=0, sticky='nw')
+
+        self.footer = Footer(
+            self,
+            background=self.app_primary_color,
+            width=self.app_width,
+            height='25'
+        )
+        self.footer.grid(row=2, column=0, sticky='ew')
+
+        self.contents['folder_list'] = FolderList(
+            self,
+            background='#4f5d75',
+            width=300)
+
+        self.contents['main'] = Main(
+            self,
+            background='#F2F2F2')
+
+        self.contents['upload_progress'] = UploadProgress(self)
+        self.contents['help_page'] = HelpPage(self)
+
+        self.panel = Panel(
+            self,
+            width=240)
+        # self.panel.place(x=0, y=50, anchor='nw')
+
+
         #self.toolbar = Toolbar(
         #    self,
         #    background='#ef8354'
@@ -111,77 +161,88 @@ class Application(tk.Tk):
         #    self,
         #    background='#bfc0c0')
 
-        #self.message = tk.Label(self, text="Hello, world!")
-        #self.message.grid(row=1, column=0, columnspan=2)
+        # self.on_upload_progress() # for quick test
 
-        #self.toolbar.grid(row=0, column=0, columnspan=2, sticky='nsew')
-        #self.sidebar.grid(row=0, column=1, sticky='nsew')
+    def show_content(self, name):
+        self.clear_contents(exclude=name)
+        if not self.contents[name].winfo_viewable():
+            self.contents[name].grid(row=1, column=0, sticky='nw')
 
-        #self.landing.grid(row=2, column=1, sticky='nsew')
-        #self.statusbar.grid(row=2, column=0, columnspan=2)
-        self.panedwindow = ttk.PanedWindow(self, orient=tk.HORIZONTAL, height=self.HEIGHT)
-        self.panedwindow.app = self
+        self.update_idletasks()
 
-        #self.panedwindow.pack(fill=tk.BOTH, expand=True)
-        self.panedwindow.grid(row=0, column=1, sticky='nsew')
-        self.panedwindow.grid_rowconfigure(0, weight=1)
-        self.panedwindow.grid_columnconfigure(0, weight=1)
+    def clear_contents(self, exclude=''):
+        for k, v in self.contents.items():
+            v.update_idletasks()
+            if v.winfo_viewable():
+                if exclude == '' or exclude != k:
+                    # print('clear ', k)
+                    self.contents[k].grid_remove()
 
-        self.frames['folder_list'] = FolderList(
-            self.panedwindow,
-            background='#4f5d75',
-            width=300)
-
-        self.frames['upload_progress'] = UploadProgress(
-            self.panedwindow,
-            width=100)
-
-        self.frames['main'] = Main(
-            self.panedwindow,
-            #fbackground='#ffffff',
-            background='#2d3142'
-        )
-
-        # init layout
-        self.panedwindow.add(self.frames['folder_list'])
-        #self.panedwindow.add(self.upload_progress)
-        self.panedwindow.add(self.frames['main'])
-
-
-    # def begin_from_source(self):
-    #     if self.landing.winfo_viewable():
-    #         self.landing.grid_remove()
-
-    #     if self.image_viewer.winfo_viewable():
-    #         self.image_viewer.grid_remove()
-
-    def clear_panedwindow(self):
-        if self.frames['folder_list'].winfo_viewable():
-            self.panedwindow.remove(self.frames['folder_list'])
-        if self.frames['upload_progress'].winfo_viewable():
-            self.panedwindow.remove(self.frames['upload_progress'])
-        if self.frames['main'].winfo_viewable():
-            self.panedwindow.remove(self.frames['main'])
-
-    def toggle_folder_list(self):
-        if self.frames['folder_list'].winfo_viewable():
-            self.clear_panedwindow()
-            self.panedwindow.add(self.frames['main'])
+    def toggle_panel(self):
+        # if this method in panel, then panel should declare before AppBar, and may by cover by other widget
+        if self.panel.is_viewable is True:
+            self.panel.hide()
         else:
-            self.clear_panedwindow()
-            self.panedwindow.add(self.frames['folder_list'])
-            self.panedwindow.add(self.frames['main'])
+            self.panel.show()
 
-    def toggle_upload_progress(self):
-        if self.frames['upload_progress'].winfo_viewable():
-            self.clear_panedwindow()
-            self.panedwindow.add(self.frames['main'])
+    def on_folder_list(self, event=None):
+        logging.debug(f'event: {event}')
+
+        self.contents['folder_list'].refresh_source_list()
+        self.show_content('folder_list')
+
+        if self.panel.is_viewable is True:
+            self.panel.hide()
+
+    def on_folder_detail(self, event, tag):
+        logging.debug(f'click on tag: {tag}')
+        if event:
+            logging.debug(f'evoked by {event}')
+        source_id = tag.replace('source_', '')
+
+        self.contents['main'].change_source(int(source_id))
+        self.show_content('main')
+
+    def on_add_folder(self, event=None):
+        logging.debug(f'{event}')
+        self.contents['folder_list'].add_folder()
+
+        if self.panel.is_viewable is True:
+            self.panel.hide()
+
+    def on_upload_progress(self, event=None):
+        logging.debug(f'event: {event}')
+        self.show_content('upload_progress')
+        #if not self.contents['upload_progress'].check_running():
+        self.contents['upload_progress'].refresh()
+
+        if self.panel.is_viewable is True:
+            self.panel.hide()
+
+    def on_help_page(self, event=None):
+        logging.debug(f'{event}')
+        self.show_content('help_page')
+
+        if self.panel.is_viewable is True:
+            self.panel.hide()
+
+    def get_font(self, size_code='default'):
+        SIZE_MAP = {
+            'display-1': 32,
+            'display-2': 24,
+            'display-3': 18,
+            'display-4': 12,
+            'default': 10,
+        }
+        if size_code in SIZE_MAP:
+            size = SIZE_MAP[size_code] if isinstance(size_code, str) else size_code
+            return (self.app_font, size)
+        elif int(size_code) > 0:
+            return (self.app_font, int(size_code))
         else:
-            self.clear_panedwindow()
-            self.panedwindow.add(self.frames['upload_progress'])
-            self.panedwindow.add(self.frames['main'])
+            return (self.app_font, 10)
 
-    def toggle_image_viewer(self, is_image_viewer=True):
+    def toggle_image_viewer_DEPRICATED(self, is_image_viewer=True):
         # 先不 remove main , 蓋掉就好了
         #if not self.frames['main'].winfo_viewable():
         #self.frames['main'].grid(row=0, column=0, sticky='nsew')
@@ -199,8 +260,24 @@ class Application(tk.Tk):
                 self.frames['image_viewer'].grid_remove()
 
     def quit(self):
-        self.frames['upload_progress'].handle_stop()
+        self.contents['upload_progress'].terminate_upload_task()
+
+        # don't save
+        # if h:= self.app_height_resize_to:
+        #     try:
+        #         if int(h) >= 150:
+        #             self.config.set('Layout', 'app_height', str(h))
+        #             logging.info(f'save config - Layout.app_height: {h}')
+        #             self.config.overwrite()
+        #     except:
+        #         print('write error')
+        #         pass
+
         self.destroy()
+
+    def resize(self, event):
+        self.app_height_resize_to = event.height
+
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(

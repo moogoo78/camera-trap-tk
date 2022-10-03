@@ -3,11 +3,45 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
+class Footer(tk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self.parent = parent
+        self.ps = parent.state
+
+        self.button_list = []
+
+        # layout
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+
+    def render(self):
+        # clear
+        for x in self.button_list:
+            x.destroy()
+
+        #print('foot', self.ps['pagination'])
+
+        for i in range(0, self.ps['pagination']['num_pages']):
+            page = i+1
+            button = ttk.Button(
+                self,
+                text=f'{page}',
+                width=2,
+                command=lambda x=page: self.parent.to_page(x),
+            )
+            if i+1 == self.ps['pagination']['current_page']:
+                button.state(['pressed'])
+
+            button.grid(row=0, column=i, sticky='nswe', padx=(0, 2))
+            self.button_list.append(button)
+
+
 class ColumnHeader(tk.Canvas):
 
-    def __init__(self, parent, bg):
-        self.height = 20
-        super().__init__(parent, bg=bg, width=500, height=self.height, bd=0)
+    def __init__(self, parent, bg, height):
+        self.height = height
+        super().__init__(parent, bg=bg, width=900, height=self.height, bd=0)
         self.ps = parent.state
         self.config(width=self.ps['width'])
 
@@ -36,7 +70,7 @@ class ColumnHeader(tk.Canvas):
                                       tag='header-border')
 
             self.create_text(
-                x_center + pad, self.ps['column_header_height']/2,
+                x_center + pad, self.height/2,
                 text=col['label'],
                 anchor='w',
                 fill='white',
@@ -51,15 +85,14 @@ class ColumnHeader(tk.Canvas):
 
 class RowIndex(tk.Canvas):
 
-    def __init__(self, parent, width=None, bg=''):
-        if not width:
-            self.width = 60
-        else:
-            self.width = width
-        super().__init__(parent, bg=bg, width=self.width, bd=0, relief='flat')
+    def __init__(self, parent, width=60, height=200, bg=''):
+
+        super().__init__(parent, bg=bg, width=width, height=height, bd=0, relief='flat')
 
         self.parent = parent
         self.ps = parent.state
+        self.width=width
+        self.height=height
 
         # saved row index control action (unit: row number start from 0)
         self.selected = {
@@ -68,11 +101,11 @@ class RowIndex(tk.Canvas):
             'row_start': None,
             'row_end': None,
         }
-        self.bind('<B1-Motion>', self.handle_mouse_drag)
-        self.bind('<Button-1>', self.handle_mouse_button_1)
-        self.bind('<Button-3>', self.handle_mouse_button_3)
-        self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
-        self.bind('<Shift-Button-1>', self.handle_shift_button_1)
+        # self.bind('<B1-Motion>', self.handle_mouse_drag)
+        # self.bind('<Button-1>', self.handle_mouse_button_1)
+        # self.bind('<Button-3>', self.handle_mouse_button_3)
+        # self.bind('<Control-Button-1>', self.handle_ctrl_button_1)
+        # self.bind('<Shift-Button-1>', self.handle_shift_button_1)
 
     def get_cleaned_row(self, event_y):
         y = int(self.canvasy(event_y))
@@ -83,6 +116,8 @@ class RowIndex(tk.Canvas):
 
     def handle_shift_button_1(self, event):
         logging.debug('shift select, {}'.format(self.selected))
+
+        self.parent.update_state('is_row_index_selected', True)
 
         rows = self.parent.get_row_list()
         current_row = self.get_cleaned_row(event.y)
@@ -101,7 +136,7 @@ class RowIndex(tk.Canvas):
         self.render_row_highlight()
 
     def handle_ctrl_button_1(self, event):
-
+        self.parent.update_state('is_row_index_selected', True)
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -121,7 +156,7 @@ class RowIndex(tk.Canvas):
 
     def handle_mouse_button_1(self, event):
         self.parent.main_table.clear_selected()
-
+        self.parent.update_state('is_row_index_selected', True)
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -137,9 +172,6 @@ class RowIndex(tk.Canvas):
         logging.debug('mouse_button_1 <Button-1>: {}'.format(self.selected))
 
         self.render_row_highlight()
-
-    def foo(self):
-        pass
 
     def handle_mouse_button_3(self, event):
         self.parent.main_table.render_popup_menu(event)
@@ -162,7 +194,7 @@ class RowIndex(tk.Canvas):
 
     def handle_mouse_drag(self, event):
         #self.parent.main_table.clear_selected()
-
+        self.parent.update_state('is_row_index_selected', True)
         row = self.get_cleaned_row(event.y)
         if row < 0:
             return None
@@ -187,33 +219,36 @@ class RowIndex(tk.Canvas):
     def render_row_highlight(self):
         self.delete('row-highlight')
 
-        s = self.selected
+        selected = self.selected
 
         y1 = -1
         y2 = -1
         y_pos_list = [] # for row_index bg color
         rows = [] # for main_table row highlight
-        mode = s.get('mode', '')
+        mode = selected.get('mode', '')
+        self.ps['is_row_index_selected'] = True
+
         if mode == 'click':
             #rows.append(s['row_start'])
-            y1 = self.ps['cell_height'] * s['row_start']
-            y2 = self.ps['cell_height'] * (s['row_start'] + 1)
+            y1 = self.ps['cell_height'] * selected['row_start']
+            y2 = self.ps['cell_height'] * (selected['row_start'] + 1)
             y_pos_list.append((y1, y2))
-            rows = s['row_list']
+            rows = selected['row_list']
         elif mode == 'drag':
-            if s['row_start'] >= 0 and s['row_end'] >= 0:
-                diff = s['row_end'] - s['row_start']
+            if selected['row_start'] >= 0 and selected['row_end'] >= 0:
+                diff = selected['row_end'] - selected['row_start']
                 # 不給逆向 (由下往上選)
-                if diff > 0:
-                    #print (self.ps['cell_height'] * s['row_start'], self.ps['cell_height'] * s['row_end'])
-                    y1 = self.ps['cell_height'] * s['row_start']
-                    y2 = self.ps['cell_height'] * (s['row_end'] + 1)
-                    y_pos_list.append((y1, y2))
-
+                if diff != 0:
                     if diff > 0:
-                        rows = list(range(s['row_start'], s['row_end']+1))
-                    #elif diff < 0:
-                    #    rows = list(range(s['row_end'], s['row_start']+1))
+                        y1 = self.ps['cell_height'] * selected['row_start']
+                        y2 = self.ps['cell_height'] * (selected['row_end'] + 1)
+                        y_pos_list.append((y1, y2))
+                        rows = list(range(selected['row_start'], selected['row_end']+1))
+                    elif diff < 0:
+                        y1 = self.ps['cell_height'] * selected['row_end']
+                        y2 = self.ps['cell_height'] * (selected['row_start'] + 1)
+                        y_pos_list.append((y1, y2))
+                        rows = list(range(selected['row_end'], selected['row_start']+1))
 
         elif mode == 'ctrl-click':
             for row in s['row_list']:
@@ -222,7 +257,7 @@ class RowIndex(tk.Canvas):
                 y_pos_list.append((y1, y2))
                 rows.append(row)
         elif mode == 'shift':
-            for row in s['row_list']:
+            for row in selected['row_list']:
                 y1 = self.ps['cell_height'] * row
                 y2 = self.ps['cell_height'] * (row + 1)
                 y_pos_list.append((y1, y2))
@@ -236,13 +271,14 @@ class RowIndex(tk.Canvas):
                 #outline=self.ps['style']['color']['cell-highlight-border'],
                 #stipple="gray50",
                 tags=('row-highlight'))
-        self.lower('row-highlight')
+        self.tag_lower('row-highlight')
 
         if func := self.ps.get('after_row_index_selected', ''):
             return func(rows)
 
     def clear_selected(self):
-        self.delete('row-highlight')
+        self.parent.update_state({'is_row_index_selected': False})
+        # self.delete('row-highlight')
         self.selected = {}
 
     def render(self, current_row=''):
@@ -270,6 +306,7 @@ class RowIndex(tk.Canvas):
 
             disp = self.ps.get('row_index_display', '')
             text = ''
+
             if disp == 'iid':
                 text = f'{i+1}({v[0]})', #f'{i+1}'
             else:
@@ -285,7 +322,6 @@ class AutoScrollbar(ttk.Scrollbar):
        works if you use the grid geometry manager."""
 
     def set(self, lo, hi):
-        #print (lo, hi)
         '''
         if float(lo) <= 0.0 and float(hi) >= 1.0:
             # grid_remove is currently missing from Tkinter!

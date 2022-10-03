@@ -1,33 +1,64 @@
 [Installation]
-account_id = EXSAMPLE
+account_id = EXAMPLE
 
 [Server]
-host = http://dev.camera-trap.tw
+host = http://test.camera-trap.tw
 image_annotation_api = /api/client/v1/image/annotation/
 image_update_api = /api/client/v1/image/update/
+update_upload_history_api = /update_upload_history/
 project_api = /api/client/v1/projects/
+project_option_list = 141::桌機上傳-2021
+
+[Mode]
+log_level = debug
 
 [SQLite]
-dbfile = camera-trap-desktop.db
+dbfile = ct.db
 
 [Thumbnail]
 destination = camera-trap-desktop
 prefix = thumb-
 
 [AWSConfig]
-access_key_id = my-access-key-id
-secret_access_key = my-secret-access-key
-bucket_name = my-bucket-name
+access_key_id =key
+secret_access_key = access
+bucket_name = camera-trap-21-dev
+mediaconvert_region = region
+mediaconvert_endpoint = endpoint
+mediaconvert_role = role
+mediaconvert_queue = queue
+mediaconvert_job_template = job_template
+# mediaconvert_input_folder = original
+mediaconvert_output_folder = target
+
+[Layout]
+app_width = 1200
+app_height = 760
+
+[DataGrid]
+num_per_page = 100
 
 [Column]
 label_list = filename:原始檔案,datetime:日期時間,species:物種,lifestage:年齡,sex:性別,antler:角況,animal_id:個體ID,remarks:備註
 default_list = filename,datetime,species,lifestage
 annotation_list = species:Species,lifestage:LifeStage,sex:Sex,antler:Antler,animal_id:AnimalID,remarks:Remarks
 
+[KeyboardShortcut]
+control-key-0 = 空拍
+control-key-1 = 測試
+control-key-2 = 工作照
+control-key-3 = 山羌
+control-key-4 = 獼猴
+control-key-5 = 野豬
+control-key-6 = 鼬獾
+control-key-7 = 白鼻心
+control-key-8 = 食蟹獴
+control-key-9 = 鳥
+
 [AnnotationFieldSpecies]
 type = select
 mutiple = 1
-choices = 測試,空拍,山羌,山羊,水鹿,
+choices = 工作照,測試,空拍,無法辨識,水鹿,山羌,獼猴,山羊,野豬,鼬獾,白鼻心,食蟹獴,鳥,鼠,松鼠,飛鼠,黃喉貂,黃鼠狼,小黃鼠狼,麝香貓,黑熊,石虎,穿山甲,狗,貓,梅花鹿,野兔,蝙蝠,人,獵人,其他
 label = 物種
 
 [AnnotationFieldLifeStage]
@@ -56,3 +87,82 @@ label = 個體 ID
 key = remarks
 type = text
 label = 備註
+
+[AnnotationSpeciesExtra]
+birds = 台灣山鷓鴣,台灣竹雞,黑長尾雉,藍腹鷴,黑冠麻鷺,大冠鷲,鳳頭蒼鷹,灰林鴿,金背鳩,珠頸斑鳩,翠翼鳩,台灣擬啄木,台灣藍鵲,樹鵲,暗綠繡眼,小彎嘴,大彎嘴,頭烏線,繡眼畫眉,黃痣藪眉,台灣噪眉,台灣棕噪眉,紅頭山雀,青背山雀,黃胸青鶲,白尾鴝,白眉林鴝,白腰鵲鴝,栗背林鴝,台灣紫嘯鶇,虎鶇,白眉鶇,白腹鶇,赤腹鶇,白頭鶇,山鷸,灰腳秧雞,白腹秧雞,松鴉,星鴉,棕耳鵯,棕面鶯,山紅頭,紋翼畫眉,台灣白喉噪眉,中國畫眉,白耳畫眉,灰背鶇,山鶺鴒,環頸雉,夜鷺,池鷺,中白鷺,松雀鷹,蘭嶼角鴞,領角鴞,東方灰林鴞,小啄木,大赤啄木,綠啄木,八色鳥,紅尾伯勞,巨嘴鴉,極北柳鶯,方尾鶲,黃腹琉璃,白腹琉璃,琉球歌鴝,小翼鶇,黑臉鵐,灰鷽,白腰文鳥
+
+
+
+
+
+
+
+
+
+
+
+
+[Mode]
+log_level = debug
+
+[SQLite]
+dbfile = camera-trap-desktop.db
+
+[Thumbnail]
+destination = camera-trap-desktop
+prefix = thumb-
+
+[AWSConfig]
+access_key_id = my-access-key-id
+secret_access_key = my-secret-access-key
+bucket_name = my-bucket-name
+
+[DataGrid]
+num_per_page = 500
+
+[Column]
+label_list = filename:原始檔案,datetime:日期時間,species:物種,lifestage:年齡,sex:性別,antler:角況,animal_id:個體ID,remarks:備註
+default_list = filename,datetime,species,lifestage
+annotation_list = species:Species,lifestage:LifeStage,sex:Sex,antler:Antler,animal_id:AnimalID,remarks:Remarks
+
+[KeyboardShortcut]
+Control-Key-0 = 空拍
+Control-Key-1 = 測試
+Control-Key-2 = 工作照
+Control-Key-3 = 山羌
+Control-Key-4 = 獼猴
+Control-Key-5 = 野豬
+Control-Key-6 = 鼬獾
+Control-Key-7 = 白鼻心
+Control-Key-8 = 食蟹獴
+Control-Key-9 = 鳥
+
+[AnnotationFieldLifeStage]
+type = select
+choices = 成體,亞成體,幼體,無法判定
+label = 年齡
+
+[AnnotationFieldSex]
+key = sex
+type = select
+choices = 雄性,雌性,無法判定
+label = 性別
+
+[AnnotationFieldAntler]
+key = antler
+type = select
+label = 角況
+choices = 初茸,茸角一尖,茸角一岔二尖,茸角二岔三尖,茸角三岔四尖,硬角一尖,硬角一岔二尖,硬角二岔三尖,硬角三岔四尖,解角
+
+[AnnotationFieldAnimalID]
+key = animal_id
+type = text
+label = 個體 ID
+
+[AnnotationFieldRemarks]
+key = remarks
+type = text
+label = 備註
+
+[AnnotationSpeciesExtra]
+birds = 台灣山鷓鴣,台灣竹雞,黑長尾雉,藍腹鷴,黑冠麻鷺,大冠鷲,鳳頭蒼鷹,灰林鴿,金背鳩,珠頸斑鳩,翠翼鳩,台灣擬啄木,台灣藍鵲,樹鵲,暗綠繡眼,小彎嘴,大彎嘴,頭烏線,繡眼畫眉,黃痣藪眉,台灣噪眉,台灣棕噪眉,紅頭山雀,青背山雀,黃胸青鶲,白尾鴝,白眉林鴝,白腰鵲鴝,栗背林鴝,台灣紫嘯鶇,虎鶇,白眉鶇,白腹鶇,赤腹鶇,白頭鶇,山鷸,灰腳秧雞,白腹秧雞,松鴉,星鴉,棕耳鵯,棕面鶯,山紅頭,紋翼畫眉,台灣白喉噪眉,中國畫眉,白耳畫眉,灰背鶇,山鶺鴒,環頸雉,夜鷺,池鷺,中白鷺,松雀鷹,蘭嶼角鴞,領角鴞,東方灰林鴞,小啄木,大赤啄木,綠啄木,八色鳥,紅尾伯勞,巨嘴鴉,極北柳鶯,方尾鶲,黃腹琉璃,白腹琉璃,琉球歌鴝,小翼鶇,黑臉鵐,灰鷽,白腰文鳥

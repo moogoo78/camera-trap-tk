@@ -2,6 +2,13 @@
 
 tkinter GUI
 
+## Documentation
+
+- [Usage](./docs/usage.rst) (使用說明)
+- [System](./docs/system-design.rst)
+- [Workflow](./docs/workflow.md) (upload status)
+- [Test Case](./docs/test-case.rest)
+
 ## Development
 
 ### Requirements
@@ -12,7 +19,6 @@ Note: Python 3.9.6 cannot be used on Windows 7 or earlier - [Python Releases for
 
 **Dependency**
 - Pillow
-- tksheet
 - requests
 - boto3
 - pyinstaller (for build win exe)
@@ -33,6 +39,13 @@ $ poetry shell
 ```sh
 $ python ./src/app.py
 ```
+
+or
+
+```
+$ poetry run python src/app.py
+```
+
 use custom ini file
 
 ```sh
@@ -44,5 +57,10 @@ $ python ./src/app.py -i my-dev.ini
 ```sh
 $ pyinstaller.exe --onefile -F .\src\app.py --clean
 ```
+**⚠WARNING**: 要進去 virtualenv (poetry shell)，才不會找不到 tkdatagrid 的 module
 
 提供 config.ini file, 注意: `account_id`,
+
+## Changes
+
+[CHANGELOG.md](CHANGELOG.md)

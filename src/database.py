@@ -11,7 +11,13 @@ CREATE TABLE IF NOT EXISTS source (
   created INTEGER,
   status TEXT,
   description TEXT,
-  history TEXT
+  history TEXT,
+  trip_start TEXT,
+  trip_end TEXT,
+  test_foto_time TEXT,
+  deployment_journal_id INTEGER,
+  upload_created INTEGER,
+  upload_changed INTEGER
 );'''
 
 SQL_INIT_IMAGE = '''
@@ -30,6 +36,8 @@ CREATE TABLE IF NOT EXISTS image (
   server_image_id TEXT,
   upload_status TEXT,
   sys_note TEXT,
+  object_id TEXT,
+  media_type TEXT,
   FOREIGN KEY (source_id) REFERENCES source(source_id)
 );'''
 

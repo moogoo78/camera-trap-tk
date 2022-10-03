@@ -11,6 +11,7 @@ THUMB_MAP = (
     #('l', (1280, 1280)),
     ('l', (1024, 1024)),
     ('x', (2048, 2048)),
+    ('o', (4096, 4096)),
 )
 
 def make_thumb(src_path, thumb_source_path):
@@ -35,12 +36,20 @@ def check_thumb(thumb_path, image_path):
     return thumb_path
 
 def get_thumb(source_id, filename, image_path, size='l'):
+    '''
+    size: 
+    'all' iterate all thumb size
+    'all-max-x': exclude 'o' (original, 4096)
+    '''
     stem = Path(filename).stem
     thumb_source_path = Path(f'./thumbnails/{source_id}')
-    if size == 'all':
+    if size in ['all', 'all-max-x']:
         ret = {}
         for i in THUMB_MAP:
             code = i[0]
+            if size == 'all-max-x' and code == 'o':
+                continue
+
             thumb_path = thumb_source_path.joinpath(f'{stem}-{code}.jpg')
             ret[code] = thumb_path
 
@@ -50,6 +59,16 @@ def get_thumb(source_id, filename, image_path, size='l'):
         if not thumb_path.exists():
             make_thumb(image_path, thumb_source_path)
         return thumb_path
+
+def aspect_ratio(size, height=0, width=0):
+    if width > 0:
+        ratio = width / float(size[0])
+        height = int(float(size[1]) * float(ratio))
+        return (width, height)
+    elif height > 0:
+        ratio = height / float(size[1])
+        width = int(float(size[0]) * float(ratio))
+        return (width, height)
 
 
 class ImageManager(object):

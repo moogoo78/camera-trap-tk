@@ -3,38 +3,106 @@ from tkinter import (
     ttk,
 )
 
+from PIL import (
+    Image,
+    ImageTk
+)
+
 class Landing(tk.Frame):
+
     def __init__(self, parent, *args, **kwargs):
+
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.app = parent.app
+        self.app = parent
 
-        self.title = ttk.Label(
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+
+        canvas = tk.Canvas(
             self,
-            text='Camera Trap Images',
-            font=self.app.nice_font['h2'])
-        self.title.grid(row=0, column=0, sticky='w', padx=10, pady=10)
+            width=self.app.app_width,
+            height=self.app.app_height-50-25,
+            bg='#777777',
+            bd=0,
+            highlightthickness=0,
+            relief='ridge',
+        )
+        canvas.grid(row=0, column=0, sticky='ewns')
 
-        #self.render_progress_bar(length=300, folder_name='oeue')
+        # assign to self, for not clear by python's garbage collection...
+        self.bg = ImageTk.PhotoImage(file='./assets/landing_bg.png')
 
-    def show(self, is_show=True):
-        #and self.winfo_viewable():
-        if is_show == False:
-            self.grid_remove()
-        else:
-            self.grid(row=0, column=0, sticky='nsew')
+        canvas.create_image(
+            0,
+            0,
+            image=self.bg,
+            anchor='nw',
+        )
 
-    def render_progress_bar(self, length=100, title='', sub_title1='', sub_title2=''):
+        canvas.create_text(
+            920,
+            250,
+            text='臺灣自動相機上傳系統',
+            fill='#FFFFFF',
+            font=self.app.get_font('display-1')
+        )
+        canvas.create_text(
+            900,
+            300,
+            text='Taiwan Camera Trap System',
+            fill='#FFFFFF',
+            font=self.app.get_font(29)
+        )
 
-        self.pg_box = tk.Frame(self, width=length, background='#DDDDDD')
-        self.pg_box.grid(row=1, column=0, padx=10, pady=10)
-        self.pg_title = ttk.Label(self.pg_box, text=title) # 'Loading images. Please wait ...'
-        self.pg_title.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
-        self.progress_bar = ttk.Progressbar(self.pg_box, orient=tk.HORIZONTAL, length=length, mode='determinate', value=0)
-        self.progress_bar.grid(row=1, column=0, sticky='nsew', padx=10, pady=0)
+        canvas.create_rectangle(
+            660, 340,
+            900, 398,
+            fill=self.app.app_primary_color,
+            outline=self.app.app_primary_color,
+            tags=('button-folder-list'),
+        )
+        canvas.create_text(
+            785,
+            369,
+            text='現有資料夾',
+            fill='#FFFFFF',
+            font=self.app.get_font('display-3'),
+            tags=('button-folder-list'),
+        )
+        canvas.create_rectangle(
+            920, 340,
+            1160, 398,
+            fill=self.app.app_primary_color,
+            outline=self.app.app_primary_color,
+            tags=('button-folder-add'),
+        )
+        canvas.create_text(
+            1040,
+            369,
+            text='加入資料夾',
+            fill='#FFFFFF',
+            font=self.app.get_font('display-3'),
+            tags=('button-folder-add'),
+        )
+        canvas.tag_bind(
+            'button-folder-list',
+            '<ButtonPress>',
+            self.app.on_folder_list)
 
-        self.folder_label = ttk.Label(self.pg_box, text=sub_title1)
-        self.folder_label.grid(row=2, column=0, sticky='nw', padx=10, pady=(10, 0))
-        self.thumb_label = ttk.Label(self.pg_box, text=sub_title2)
-        self.thumb_label.grid(row=3, column=0, sticky='nw', padx=10, pady=(0, 6))
+        canvas.tag_bind(
+            'button-folder-add',
+            '<ButtonPress>',
+            self.app.on_add_folder)
 
-        return self.pg_box
+        # self.btn1 = ttk.Button(
+        #     self,
+        #     text='現有資料夾',
+        #     command=self.app.on_folder_list
+        # )
+        # self.btn1.place(x=800, y=360, anchor='nw')
+        # self.btn2 = ttk.Button(
+        #     self,
+        #     text='加入資料夾',
+        #     command=self.app.on_add_folder
+        # )
+        # self.btn2.place(x=950, y=360, anchor='nw')

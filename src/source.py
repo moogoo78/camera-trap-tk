@@ -1,8 +1,10 @@
+
 from pathlib import Path
 import shutil
 import time
 from datetime import datetime
 import json
+import re
 
 import boto3
 from botocore.exceptions import ClientError
@@ -10,17 +12,78 @@ from boto3.exceptions import S3UploadFailedError
 #S3UploadFailedError
 
 from image import ImageManager, make_thumb, get_thumb
+from utils import validate_datetime
 #from upload import UploadThread
 
 IGNORE_FILES = ['Thumbs.db', '']
 IMAGE_EXTENSIONS = ['.JPG', '.JPEG', '.PNG']
+VIDEO_EXTENSIONS = ['.MOV', '.AVI', '.M4V', '.MP4', '.WMV', '.MKV', '.WEBM']
 
 class Source(object):
     '''much like a helper'''
 
+    STATUS_START_IMPORT = 'a1'
+    STATUS_DONE_IMPORT = 'a2'
+    STATUS_START_ANNOTATE = 'a3'
+    STATUS_START_UPLOAD = 'b1'
+    STATUS_ANNOTATION_UPLOAD_FAILED = 'b1a'
+    STATUS_MEDIA_UPLOAD_PENDING = 'b2'
+    STATUS_MEDIA_UPLOADING = 'b2a'
+    STATUS_MEDIA_UPLOAD_FAILED = 'b2b'
+    STATUS_DONE_UPLOAD = 'b2c'
+    STATUS_START_OVERRIDE_UPLOAD = 'b3'
+    STATUS_OVERRIDE_ANNOTATION_UPLOAD_FAILED = 'b3a'
+    STATUS_DONE_OVERRIDE_UPLOAD = 'b3b'
+    STATUS_ARCHIVE = 'c'
+
+    STATUS_LABELS = {
+        'STATUS_START_IMPORT': '',
+        'STATUS_DONE_IMPORT': '未編輯',
+        'STATUS_START_ANNOTATE': '編輯中',
+        'STATUS_START_UPLOAD': '',
+        'STATUS_ANNOTATION_UPLOAD_FAILED': '上傳失敗',
+        'STATUS_MEDIA_UPLOAD_PENDING': '上傳中',
+        'STATUS_MEDIA_UPLOADING': '上傳中',
+        'STATUS_MEDIA_UPLOAD_FAILED': '上傳不完全',
+        'STATUS_DONE_UPLOAD': '完成',
+        'STATUS_START_OVERRIDE_UPLOAD': '上傳覆寫',
+        'STATUS_OVERRIDE_ANNOTATION_UPLOAD_FAILED': '上傳失敗',
+        'STATUS_DONE_OVERRIDE_UPLOAD': '覆寫完成',
+        'STATUS_ARCHIVE': '歸檔',
+    }
+
     def __init__(self, app):
         self.db = app.db
         self.app = app
+
+    def update_status(self, source_id, key, **kwargs):
+        if value := getattr(self, f'STATUS_{key}', ''):
+            sql = f"UPDATE source SET status='{value}' WHERE source_id={source_id}"
+            # 特別處理 "首次上傳時間/上次上傳時間"
+            if key == 'START_UPLOAD':
+                if now := kwargs.get('now', ''):
+                    sql = f"UPDATE source SET status='{value}', upload_created={now}, upload_changed={now} WHERE source_id={source_id}"
+            if key == 'START_OVERRIDE_UPLOAD':
+                if now := kwargs.get('now', ''):
+                    sql = f"UPDATE source SET status='{value}', upload_changed={now} WHERE source_id={source_id}"
+
+            self.app.db.exec_sql(sql, True)
+            return True
+        return False
+
+    def get_status_label(self, code):
+        for k, v in self.STATUS_LABELS.items():
+            if status := getattr(self, k, ''):
+                if status == code:
+                    return v
+        return ''
+
+    def is_done_upload(self, status):
+        if status in [
+                self.STATUS_DONE_UPLOAD,
+                self.STATUS_DONE_OVERRIDE_UPLOAD]:
+            return True
+        return False
 
     def get_folder_path(self, folder):
         db = self.db
@@ -36,23 +99,33 @@ class Source(object):
         image_list = []
         for entry in folder_path.iterdir():
             if not entry.name.startswith('.') and \
-               entry.is_file() and \
-               self._check_image_filename(entry):
-                image_list.append(entry)
+               entry.is_file():
+                if type_ := self._check_filename(entry):
+                    image_list.append((entry, type_))
 
         return image_list
 
-    def create_import_directory(self, image_list, folder_path):
+    def create_import_directory(self, num_image_list, folder_path):
         db = self.db
         ts_now = int(time.time())
         dir_name = folder_path.stem # final path component
-
+        sql = ''
         sql_jobs = []
-        sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '10')".format(folder_path, dir_name, len(image_list), ts_now)
+        # validate date format
+        if m := re.search(r'([0-9]{8})-([0-9]{8})',dir_name):
+            start = m.group(1)
+            end = m.group(2)
+            if validate_datetime(start, '%Y%m%d') and \
+               validate_datetime(end, '%Y%m%d'):
+                sql = "INSERT INTO source (source_type, path, name, count, created, status, trip_start, trip_end) VALUES('folder', '{}', '{}', {}, {}, '{}', '{}', '{}')".format(folder_path, dir_name, num_image_list, ts_now, self.STATUS_START_IMPORT, start, end)
+        else:
+            sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '{}')".format(folder_path, dir_name, num_image_list, ts_now, self.STATUS_START_IMPORT)
+
         source_id = db.exec_sql(sql, True)
+
         return source_id
 
-    def gen_import_image(self, source_id, image_list, folder_path):
+    def gen_import_file(self, source_id, image_list, folder_path):
         ts_now = int(time.time())
         # mkdir thumbnails dir
         thumb_conf = 'thumbnails' # TODO config
@@ -64,17 +137,44 @@ class Source(object):
         if not thumb_source_path.exists():
             thumb_source_path.mkdir()
 
-        for i in image_list:
+        for entry, type_ in image_list:
+            img = None
             data = {
-                'path': i.as_posix(),
-                'name': i.name,
-                'img': ImageManager(i),
+                'path': entry.as_posix(),
+                'name': entry.name,
             }
-            sql = self._insert_image_db(data, ts_now, source_id, thumb_source_path)
+            if type_ == 'image':
+                data['img'] = ImageManager(entry)
+                sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
+            elif type_ == 'video':
+                data['mov'] = entry
+                sql = self.prepare_video_sql(data, ts_now, source_id, thumb_source_path)
+                # HACK: if video process too fast, folder_list.folder_importing will has empty value, cause error while update
+                time.sleep(0.5)
+            yield (data, sql)
 
-            yield data, sql
 
-    def _insert_image_db(self, i, ts_now, source_id, thumb_source_path):
+    def prepare_video_sql(self, i, ts_now, source_id, thumb_source_path):
+        db = self.db
+        stat = i['mov'].stat()
+        timestamp = int(stat.st_mtime)
+        via = 'mtime'
+
+        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, {}, '{}', 'video')".format(
+            i['path'],
+            i['name'],
+            timestamp,
+            via,
+            '10',
+            '',
+            '[]',
+            ts_now,
+            source_id,
+            '{}',
+        )
+        return sql
+
+    def prepare_image_sql_and_thumb(self, i, ts_now, source_id, thumb_source_path):
         db = self.db
         timestamp = None
 
@@ -90,7 +190,7 @@ class Source(object):
             timestamp = int(stat.st_mtime)
             via = 'mtime'
 
-        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, exif, source_id, sys_note) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, '{}', {}, '{}')".format(
+        sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, exif, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, '{}', {}, '{}', 'image')".format(
             i['path'],
             i['name'],
             timestamp,
@@ -110,11 +210,16 @@ class Source(object):
         return sql
 
     @staticmethod
-    def _check_image_filename(dirent):
+    def _check_filename(dirent):
+        """
+        return "image"|"video"|""
+        """
         p = Path(dirent)
         if p.suffix.upper() in IMAGE_EXTENSIONS:
-            return True
-        return False
+            return 'image'
+        elif p.suffix.upper() in VIDEO_EXTENSIONS:
+            return 'video'
+        return ''
 
     def get_source(self, source_id):
         db = self.db
@@ -126,20 +231,77 @@ class Source(object):
             'source': source,
         }
 
-    # depricated
-    def upload_annotation(self, image_list, source_id, deployment_id):
-        '''set upload_status in local database and post data to server'''
-        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
-        self.db.exec_sql(sql, True)
-        #print ('- update all image status -')
-        account_id = self.app.config.get('Installation', 'account_id')
-        # post to server
-        payload = {
-            'image_list': image_list,
-            'key': f'{account_id}-{source_id}',
-            'deployment_id': deployment_id,
+    def add_media_convert(self, object_name):
+        key = self.app.config.get('AWSConfig', 'access_key_id')
+        secret = self.app.config.get('AWSConfig', 'secret_access_key')
+        bucket_name = self.app.config.get('AWSConfig', 'bucket_name')
+        region = self.app.config.get('AWSConfig', 'mediaconvert_region')
+        endpoint = self.app.config.get('AWSConfig', 'mediaconvert_endpoint')
+        role = self.app.config.get('AWSConfig', 'mediaconvert_role')
+        queue = self.app.config.get('AWSConfig', 'mediaconvert_queue')
+        job_template = self.app.config.get('AWSConfig', 'mediaconvert_job_template')
+        #input_folder = self.app.config.get('AWSConfig', 'mediaconvert_input_folder')
+        output_folder = self.app.config.get('AWSConfig', 'mediaconvert_output_folder')
+
+        client = boto3.client(
+            'mediaconvert',
+            aws_access_key_id=key,
+            aws_secret_access_key=secret,
+            region_name=region,
+            endpoint_url=endpoint,
+            verify=False)
+
+        job_settings = {
+            'Inputs': [
+                {
+                    'AudioSelectors': {
+                        "Audio Selector 1": {
+                            "Offset": 0,
+                            "DefaultSelection": "DEFAULT",
+                            "SelectorType": "LANGUAGE_CODE",
+                            "ProgramSelection": 1,
+                            "LanguageCode": "ENM"
+                        },
+                    },
+                    'VideoSelector': {
+                        'ColorSpace': 'FOLLOW',
+                    },
+                    'FilterEnable': 'AUTO',
+                    'PsiControl': 'USE_PSI',
+                    'FilterStrength': 0,
+                    'DeblockFilter': 'DISABLED',
+                    'DenoiseFilter': 'DISABLED',
+                    'TimecodeSource': 'EMBEDDED',
+                    'FileInput': f's3://camera-trap-21-dev/{object_name}',
+                },
+            ],
+            'OutputGroups': [
+                {
+                    'Name': 'File Group',
+                    'OutputGroupSettings': {
+                        'Type': 'FILE_GROUP_SETTINGS',
+                        'FileGroupSettings': {
+                            'Destination': f's3://camera-trap-21-dev/{output_folder}/',
+                            'DestinationSettings': {
+                                'S3Settings': {
+                                    'AccessControl': {
+                                        'CannedAcl': 'PUBLIC_READ'
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    'Outputs': [],
+                },
+            ],
         }
-        return self.app.server.post_annotation(payload)
+
+        client.create_job(
+            JobTemplate = job_template,
+            Queue = queue,
+            Role = role,
+            Settings = job_settings,
+        )
 
     def upload_to_s3(self, file_path, object_name):
         key = self.app.config.get('AWSConfig', 'access_key_id')
@@ -175,7 +337,6 @@ class Source(object):
         return ret
 
 
-
     def delete_folder(self, source_id):
         #print ('delete', source_id)
         sql = f"DELETE FROM source WHERE source_id = {source_id}"
@@ -184,9 +345,3 @@ class Source(object):
         self.db.exec_sql(sql, True)
 
         shutil.rmtree(Path(f'./thumbnails/{source_id}'), ignore_errors=True)
-
-############
-    def finish_upload_task(self, source_id):
-        #source_id = source_data['source'][0]
-        sql = f"UPDATE source SET status='30' WHERE source_id={source_id}"
-        self.db.exec_sql(sql, True)

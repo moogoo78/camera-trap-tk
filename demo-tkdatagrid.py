@@ -6,6 +6,8 @@ import sys
 sys.path.insert(0, '')
 from tkdatagrid import DataGrid
 
+NUM_ROWS = 16
+NUM_PER_PAGE = 10
 
 HEADER = {
     'a': {
@@ -20,11 +22,13 @@ HEADER = {
     },
     'c': {
         'label': 'C',
-        'type': 'listbox',
-        'choices': [('op1', 'option1'), ('op2', 'option2'), ('op3', 'option3'),('op4', 'option4'),('op5', 'option5'),],
+        'type': 'autocomplete',
+        'choices': ['God Father', 'Top Gun', 'Lord of the Ring', 'Star Wars', 'Tropical Fish']
     },
     'd': {
         'label': 'D',
+        'type': 'listbox',
+        'choices': [('op1', 'option1'), ('op2', 'option2'), ('op3', 'option3'),('op4', 'option4'),('op5', 'option5'),],
     },
     'e': {
         'label': 'E',
@@ -37,13 +41,13 @@ HEADER = {
 #DATA = {f'iid:{k}': v for k, v in DATA.items()}
 import random
 DATA = {}
-for i in range(10):
+for i in range(NUM_ROWS):
     x = random.random()
     DATA[i] = {}
     for j in range(5):
         h = chr(97+j)
         DATA[i][h] = str(round(x * random.random() * 10, 2))
-    DATA[i]['index'] = i+1
+    #DATA[i]['index'] = i+1
 
 DATA3 = {
     0: {
@@ -67,8 +71,9 @@ class DemoApp(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self.frame = tk.Frame(self)
-
-        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=600, row_index_display='iid')
+        self.frame.grid_columnconfigure(0, weight=1)
+        self.frame.grid_rowconfigure(0, weight=1)
+        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=100, height=400, row_index_display='iid', num_per_page=NUM_PER_PAGE, cols_on_ctrl_button_1=['b'], cols_on_fill_handle=['c',], row_index_width=100, rows_delete_type='CLONED')
 
         # redraw another
         #data2=sampledata()
@@ -93,6 +98,6 @@ class DemoApp(tk.Tk):
 
         self.frame.grid(row = 0, column = 0, sticky = "nswe")
         self.data_grid.grid(row = 0, column = 0, sticky = "nswe")
-2
+
 app=DemoApp()
 app.mainloop()
