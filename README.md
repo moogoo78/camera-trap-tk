@@ -4,7 +4,7 @@ tkinter GUI
 
 ## Documentation
 
-- [Usage](./docs/usage.rest)
+- [Usage](./docs/usage.rst) (使用說明)
 - [System](./docs/system-design.rst)
 - [Workflow](./docs/workflow.md) (upload status)
 - [Test Case](./docs/test-case.rest)
