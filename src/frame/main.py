@@ -461,7 +461,7 @@ class Main(tk.Frame):
             self.table_frame,
             data={},
             columns=self.data_helper.columns,
-            height= 1000,#760-480, #self.app.app_height-480, #760-480,
+            height= self.app.app_height - 480, #760-480 #760-480,
             width=1200,
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
@@ -902,6 +902,7 @@ class Main(tk.Frame):
             item = self.data_helper.data[row_key]
             image_path = item['thumb'].replace('-q.', '-o.')
             self.image_detail.change_image(image_path)
+
     def custom_mouse_click(self, row_key, col_key):
         self.select_item(row_key, col_key)
 
