@@ -4,6 +4,7 @@ import logging
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen, Request
 from http.client import HTTPResponse
+import ssl
 import json
 
 # ping, via: https://stackoverflow.com/a/32684938/644070
@@ -33,7 +34,8 @@ def make_request(url, headers=None, data=None, is_json=False):
         'error': None
     }
     try:
-        with urlopen(request, timeout=10) as response:
+        context = ssl._create_unverified_context()
+        with urlopen(request, timeout=10, context=context) as response:
             method = 'GET' if data == None else 'POST'
             logging.info(f'{method} {url} | {response.status}')
             # if data:
