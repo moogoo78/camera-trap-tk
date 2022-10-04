@@ -254,7 +254,7 @@ class UploadProgress(tk.Frame):
             fill='#464646',
             tags=('item'))
 
-        if r[6] == self.app.source.STATUS_DONE_UPLOAD:
+        if r[6] in [self.app.source.STATUS_DONE_UPLOAD, self.app.source.STATUS_DONE_OVERRIDE_UPLOAD]:
             self.canvas.create_image(
                 x+204,
                 gap-36,
