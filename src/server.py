@@ -1,6 +1,7 @@
 import tkinter as tk
 # import requests
 import logging
+import urllib3
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen, Request
 from http.client import HTTPResponse
@@ -34,14 +35,24 @@ def make_request(url, headers=None, data=None, is_json=False):
         'error': None
     }
     try:
-        context = ssl._create_unverified_context()
-        with urlopen(request, timeout=10, context=context) as response:
+        '''
+        # context = ssl._create_unverified_context() # bad idea for disabled check
+        with urlopen(request, timeout=10) as response:
+            print(response)
             method = 'GET' if data == None else 'POST'
             logging.info(f'{method} {url} | {response.status}')
             # if data:
             #   logging.debug(f'POST payload: {data}') # print too many
             ret['body'] = response.read() # 如果先 return response, read() 內容會不見
             ret['response'] = response
+        '''
+        # ref: https://drola.si/post/2019-09-05-python-ssl-verification-error/
+        http = urllib3.PoolManager()
+        response = http.request('GET', url)
+        method = 'GET' if data == None else 'POST'
+        logging.info(f'{method} {url} | {response.status}')
+        ret['body'] = response.data # 如果先 return response, read() 內容會不見
+        ret['response'] = response
     except HTTPError as error:
         logging.error(f'HTTPError: {error.status} {error.reason}')
         ret['error'] = error
