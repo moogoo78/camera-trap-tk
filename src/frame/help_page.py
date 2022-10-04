@@ -21,12 +21,10 @@ class HelpPage(tk.Frame):
     def handle_mouse_wheel(self, event):
         # print(event) # TODO
         if event.num == 5 or event.delta == -120:
-            self.yview_scroll(1, 'units')
             self.canvas.yview_scroll(1, 'units')
         elif event.num == 4 or event.delta == 120:
-            if self.canvasy(0) < 0:  # ?
+            if self.canvas.canvasy(0) < 0:  # ?
                 return
-            self.yview_scroll(-1, 'units')
             self.canvas.yview_scroll(-1, 'units')
 
     def handle_yviews(self, *args):
