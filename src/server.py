@@ -34,6 +34,7 @@ def make_request(url, headers=None, data=None, is_json=False):
         'response': None,
         'error': None
     }
+
     try:
         '''
         # context = ssl._create_unverified_context() # bad idea for disabled check
@@ -50,11 +51,15 @@ def make_request(url, headers=None, data=None, is_json=False):
         http = urllib3.PoolManager()
         method = 'GET'
 
-        if data:
-            response = http.request(method, url)
+        if data is None:
+            response = http.request('GET', url)
         else:
             method = 'POST'
-            response = http.request(method, url, fields=data)
+            response = http.request(
+                'POST',
+                url,
+                body=data,
+                headers=headers)
 
         logging.info(f'{method} {url} | {response.status}')
         ret['body'] = response.data # 如果先 return response, read() 內容會不見
@@ -68,6 +73,8 @@ def make_request(url, headers=None, data=None, is_json=False):
     except TimeoutError:
         logging.error('Request timed out')
         ret['error'] = 'Request timed out'
+    except BaseException as err:
+        logging.error(f'Unexpected: {err}')
     finally:
         return ret
 
