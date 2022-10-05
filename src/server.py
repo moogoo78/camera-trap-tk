@@ -28,7 +28,7 @@ def make_request(url, headers=None, data=None, is_json=False):
         json_string = json.dumps(data)
         data = json_string.encode("utf-8")
 
-    request = Request(url, headers=headers or {}, data=data)
+    #request = Request(url, headers=headers or {}, data=data)
     ret = {
         'body': None,
         'response': None,
@@ -48,8 +48,14 @@ def make_request(url, headers=None, data=None, is_json=False):
         '''
         # ref: https://drola.si/post/2019-09-05-python-ssl-verification-error/
         http = urllib3.PoolManager()
-        response = http.request('GET', url)
-        method = 'GET' if data == None else 'POST'
+        method = 'GET'
+
+        if data:
+            response = http.request(method, url)
+        else:
+            method = 'POST'
+            response = http.request(method, url, fields=data)
+
         logging.info(f'{method} {url} | {response.status}')
         ret['body'] = response.data # 如果先 return response, read() 內容會不見
         ret['response'] = response
