@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.4b]
+
+### Changed:
+fix:
+- if upload_progress has multiple folder to upload, pause not work
+- update annotation will let server send notification like upload finish
+
 ## [v0.2.4a]
+
+### Changed:
 fix:
 - server.make_request use requests package
 - config.ini add ssl_verify

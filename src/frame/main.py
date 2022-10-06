@@ -788,6 +788,12 @@ class Main(tk.Frame):
                 else:
                     self.app.source.update_status(source_id, 'DONE_OVERRIDE_UPLOAD')
                     tk.messagebox.showinfo('info', '文字資料更新成功 !')
+
+                    # let server send notification again
+                    if dj_id := self.source_data['source'][12]:
+                        deployment_journal_id = dj_id
+                        self.app.server.post_upload_history(deployment_journal_id, 'finished')
+
                     return # stop uploading images again
 
         # 1. post annotation to server
