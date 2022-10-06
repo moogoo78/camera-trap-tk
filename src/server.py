@@ -1,5 +1,5 @@
 import tkinter as tk
-# import requests
+import requests
 import logging
 import urllib3
 from urllib.error import HTTPError, URLError
@@ -16,9 +16,10 @@ def to_json(body):
     data_str = body.decode('utf-8')
     return json.loads(data_str)
 
+
 # via: https://realpython.com/urllib-request/
 # modified return struct
-def make_request(url, headers=None, data=None, is_json=False):
+def make_request_urllib(url, headers=None, data=None, is_json=False):
 
     if is_json is True:
         if not headers:
@@ -28,7 +29,6 @@ def make_request(url, headers=None, data=None, is_json=False):
         json_string = json.dumps(data)
         data = json_string.encode("utf-8")
 
-    #request = Request(url, headers=headers or {}, data=data)
     ret = {
         'body': None,
         'response': None,
@@ -36,10 +36,15 @@ def make_request(url, headers=None, data=None, is_json=False):
     }
 
     try:
-        '''
-        # context = ssl._create_unverified_context() # bad idea for disabled check
-        with urlopen(request, timeout=10) as response:
-            print(response)
+        request = Request(url, headers=headers or {}, data=data, unverifiable=True) # unverifiable default: False
+        method = 'GET' if data == None else 'POST'
+        logging.info(f'{method} {url} | {response.status}')
+        ret['body'] = response.read() # 如果先 return response, read() 內容會不見
+        ret['response'] = response        
+        '''urlopen
+        # ssl._create_default_https_context = ssl._create_unverified_context
+        context = ssl._create_unverified_context() # bad idea for disabled check
+        with urlopen(request, context=context, timeout=10) as response:
             method = 'GET' if data == None else 'POST'
             logging.info(f'{method} {url} | {response.status}')
             # if data:
@@ -47,6 +52,7 @@ def make_request(url, headers=None, data=None, is_json=False):
             ret['body'] = response.read() # 如果先 return response, read() 內容會不見
             ret['response'] = response
         '''
+        '''urllib3
         # ref: https://drola.si/post/2019-09-05-python-ssl-verification-error/
         http = urllib3.PoolManager()
         method = 'GET'
@@ -60,10 +66,10 @@ def make_request(url, headers=None, data=None, is_json=False):
                 url,
                 body=data,
                 headers=headers)
-
         logging.info(f'{method} {url} | {response.status}')
         ret['body'] = response.data # 如果先 return response, read() 內容會不見
         ret['response'] = response
+        '''
     except HTTPError as error:
         logging.error(f'HTTPError: {error.status} {error.reason}')
         ret['error'] = error
@@ -127,9 +133,10 @@ class Server(object):
             # r = requests.get(f'{project_api_prefix}{source_id}/')
             # return r.json()
             url = f'{project_api_prefix}{source_id}/'
-            resp = make_request(url)
+            resp = self.make_request(url)
             if not resp['error']:
-                return to_json(resp['body'])
+                #return to_json(resp['body'])
+                return resp['json']
             else:
                 tk.messagebox.showerror('server error', resp['error'])
 
@@ -148,7 +155,7 @@ class Server(object):
     def post_image_status(self, payload):
         url = f"{self.config['host']}{self.config['image_update_api']}"
         # resp = requests.post(url, json=payload)
-        resp = make_request(
+        resp = self.make_request(
             url,
             data=payload,
             is_json=True)
@@ -177,7 +184,7 @@ class Server(object):
             'status': status,
         }
         # resp = requests.post(url, data=payload)
-        resp = make_request(
+        resp = self.make_request(
             url,
             data=payload,
             is_json=True)
@@ -191,7 +198,8 @@ class Server(object):
             logging.error(f'error: {err}')
         else:
             # server 傳 200, 但是是有錯
-            data = to_json(resp['body'])
+            #data = to_json(resp['body'])
+            data = resp['json']
             if msg := data.get('messages', ''):
                 if msg != 'success':
                     ret['error'] = msg
@@ -211,13 +219,14 @@ class Server(object):
         }
         #url_encoded_data = urlencode(post_dict)
         #body, response = make_request(url, data=post_data)
-        resp = make_request(
+        resp = self.make_request(
             url,
             data=post_dict,
             is_json=True)
 
         if not resp['error']:
-            data = to_json(resp['body'])
+            # data = to_json(resp['body'])
+            data = resp['json']
             ret.update({
                 'data': data['saved_image_ids'],
                 'deployment_journal_id': data['deployment_journal_id']
@@ -270,3 +279,34 @@ class Server(object):
         result = subprocess.run(command, capture_output=True)
         return result.returncode == 0
 
+    def make_request(self, url, headers=None, data=None, is_json=False):
+        ret = {
+            'body': None,
+            'response': None,
+            'error': None,
+            'method': 'GET',
+        }
+
+        response = None
+        ssl_verify = True
+        if v := self.config.get('requests_verify'):
+            # check falsy
+            if v in ['False', '0', 0]:
+                ssl_verify = False
+
+        if data:
+            ret['method'] = 'POST'
+            response = requests.post(url, json=data, verify=ssl_verify)
+        else:
+            response = requests.get(url, verify=ssl_verify)
+
+        logging.info(f"{ret['method']} {url} | {response.status_code}")
+        if response.status_code != requests.codes.ok:
+            ret['error'] = f'request error: {response.status_code}'
+            response.raise_for_status()
+
+        ret['response'] = response
+        #ret['body']
+        ret['json'] = response.json()
+
+        return ret
