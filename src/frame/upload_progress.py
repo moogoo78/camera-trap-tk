@@ -233,7 +233,7 @@ class UploadProgress(tk.Frame):
         # different state display
         status_text = '資料夾上傳中...'
         # print('!!!',row['source_data'][6], row['state'])
-        if row['source_data'][6] == self.app.source.STATUS_DONE_UPLOAD:
+        if row['source_data'][6] in [self.app.source.STATUS_DONE_UPLOAD, self.app.source.STATUS_DONE_OVERRIDE_UPLOAD]:
             status_text = '資料夾上傳完畢'
             button_text = '確認並歸檔'
             button_cmd = lambda source_id=source_id: self.handle_archive(source_id)
