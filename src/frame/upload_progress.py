@@ -316,6 +316,12 @@ class UploadProgress(tk.Frame):
                 return v
         return None
 
+    def _find_source_index(self, source_id):
+        for i, v in enumerate(self.source_list):
+            if v['source_data'][0] == source_id:
+                return i
+        return None
+
     def handle_archive(self, source_id):
         print('on archive', source_id)
 
@@ -401,9 +407,11 @@ class UploadProgress(tk.Frame):
 
         num = len(item['images'])
         source_id = item['source_data'][0]
+        current_source_index = self._find_source_index(source_id)
         counter = 0
         for i, v in enumerate(item['images']):
-            if item['state'] == self.STATE_RUNNING:
+            # if item['state'] == self.STATE_RUNNING:
+            if self.source_list[current_source_index]['state'] == self.STATE_RUNNING:
                 logging.debug(f'🧵 uploading: {source_id}-{counter}/{num}')
                 counter = i + 1
                 path = v[1]
