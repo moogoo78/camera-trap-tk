@@ -289,7 +289,7 @@ class Server(object):
 
         response = None
         ssl_verify = True
-        if v := self.config.get('requests_verify'):
+        if v := self.config.get('ssl_verify'):
             # check falsy
             if v in ['False', '0', 0]:
                 ssl_verify = False

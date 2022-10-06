@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.4a]
+fix:
+- server.make_request use requests package
+- config.ini add ssl_verify
+
+## [v0.2.3a]
+
+### Changed:
+
+fix:
+- 更新文字，上傳進度要變綠勾勾
+- 上下鍵要到第28列畫面才會跳過去
+- SSL 網路問題
+
+### Added:
+
+- 輸入資料的原則與影像定義附掛於介面上
+
 ## [v0.2.2a]
 
 ### Changed:

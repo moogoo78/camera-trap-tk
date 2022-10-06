@@ -8,7 +8,7 @@ image_update_api = /api/client/v1/image/update/
 update_upload_history_api = /update_upload_history/
 project_api = /api/client/v1/projects/
 project_option_list = 141::桌機上傳-2021
-requests_verify = 0
+ssl_verify = 0
 
 [Mode]
 log_level = debug
