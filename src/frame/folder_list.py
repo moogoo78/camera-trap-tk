@@ -49,7 +49,7 @@ class FolderList(tk.Frame):
         self.scrollbar.grid(row=0, column=1, sticky='ewns')
         self.canvas.config(yscrollcommand=self.scrollbar.set)
 
-        self.bg = ImageTk.PhotoImage(file='./assets/folder_list_vector.png')
+        #self.bg = ImageTk.PhotoImage(file='./assets/folder_list_vector.png')
         self.fresh_icon = ImageTk.PhotoImage(file='./assets/source_status_fresh.png')
         self.done_icon = ImageTk.PhotoImage(file='./assets/source_status_done.png')
         self.uploading_icon = ImageTk.PhotoImage(file='./assets/source_status_uploading.png')
@@ -60,12 +60,14 @@ class FolderList(tk.Frame):
         self.status_all_icon = ImageTk.PhotoImage(file='./assets/folder-list-status-all.png')
         self.status_pending_icon = ImageTk.PhotoImage(file='./assets/folder-list-status-pending.png')
         self.status_uploaded_icon = ImageTk.PhotoImage(file='./assets/folder-list-status-uploaded.png')
-        self.canvas.create_image(
-            620,
-            330,
-            image=self.bg,
-            anchor='nw',
-        )
+
+        # hide background vector
+        # self.canvas.create_image(
+        #     620,
+        #     330,
+        #     image=self.bg,
+        #     anchor='nw',
+        # )
         self.canvas.create_text(
             50,
             20,
