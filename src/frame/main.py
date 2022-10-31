@@ -120,7 +120,7 @@ class Main(tk.Frame):
         self.panedwindow = ttk.PanedWindow(self, orient=tk.VERTICAL)
         #panedwindow_style = configure('PanedWindow', sashpad=5)
         #self.panedwindow.pack(fill=tk.BOTH, expand=True)
-        self.panedwindow.grid(row=0, column=0, sticky='ew')
+        self.panedwindow.grid(row=0, column=0, sticky='nsew')
         self.panedwindow.grid_rowconfigure(0, weight=1)
         self.panedwindow.grid_columnconfigure(0, weight=1)
         #self.panedwindow.bind("<ButtonRelease-1>", self.handle_panedwindow_release)
@@ -1077,6 +1077,8 @@ class Main(tk.Frame):
             self.custom_to_page()
 
     def set_test_foto_by_time(self):
+        time_str = self.test_foto_val.get()
+        print(time_str)
         if time_str := self.test_foto_val.get():
             if m := re.search(r'([0-9]{2}):([0-9]{2}):([0-9]{2})', time_str):
                 hh = m.group(1)
