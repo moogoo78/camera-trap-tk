@@ -617,6 +617,7 @@ class Main(tk.Frame):
 
         self.data_grid.main_table.delete('row-img-seq')
         self.data_grid.refresh(data, is_init_highlight=is_init_highlight)
+
         # draw img_seq
         # print(self.seq_info)
         for i, (iid, row) in enumerate(data.items()):
@@ -1078,8 +1079,7 @@ class Main(tk.Frame):
 
     def set_test_foto_by_time(self):
         time_str = self.test_foto_val.get()
-        print(time_str)
-        if time_str := self.test_foto_val.get():
+        if time_str != '':
             if m := re.search(r'([0-9]{2}):([0-9]{2}):([0-9]{2})', time_str):
                 hh = m.group(1)
                 mm = m.group(2)
@@ -1099,6 +1099,17 @@ class Main(tk.Frame):
                     self.app.db.exec_sql(sql, True)
                     self.refresh()
                     tk.messagebox.showinfo('info', f'已設定測試照 - {time_str}')
+        else:
+            if not tk.messagebox.askokcancel('確認', '確認要清空測試照設定？'):
+                return False
+            else:
+                for row_key, item in self.data_helper.data.items(): 
+                    self.data_helper.update_annotation(row_key, 'annotation_species', '')
+
+                sql = "UPDATE source SET test_foto_time='' WHERE source_id={}".format(self.source_data['source'][0])
+                self.app.db.exec_sql(sql, True)
+                self.refresh()
+                tk.messagebox.showinfo('info', f'已清空測試照')
 
     def handle_entry_change(self, *args):
         if self.is_editing is False:

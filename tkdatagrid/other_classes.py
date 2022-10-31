@@ -17,10 +17,9 @@ class Footer(tk.Frame):
 
     def render(self):
         # clear
-        for x in self.button_list:
-            x.destroy()
-
-        #print('foot', self.ps['pagination'])
+        #for x in self.button_list: # mac strange error
+        #    x.destroy()
+        self.button_list = []
 
         for i in range(0, self.ps['pagination']['num_pages']):
             page = i+1
@@ -35,7 +34,6 @@ class Footer(tk.Frame):
 
             button.grid(row=0, column=i, sticky='nswe', padx=(0, 2))
             self.button_list.append(button)
-
 
 class ColumnHeader(tk.Canvas):
 

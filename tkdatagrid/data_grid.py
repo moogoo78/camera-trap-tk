@@ -202,10 +202,12 @@ class DataGrid(tk.Frame):
             },
         })
 
+
         #self.main_table.render_selected(0, 0)
         self.main_table.render()
         if self.state['row_index_display']:
             self.row_index.render()
+
         self.column_header.render()
         self.footer.render()
 
