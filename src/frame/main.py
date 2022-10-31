@@ -120,7 +120,7 @@ class Main(tk.Frame):
         self.panedwindow = ttk.PanedWindow(self, orient=tk.VERTICAL)
         #panedwindow_style = configure('PanedWindow', sashpad=5)
         #self.panedwindow.pack(fill=tk.BOTH, expand=True)
-        self.panedwindow.grid(row=0, column=0, sticky='nsew')
+        self.panedwindow.grid(row=0, column=0, sticky='ew')
         self.panedwindow.grid_rowconfigure(0, weight=1)
         self.panedwindow.grid_columnconfigure(0, weight=1)
         #self.panedwindow.bind("<ButtonRelease-1>", self.handle_panedwindow_release)
@@ -186,20 +186,6 @@ class Main(tk.Frame):
         )
 
         self.label_folder.grid(row=0, column=0, padx=4, pady=10, sticky='nw')
-        self.enlarge_icon = ImageTk.PhotoImage(file='./assets/enlarge.png')
-
-        self.image_viewer_button = tk.Button(
-            self,
-            text='看大圖',
-            image=self.enlarge_icon,
-            #command=self.handle_image_viewer,
-            #command=self.app.toggle_image_viewer,
-            relief='flat',
-            background='#FFFFFF',
-            command=self.show_image_detail,
-            takefocus=0,
-        )
-        self.image_viewer_button.place(x=416, y=270, anchor='nw')
 
         conf_kb_shortcut_button = tk.Button(
             self,
@@ -427,6 +413,21 @@ class Main(tk.Frame):
         self.upload_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+110), pady=(18,0))
         self.delete_button.grid(row=6, column=1, sticky='e', padx=(20, 0), pady=(18, 0))
 
+        self.enlarge_icon = ImageTk.PhotoImage(file='./assets/enlarge.png')
+        self.image_viewer_button = tk.Button(
+            self.ctrl_frame2,
+            text='看大圖',
+            image=self.enlarge_icon,
+            #command=self.handle_image_viewer,
+            #command=self.app.toggle_image_viewer,
+            relief='flat',
+            background='#FFFFFF',
+            command=self.show_image_detail,
+            takefocus=0,
+        )
+        # self.image_viewer_button.place(x=416, y=270, anchor='nw')
+        self.image_viewer_button.grid(row=7, column=0, sticky='sw')
+
     def config_table_frame(self):
         self.table_frame.grid_columnconfigure(0, weight=1)
         self.table_frame.grid_rowconfigure(0, weight=1)
@@ -461,7 +462,7 @@ class Main(tk.Frame):
             self.table_frame,
             data={},
             columns=self.data_helper.columns,
-            height= self.app.app_height - 480, #760-480 #760-480,
+            height= 1600-480, #self.app.app_height - 480, #760-480
             width=1200,
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
@@ -931,7 +932,7 @@ class Main(tk.Frame):
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo # 一定要用這樣設，圖片不然出不來
 
-        self.image_viewer_button.place(x=resize_to[0]-46, y=270, anchor='nw')
+        #self.image_viewer_button.place(x=resize_to[0]-46, y=270, anchor='nw')
 
         self.update_idletasks()
 

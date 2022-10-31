@@ -101,9 +101,9 @@ class DataGrid(tk.Frame):
         #logging.debug(self.state)
 
         self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
-        self.grid_columnconfigure(0, weight=0)
-        self.grid_rowconfigure(1, weight=1)        
 
         self.main_table = MainTable(self)
         self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'], height=column_header_height)

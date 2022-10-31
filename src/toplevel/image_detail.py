@@ -9,8 +9,8 @@ from image import aspect_ratio
 
 
 class ImageDetail(tk.Toplevel):
-    INIT_WIDTH = 1200
-    INIT_HEIGHT = 900
+    INIT_WIDTH = 800 # 1200
+    INIT_HEIGHT = 600 # 900
 
     def __init__(self, parent, image_path):
         super().__init__(parent)
@@ -103,6 +103,7 @@ class ImageDetail(tk.Toplevel):
         tmp = self.orig_img
         to_size = aspect_ratio(tmp.size, width=to_width)
         self.resize_ratio = to_width / float(tmp.size[0])
+        # print(self.resize_ratio, to_size)
         self.bg_img = ImageTk.PhotoImage(tmp.resize(to_size))
         self.bg_img_id = self.canvas.create_image(
             0,

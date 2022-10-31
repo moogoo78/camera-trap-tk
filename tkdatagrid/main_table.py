@@ -389,7 +389,7 @@ class MainTable(tk.Canvas):
         self.render_copy_box(self.selected['box'])
 
     def render(self):
-        # print ('render', self.height, self.width, self.ps['height'])
+        # print ('render', self.height, self.width, self.ps['height'], self.ps['width'])
         self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
         self.render_grid()
         self.render_data()
