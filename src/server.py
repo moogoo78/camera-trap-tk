@@ -293,20 +293,25 @@ class Server(object):
             # check falsy
             if v in ['False', '0', 0]:
                 ssl_verify = False
+        try:
+            if data:
+                ret['method'] = 'POST'
+                response = requests.post(url, json=data, verify=ssl_verify)
+            else:
+                response = requests.get(url, verify=ssl_verify)
 
-        if data:
-            ret['method'] = 'POST'
-            response = requests.post(url, json=data, verify=ssl_verify)
-        else:
-            response = requests.get(url, verify=ssl_verify)
+            logging.info(f"{ret['method']} {url} | {response.status_code}")
+            if response.status_code == requests.codes.ok:
+                ret['response'] = response
+                #ret['body']
+                ret['json'] = response.json()
+            else:
+                ret['error'] = f'request error: {response.status_code}'
 
-        logging.info(f"{ret['method']} {url} | {response.status_code}")
-        if response.status_code != requests.codes.ok:
-            ret['error'] = f'request error: {response.status_code}'
-            response.raise_for_status()
-
-        ret['response'] = response
-        #ret['body']
-        ret['json'] = response.json()
-
+            #response.raise_for_status()
+        except requests.exceptions.HTTPError as err_msg:
+            ret['error']: f'連線失敗: {err}_msg'
+        except requests.exceptions.ConnectionError as err_msg:
+            ret['error'] = '連線失敗，請檢查網路連線是否有問題，或是伺服器有無正常運作?'
+            logging.error(f'request connection error: {err_msg}')
         return ret
