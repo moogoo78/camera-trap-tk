@@ -46,18 +46,9 @@ class Main(tk.Frame):
         self.background_color = kwargs.get('background','')
 
         self.source_data = {}
-        # self.projects = self.app.server.projects
-        # self.id_map = {
-        #     'project': {},
-        #     'studyarea': {},
-        #     'deployment': {},
-        #     'sa_to_d': {}
-        # }
-        # self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
         # self.bind('<Configure>', self.resize)
 
-        self.projects = []
-        self.update_project_options()
+        self.server_project_map = self.app.server.project_map
 
         self.source_id = None
         self.current_row = 0
@@ -79,6 +70,8 @@ class Main(tk.Frame):
         lifestage_choices = self.app.config.get('AnnotationFieldLifeStage', 'choices')
         species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         self.data_helper.columns['annotation_species']['choices'] = species_choices.split(',')
+        species_bird_choices = self.app.config.get('AnnotationSpeciesExtra', 'birds')
+        self.data_helper.columns['annotation_species']['choices'] += species_bird_choices.split(',')
         self.data_helper.columns['annotation_species']['extra_choices'] = species_extra_birds.split(',')
         self.data_helper.columns['annotation_antler']['choices'] = antler_choices.split(',')
         self.data_helper.columns['annotation_sex']['choices'] = sex_choices.split(',')
@@ -239,7 +232,7 @@ class Main(tk.Frame):
             text='檢視計畫',
             **label_args)
 
-        self.project_options = [x['name'] for x in self.projects]
+        self.project_options = [x for x in self.server_project_map['project']]
         self.project_var = tk.StringVar(self)
         self.project_menu = tk.OptionMenu(
             self.ctrl_frame2,
@@ -259,7 +252,6 @@ class Main(tk.Frame):
             **label_args)
 
         self.studyarea_var = tk.StringVar(self)
-        self.studyarea_options = []
         self.studyarea_menu = tk.OptionMenu(
             self.ctrl_frame2,
             self.studyarea_var,
@@ -275,7 +267,6 @@ class Main(tk.Frame):
             text='相機位置',
             **label_args)
 
-        self.deployment_options = []
         self.deployment_var = tk.StringVar(self)
         self.deployment_var.trace('w', self.deployment_option_changed)
         self.deployment_menu = tk.OptionMenu(
@@ -306,14 +297,16 @@ class Main(tk.Frame):
             self.ctrl_frame2,
             textvariable=self.trip_start_var,
             width=10,
+            state=tk.DISABLED,
         )
         self.trip_end_entry = ttk.Entry(
             self.ctrl_frame2,
             textvariable=self.trip_end_var,
             width=10,
+            state=tk.DISABLED,
         )
-        self.trip_start_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_start'))
-        self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
+        # self.trip_start_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_start'))
+        # self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
 
         self.trip_label.grid(row=3, column=0, **label_grid)
         self.trip_start_entry.grid(row=3, column=1, sticky='w', padx=(left_spacing+2, 0))
@@ -494,22 +487,22 @@ class Main(tk.Frame):
         self.data_grid.grid(row=0, column=0, sticky='nsew')
 
 
-    def update_project_options(self):
-        if len(self.projects) <= 0:
-            self.projects = self.app.server.get_projects()
-            self.id_map = {
-                'project': {},
-                'studyarea': {},
-                'deployment': {},
-                'sa_to_d': {}
-            }
-            self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
-            logging.info('server: get project options')
+    # def update_project_options(self):
+    #     if len(self.projects) <= 0:
+    #         self.projects = self.app.server.get_projects()
+    #         self.id_map = {
+    #             'project': {},
+    #             'studyarea': {},
+    #             'deployment': {},
+    #             'sa_to_d': {}
+    #         }
+    #         self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
+    #         logging.info('server: get project options')
 
     def change_source(self, source_id=None):
         logging.debug('source_id: {}'.format(source_id))
 
-        self.update_project_options()
+        # self.update_project_options()
         self.source_id = source_id
 
         # reset current_row
@@ -540,12 +533,44 @@ class Main(tk.Frame):
         self.source_data = self.app.source.get_source(self.source_id)
         if status := self.source_data['source'][6]:
             self.data_helper.source_id_status = [self.source_id, status]
+
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
             # set init value
-            self.project_var.set(d.get('project_name', ''))
-            self.studyarea_var.set(d.get('studyarea_name', ''))
-            self.deployment_var.set(d.get('deployment_name', ''))
+            parsed_project_id = None
+            parsed_project_name = None
+
+            # set order matter ! for dependency on_change
+            # 1) set studyarea
+            if x := d.get('studyarea_name', ''):
+                self.studyarea_var.set(x)
+            elif y:= d['parsed'].get('studyarea', ''):
+                if sa := self.server_project_map['studyarea'].get(y, ''):
+                    self.studyarea_var.set(y)
+                    d['studyarea_name'] = y
+                    d['studyarea_id'] = sa.get('id', '')
+                    parsed_project_id = self.server_project_map['studyarea'][y].get('project_id', '')
+                    for name, value in self.server_project_map['project'].items():
+                        if value['id'] == parsed_project_id:
+                            parsed_project_name = name
+
+            # 2) set project
+            if x := d.get('project_name', ''):
+                self.project_var.set(x)
+            elif parsed_project_name:
+                self.project_var.set(parsed_project_name)
+
+            # 3) set deployment
+            if x := d.get('deployment_name', ''):
+                self.deployment_var.set(x)
+            elif y:= d['parsed'].get('deployment', ''):
+                self.deployment_var.set(y)
+                d['deployment_name'] = y
+                d['deployment_id'] = self.server_project_map['deployment'][y]['id']
+                # save to db
+                sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(d), self.source_id)
+                self.app.db.exec_sql(sql, True)
+
         else:
             self.project_var.set('')
             self.studyarea_var.set('')
@@ -556,16 +581,6 @@ class Main(tk.Frame):
             self.data_helper.test_foto_time = test_foto_time
         else:
             self.test_foto_val.set('')
-
-        if trip_start := self.source_data['source'][9]:
-            self.trip_start_var.set(trip_start)
-        else:
-            self.trip_start_var.set('')
-
-        if trip_end := self.source_data['source'][10]:
-            self.trip_end_var.set(trip_end)
-        else:
-            self.trip_end_var.set('')
 
         # update upload_button
         source_status = self.source_data['source'][6]
@@ -642,88 +657,89 @@ class Main(tk.Frame):
 
         # trip start/end
         if trip_start := self.source_data['source'][9]:
-            self.trip_start_var.set(trip_start)
+            ts = datetime.fromtimestamp(trip_start)
+            self.trip_start_var.set(ts.strftime('%Y%m%d'))
         if trip_end := self.source_data['source'][10]:
             self.trip_end_var.set(trip_end)
+            ts = datetime.fromtimestamp(trip_end)
+            self.trip_end_var.set(ts.strftime('%Y%m%d'))
 
         self.is_editing = True
 
     def project_option_changed(self, *args):
-        name = self.project_var.get()
-        id_ = self.id_map['project'].get(name,'')
-        if id_ == '':
-            return
-
-        # reset
-        self.studyarea_options = []
-        self.id_map['studyarea'] = {}
-        self.id_map['deployment'] = {}
-        self.id_map['sa_to_d'] = {}
-
-        res = self.app.server.get_projects(id_)
-        for i in res['studyareas']:
-            self.id_map['studyarea'][i['name']] = i['studyarea_id']
-            self.studyarea_options.append(i['name'])
-
-            if i['name'] not in self.id_map['sa_to_d']:
-                self.id_map['sa_to_d'][i['name']] = []
-            for j in i['deployments']:
-                self.id_map['sa_to_d'][i['name']].append(j)
-                self.id_map['deployment'][j['name']] = j['deployment_id']
-        # refresh
-        #print (self.studyarea_options)
-        #print (self.id_map['studyarea'], self.id_map['deployment'])
-        # refresh studyarea_options
+        # reset studyarea & deployment
         self.studyarea_var.set('-- 選擇樣區 --')
         menu = self.studyarea_menu['menu']
         menu.delete(0, 'end')
-        for sa_name in self.studyarea_options:
-            menu.add_command(label=sa_name, command=lambda x=sa_name: self.studyarea_var.set(x))
+
+        selected_proj = self.project_var.get()
+        if project := self.server_project_map['project'].get(selected_proj):
+            for name, value in self.server_project_map['studyarea'].items():
+                if value['project_id'] == project['id']:
+                    menu.add_command(label=name, command=lambda x=name: self.studyarea_var.set(x))
 
     def studyarea_option_changed(self, *args):
         selected_sa = self.studyarea_var.get()
-        self.deployment_options = []
-        for i in self.id_map['sa_to_d'].get('selected_sa', []):
-            self.deployment_options.append(i['name'])
-        # refresh studyarea_options
+        if selected_sa == '' or selected_sa == '-- 選擇樣區 --':
+            return
+
+        # refresh deployment options
         self.deployment_var.set('-- 選擇相機位置 --')
         menu = self.deployment_menu['menu']
         menu.delete(0, 'end')
-        for d in self.id_map['sa_to_d'].get(selected_sa, []):
-            menu.add_command(label=d['name'], command=lambda x=d['name']: self.deployment_var.set(x))
+
+        studyarea = self.server_project_map['studyarea'][selected_sa]
+        for name, value in self.server_project_map['deployment'].items():
+            if value['studyarea_id'] == studyarea['id']:
+                menu.add_command(label=name, command=lambda x=name: self.deployment_var.set(x))
 
     def deployment_option_changed(self, *args):
-        d_name = self.deployment_var.get()
-        if deployment_id := self.id_map['deployment'].get(d_name, ''):
-            #print ('set deployment_id: ', deployment_id, d_name, )
-            sa_name = self.studyarea_var.get()
-            p_name = self.project_var.get()
-            descr = {
-                'deployment_id': deployment_id,
-                'deployment_name': d_name,
-                'studyarea_id': self.id_map['studyarea'].get(sa_name, ''),
-                'studyarea_name': sa_name,
-                'project_id': self.id_map['project'].get(p_name, ''),
-                'project_name': p_name,
-            }
-            #print (descr)
-            update_db = False
-            if db_descr := self.source_data['source'][7]:
-                d = json.loads(db_descr)
-                if deployment_id != d['deployment_id']:
-                    update_db = True
-            else:
-                # new
+        selected_dep = self.deployment_var.get()
+        if selected_dep == '' or selected_dep == '-- 選擇相機位置 --':
+            return
+
+        deployment_id = None
+        studyarea_id = None
+        project_id = None
+        project_name = self.project_var.get()
+        if x := self.server_project_map['project'].get(project_name):
+            project_id = x['id']
+
+        studyarea_name = self.studyarea_var.get()
+        if x := self.server_project_map['studyarea'].get(studyarea_name):
+            studyarea_id = x['id']
+        if x := self.server_project_map['deployment'][selected_dep]:
+            deployment_id = x['id']
+
+        update_db = False
+        descr = {}
+        if db_descr := self.source_data['source'][7]:
+            descr = json.loads(db_descr)
+            if deployment_id != descr.get('deployment_id'):
                 update_db = True
-            if update_db:
-                # save to db
-                sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(descr), self.source_id)
-                self.app.db.exec_sql(sql, True)
+        else:
+            # new
+            update_db = True
+
+        if update_db:
+            descr.update({
+                'deployment_id': deployment_id,
+                'deployment_name': selected_dep,
+                'studyarea_id': studyarea_id,
+                'studyarea_name': studyarea_name,
+                'project_id': project_id,
+                'project_name': project_name,
+            })
+
+            # save to db
+            sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(descr), self.source_id)
+            self.app.db.exec_sql(sql, True)
 
             # update source_data (for upload: first time import folder, get no deployment_id even if selected)
             self.source_data = self.app.source.get_source(self.source_id)
-            # TODO
+
             #tk.messagebox.showinfo('info', '已設定相機位置')
+
 
     def handle_upload3(self):
         # ==============
@@ -840,11 +856,8 @@ class Main(tk.Frame):
             return False
 
         self.app.source.delete_folder(self.source_id)
-        #self.app.frames['folder_list'].refresh_source_list()\
-
-        '''TODO_LAYOUT
-        self.app.frames['landing'].show(True)
-        '''
+        #self.app.frames['folder_list'].refresh_source_list()
+        self.app.on_folder_list()
 
     def custom_to_page(self):
         self.refresh()
@@ -1111,6 +1124,7 @@ class Main(tk.Frame):
                 self.refresh()
                 tk.messagebox.showinfo('info', f'已清空測試照')
 
+    # DEPRICATED
     def handle_entry_change(self, *args):
         if self.is_editing is False:
             return

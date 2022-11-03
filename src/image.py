@@ -1,5 +1,6 @@
 import hashlib
 from pathlib import Path
+from datetime import datetime
 
 from PIL import Image as PILImage
 from PIL import ExifTags
@@ -118,3 +119,16 @@ class ImageManager(object):
 
         return h.hexdigest()
 
+    def get_timestamp(self):
+        via = 'exif'
+        dtime = self.exif.get('DateTimeOriginal', '')
+        timestamp = None
+        if dtime:
+            dt = datetime.strptime(self.exif.get('DateTime', ''), '%Y:%m:%d %H:%M:%S')
+            timestamp = dt.timestamp()
+        else:
+            stat = self.get_stat()
+            timestamp = int(stat.st_mtime)
+            via = 'mtime'
+
+        return timestamp, via

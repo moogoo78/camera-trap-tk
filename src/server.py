@@ -90,7 +90,11 @@ class Server(object):
         'config already transform to dict'
         self.config = config
         self.projects = []
-
+        self.project_map = {
+            'project': {},
+            'studyarea': {},
+            'deployment': {},
+        }
         if config.get('no_network', '') == 'yes':
             return None
 
@@ -315,3 +319,31 @@ class Server(object):
             ret['error'] = '連線失敗，請檢查網路連線是否有問題，或是伺服器有無正常運作?'
             logging.error(f'request connection error: {err_msg}')
         return ret
+
+    def get_project_map(self):
+        data = {
+            'project': {},
+            'studyarea': {},
+            'deployment': {},
+        }
+        projects = self.get_projects()
+        # notice: if projects from conf, project_id is string!!
+        for p in projects:
+            res = self.get_projects(p['project_id'])
+            data['project'][res['name']] = {
+                'id': res['project_id'],
+            }
+            for sa in res['studyareas']:
+                data['studyarea'][sa['name']] = {
+                    'id': sa['studyarea_id'],
+                    'project_id': res['project_id'],
+                }
+                for dep in sa['deployments']:
+                    data['deployment'][dep['name']] = {
+                        'id': dep['deployment_id'],
+                        'studyarea_id': sa['studyarea_id'],
+                    }
+
+        self.project_map = data
+        # print(data)
+        return data

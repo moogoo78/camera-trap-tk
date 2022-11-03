@@ -25,3 +25,13 @@ System Design
 
 看大圖
 ^^^^^^^^^^^^
+
+
+Local Schema
+=============
+
+source
+------------
+
+begin_date: 照片開始日期
+end_date: 照片結束日期

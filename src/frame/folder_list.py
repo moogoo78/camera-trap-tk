@@ -1,6 +1,7 @@
 import threading
 from datetime import datetime
 import logging
+import re
 
 import tkinter as tk
 from tkinter import (
@@ -122,13 +123,26 @@ class FolderList(tk.Frame):
 
     def add_folder_worker(self, src, source_id, image_list, folder_path):
         image_sql_list = []
+        folder_date_range = [0, 0]
         for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
             image_sql_list.append(sql)
+            # print (data)
+            if folder_date_range[0] == 0 or folder_date_range[1] == 0:
+                folder_date_range[0] = data['timestamp']
+                folder_date_range[1] = data['timestamp']
+            else:
+                if data['timestamp'] < folder_date_range[0]:
+                    folder_date_range[0] = data['timestamp']
+                elif data['timestamp'] > folder_date_range[1]:
+                    folder_date_range[1] = data['timestamp']
+
             #print(sql, self.folder_importing)
             if source_id in self.folder_importing:
                 self.folder_importing[source_id]['prog_bar']['value'] = i+1
                 self.folder_importing[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
 
+        sql_date_range = f'UPDATE source SET trip_start={folder_date_range[0]}, trip_end={folder_date_range[1]} WHERE source_id={source_id}'
+        image_sql_list.append(sql_date_range)
         self.app.after(100, lambda: self.exec_sql_list(image_sql_list, source_id))
 
     def add_folder(self):
@@ -143,9 +157,19 @@ class FolderList(tk.Frame):
             tk.messagebox.showinfo('info', '已經加過此資料夾')
             return False
 
+        # check folder name syntax
+        parsed_format = None
+        result = src.check_folder_name_format(folder_path.name)
+
+        if err := result.get('error'):
+            tk.messagebox.showinfo('注意', f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd]\n 範例: HC04-20190304-20190506')
+        else:
+            parsed_format = result
+            logging.debug(f'parsed folder name result: {result}')
+
         image_list = src.get_image_list(folder_path)
         if num_images := len(image_list):
-            source_id = src.create_import_directory(num_images, folder_path)
+            source_id = src.create_import_directory(num_images, folder_path, parsed_format)
             self.refresh_source_list()
             threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
         else:

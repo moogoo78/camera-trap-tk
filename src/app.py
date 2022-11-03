@@ -96,6 +96,8 @@ class Application(tk.Tk):
         self.source = Source(self)
         self.server = Server(dict(config['Server']))
 
+        self.server.get_project_map()
+
         #print(list(tk.font.families()))
         #Yu Gothic
         #helvetica

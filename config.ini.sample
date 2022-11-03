@@ -39,6 +39,16 @@ app_height = 760
 [DataGrid]
 num_per_page = 100
 
+[StudyAreaMap]
+PT = 屏東處
+TD = 台東處
+HL = 花蓮處
+LD = 羅東處
+HC = 新竹處
+DS = 東勢處
+CY = 嘉義處
+NT = 南投處
+
 [Column]
 label_list = filename:原始檔案,datetime:日期時間,species:物種,lifestage:年齡,sex:性別,antler:角況,animal_id:個體ID,remarks:備註
 default_list = filename,datetime,species,lifestage
