@@ -234,6 +234,7 @@ class FolderList(tk.Frame):
             #    title_font_size = 17
             # change line
             limiter = 23
+            print(len(r[3]))
             if len(r[3]) > limiter:
                 title1 = r[3][:limiter]
                 title2 = r[3][limiter:]
@@ -242,7 +243,7 @@ class FolderList(tk.Frame):
                     gap-10,
                     anchor='nw',
                     text=title1,
-                    font=self.app.get_font('display-3'),
+                    font=self.app.get_font('display-4'),
                     fill=self.app.app_primary_color,
                     tags=('item', status_cat, source_tag)
                 )
@@ -251,7 +252,7 @@ class FolderList(tk.Frame):
                     gap+10,
                     anchor='nw',
                     text=title2,
-                    font=self.app.get_font('display-3'),
+                    font=self.app.get_font('display-4'),
                     fill=self.app.app_primary_color,
                     tags=('item', status_cat, source_tag)
                 )
@@ -261,7 +262,7 @@ class FolderList(tk.Frame):
                     gap,
                     anchor='nw',
                     text=r[3],
-                    font=self.app.get_font('display-3'),
+                    font=self.app.get_font('15'),
                     fill=self.app.app_primary_color,
                     tags=('item', status_cat, source_tag)
                 )

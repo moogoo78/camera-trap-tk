@@ -196,7 +196,7 @@ class UploadProgress(tk.Frame):
                 gap-10,
                 anchor='nw',
                 text=title1,
-                font=self.app.get_font('display-3'),
+                font=self.app.get_font('display-4'),
                 fill=self.app.app_primary_color,
                 tags=('item', source_tag))
             self.canvas.create_text(
@@ -204,7 +204,7 @@ class UploadProgress(tk.Frame):
                 gap+10,
                 anchor='nw',
                 text=title2,
-                font=self.app.get_font('display-3'),
+                font=self.app.get_font('display-4'),
                 fill=self.app.app_primary_color,
                 tags=('item', source_tag))
         else:
@@ -213,7 +213,7 @@ class UploadProgress(tk.Frame):
                 gap,
                 anchor='nw',
                 text=r[3],
-                font=self.app.get_font('display-3'),
+                font=self.app.get_font('15'),
                 fill=self.app.app_primary_color,
                 tags=('item', source_tag))
 
