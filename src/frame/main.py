@@ -564,12 +564,13 @@ class Main(tk.Frame):
             if x := d.get('deployment_name', ''):
                 self.deployment_var.set(x)
             elif y:= d['parsed'].get('deployment', ''):
-                self.deployment_var.set(y)
-                d['deployment_name'] = y
-                d['deployment_id'] = self.server_project_map['deployment'][y]['id']
-                # save to db
-                sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(d), self.source_id)
-                self.app.db.exec_sql(sql, True)
+                if self.server_project_map['deployment'].get(y, ''):
+                    self.deployment_var.set(y)
+                    d['deployment_name'] = y
+                    d['deployment_id'] = self.server_project_map['deployment'][y]['id']
+                    # save to db
+                    sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(d), self.source_id)
+                    self.app.db.exec_sql(sql, True)
 
         else:
             self.project_var.set('')
