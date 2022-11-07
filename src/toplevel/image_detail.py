@@ -30,8 +30,13 @@ class ImageDetail(tk.Toplevel):
         self.resize_ratio = 1
         self.to_width = self.INIT_WIDTH
         self.protocol('WM_DELETE_WINDOW', self.quit)
-
         self.layout()
+        '''
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        print("Screen width:", screen_width)
+        print("Screen height:", screen_height)
+        '''
 
     def layout(self):
         self.columnconfigure(0, weight=1)

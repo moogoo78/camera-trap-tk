@@ -234,7 +234,6 @@ class FolderList(tk.Frame):
             #    title_font_size = 17
             # change line
             limiter = 23
-            print(len(r[3]))
             if len(r[3]) > limiter:
                 title1 = r[3][:limiter]
                 title2 = r[3][limiter:]

@@ -76,7 +76,6 @@ class MainTable(tk.Canvas):
 
         self.width = self.ps['width']
         self.height = self.ps['height']
-
         self.entry_queue = {}
 
         self.ps['after_row_index_selected'] = self.handle_row_index_selected
@@ -1010,18 +1009,28 @@ class MainTable(tk.Canvas):
             else:
                 col += 1
 
-        lower_boundry = self.ps['visible_rows'] - 1
-        if row >= lower_boundry:
-            #self.to_scroll('down')
-            y_ratio = row - int(lower_boundry / 2)  # keep highlight on center 
-            args = ('moveto', y_ratio /self.ps['num_rows'])
-            self.parent.handle_yviews(*args)
-            # print('move', args, y_ratio, lower_boundry)
-        else:
-            args = ('moveto', 0)
-            self.parent.handle_yviews(*args)
-
+        # scroll while key up/down or left/right
+        num_rows_display = int(self.ps['height_adjusted'] / self.ps['cell_height'])
+        num_rows_display_middle = (num_rows_display / 2)
+        # print(row, self.ps['height'], self.ps['height_adjusted'], num_rows_display)
         # print(self.canvasx(0), self.canvasy(0), self.canvasx(self.winfo_width()), self.canvasy(self.winfo_height()))
+
+        # adjust verticle scrollbar
+        #if row >= num_rows_display_middle:
+        v_args = ('moveto',  (row - num_rows_display_middle) / self.ps['num_rows'])
+        self.parent.handle_yviews(*v_args)
+
+        # adjust horizontal scrollbar
+        if self.ps['width_adjusted'] < self.width:
+            right_width = self.ps['column_width_list'][col+1]+self.ps['row_index_width']
+            left_width = self.ps['column_width_list'][col]+self.ps['row_index_width']
+            if col == 0 or right_width <= self.ps['width_adjusted']:
+                h_args = ('moveto', 0)
+            else:
+                h_args = ('moveto',  right_width / self.width)
+            self.parent.handle_xviews(*h_args)
+            # print(left_width, right_width, self.ps['width_adjusted'], self.width)
+
         self.selected.update({
             'action': 'key-arrow',
             'drag_start': [row, col],

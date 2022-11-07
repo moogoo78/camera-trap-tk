@@ -46,6 +46,8 @@ class DataGrid(tk.Frame):
             'columns': columns,
             'width': width,
             'height': height,
+            'height_adjusted': height,
+            'width_adjusted': width,
             'pagination': {
                 'num_per_page': num_per_page,
                 'current_page': 1,
@@ -87,6 +89,7 @@ class DataGrid(tk.Frame):
             'custom_menus': custom_menus,
             'custom_binding': custom_binding,
             'row_index_display': row_index_display,
+            'row_index_width': row_index_width,
             'box_display_type': 'lower',
             'rows_delete_type': rows_delete_type,
             'remove_rows_key_ignore_pattern': remove_rows_key_ignore_pattern,
@@ -250,6 +253,7 @@ class DataGrid(tk.Frame):
         })
 
     def handle_yviews(self, *args):
+        # print('yviews', *args)
         self.main_table.yview(*args)
         if self.state['row_index_display']:
             self.row_index.yview(*args)
@@ -258,8 +262,7 @@ class DataGrid(tk.Frame):
 
     def handle_xviews(self, *args):
         self.main_table.xview(*args)
-        if self.state['row_index_display']:
-            self.row_index.xview(*args)
+        self.column_header.xview(*args)
 
     def get_row_list(self):
         # row_list = []
@@ -270,14 +273,6 @@ class DataGrid(tk.Frame):
         selected = self.main_table.selected
         if selected['box'][0] is not None:
             return list(range(selected['box'][0], selected['box'][2] + 1))
-
-    def update_state_DEPRICATED(self, key, value):
-        if key in self.state and self.state[key] != value:
-            logging.debug(f'update state: {key}: {value}')
-            self.state[key] = value
-            return True
-
-        return False
 
     def update_state(self, new_state):
         self.state.update(new_state)

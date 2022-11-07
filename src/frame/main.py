@@ -46,7 +46,7 @@ class Main(tk.Frame):
         self.background_color = kwargs.get('background','')
 
         self.source_data = {}
-        # self.bind('<Configure>', self.resize)
+        self.bind('<Configure>', self.resize)
 
         self.server_project_map = self.app.server.project_map
 
@@ -1208,3 +1208,12 @@ class Main(tk.Frame):
     #def resize_datagrid(self):
     #    self.data_grid.update_state({'height': 900})
     #    self.data_grid.main_table.config(height=900)
+
+    def resize(self, event):
+        logging.debug(f'resize {event.width}x{event.height}')
+        data_grid_height = max(event.height - 400, 40) # at last 40
+        # print('dgh:', data_grid_height)
+        self.data_grid.update_state({
+            'height_adjusted': data_grid_height,
+            'width_adjusted': event.width,
+        })
