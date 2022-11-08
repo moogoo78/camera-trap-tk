@@ -150,6 +150,7 @@ class Source(object):
                 data['via'] = via
                 sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
             elif type_ == 'video':
+                print(entry, 'video')
                 data['mov'] = entry
                 stat = data['mov'].stat()
                 data['timestamp'] = int(stat.st_mtime)
@@ -160,7 +161,7 @@ class Source(object):
             yield (data, sql)
 
 
-    def prepare_video_sql(self, i, ts_now, source_id, thumb_source_path, timestamp, via):
+    def prepare_video_sql(self, i, ts_now, source_id, thumb_source_path):
         db = self.db
 
         sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, {}, '{}', 'video')".format(
@@ -345,7 +346,8 @@ class Source(object):
         # date_format = self.app.config.get('Format', 'date_format')
 
         # regex = r'(HC|HL|LD|NT|CY|PT|DS|TD)([0-9]+)([A-Za-z]*)-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])'
-        regex = r'(HC|HL|LD|NT|CY|PT|DS|TD)(.*)-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])'
+        # regex = r'(HC|HL|LD|NT|CY|PT|DS|TD)(.*)-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])'
+        regex = r'(.*)-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])'
         date_format = '%Y-%m-%d'
         result = {'error': ''}
         try:
@@ -356,12 +358,13 @@ class Source(object):
                 result.update({
                     'studyarea_key': sa_key,
                     'studyarea': studyarea_name,
-                    'deployment': '{}{}'.format(m.group(1), m.group(2)), #  '{}{}'.format(m.group(2), m.group(3)),
+                    # 'deployment': '{}{}'.format(m.group(1), m.group(2)), #  '{}{}'.format(m.group(2), m.group(3)),
+                    'deployment': m.group(1), #  '{}{}'.format(m.group(2), m.group(3)),
                 })
                 # begin_date = '{}{}{}'.format(m.group(4), m.group(5), m.group(6))
                 # end_date = '{}{}{}'.format(m.group(7), m.group(8), m.group(9))
-                trip_start = '{}-{}-{}'.format(m.group(3), m.group(4), m.group(5))
-                trip_end = '{}-{}-{}'.format(m.group(6), m.group(7), m.group(8))
+                trip_start = '{}-{}-{}'.format(m.group(2), m.group(3), m.group(4))
+                trip_end = '{}-{}-{}'.format(m.group(5), m.group(6), m.group(7))
                 if validate_datetime(trip_start, date_format) and \
                    validate_datetime(trip_end, date_format):
                     # 目前用不到，只是判斷格式，也沒有上傳 (上傳有 folder_name可查)
