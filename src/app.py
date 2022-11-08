@@ -96,7 +96,10 @@ class Application(tk.Tk):
         self.source = Source(self)
         self.server = Server(dict(config['Server']))
 
-        # self.server.get_project_map()
+        self.cached_project_map = self.server.get_project_map()
+        if err := self.cached_project_map.get('error'):
+            tk.messagebox.showerror('server error', f'{err}\n (無法上傳檔案，但是其他功能可以運作)')
+
 
         #print(list(tk.font.families()))
         #Yu Gothic

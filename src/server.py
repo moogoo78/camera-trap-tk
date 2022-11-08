@@ -7,6 +7,7 @@ from urllib.request import urlopen, Request
 from http.client import HTTPResponse
 import ssl
 import json
+from datetime import datetime
 
 # ping, via: https://stackoverflow.com/a/32684938/644070
 import platform    # For getting the operating system name
@@ -85,16 +86,9 @@ def make_request_urllib(url, headers=None, data=None, is_json=False):
         return ret
 
 class Server(object):
-    projects = []
     def __init__(self, config):
         'config already transform to dict'
         self.config = config
-        self.projects = []
-        self.project_map = {
-            'project': {},
-            'studyarea': {},
-            'deployment': {},
-        }
         if config.get('no_network', '') == 'yes':
             return None
 
@@ -110,7 +104,7 @@ class Server(object):
         #else:
         #    tk.messagebox.showwarning('注意', '無網路連線')
 
-    def get_projects(self, source_id=0):
+    def get_projects_DEPRECATED(self, source_id=0):
         '''get from ini configuration'''
         if source_id:
             return self.get_projects_server(source_id)
@@ -137,15 +131,15 @@ class Server(object):
             # r = requests.get(f'{project_api_prefix}{source_id}/')
             # return r.json()
             url = f'{project_api_prefix}{source_id}/'
-            resp = self.make_request(url)
-            if not resp['error']:
-                #return to_json(resp['body'])
-                return resp['json']
-            else:
-                tk.messagebox.showerror('server error', resp['error'])
+            return self.make_request(url)
+            #if not resp['error']:
+            #    #return to_json(resp['body'])
+            #    return resp['json']
+            # else:
+            #    tk.messagebox.showerror('server error', resp['error'])
 
-            if x:= resp.get('response'):
-                x.close()
+            #if x:= resp.get('response'):
+            #    x.close()
 
         # else: # TODO
             # r = requests.get(project_api_prefix)
@@ -154,7 +148,7 @@ class Server(object):
             #data = json.loads(body)
             #return data['results']
 
-        return []
+        return None
 
     def post_image_status(self, payload):
         url = f"{self.config['host']}{self.config['image_update_api']}"
@@ -322,28 +316,37 @@ class Server(object):
 
     def get_project_map(self):
         data = {
+            'timestamp': None,
+            'error': '',
             'project': {},
             'studyarea': {},
             'deployment': {},
         }
-        projects = self.get_projects()
+        now = datetime.now().timestamp()
+        projects = self.get_projects_conf()
         # notice: if projects from conf, project_id is string!!
         for p in projects:
-            res = self.get_projects(p['project_id'])
-            data['project'][res['name']] = {
-                'id': res['project_id'],
-            }
-            for sa in res['studyareas']:
-                data['studyarea'][sa['name']] = {
-                    'id': sa['studyarea_id'],
-                    'project_id': res['project_id'],
+            result = self.get_projects_server(p['project_id'])
+            if not result['error']:
+                res = result['json']
+                data['timestamp'] = now
+                data['project'][res['name']] = {
+                    'id': res['project_id'],
                 }
-                for dep in sa['deployments']:
-                    data['deployment'][dep['name']] = {
-                        'id': dep['deployment_id'],
-                        'studyarea_id': sa['studyarea_id'],
+                for sa in res['studyareas']:
+                    data['studyarea'][sa['name']] = {
+                        'id': sa['studyarea_id'],
+                        'project_id': res['project_id'],
                     }
+                    for dep in sa['deployments']:
+                        dep_key = '{}::{}'.format(sa['name'], dep['name'])
+                        data['deployment'][dep_key] = {
+                            'id': dep['deployment_id'],
+                            'key': dep_key,
+                            'name': dep['name'],
+                            'studyarea_id': sa['studyarea_id'],
+                        }
+            else:
+                data['error'] = result['error']
 
-        self.project_map = data
-        # print(data)
         return data

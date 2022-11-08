@@ -30,7 +30,7 @@ from image import (
     check_thumb,
     aspect_ratio,
 )
-from worker import UpdateAction
+from utils import human_sorting
 
 sys.path.insert(0, '') # TODO: pip install -e .
 from tkdatagrid import DataGrid
@@ -48,7 +48,7 @@ class Main(tk.Frame):
         self.source_data = {}
         self.bind('<Configure>', self.resize)
 
-        self.server_project_map = self.app.server.project_map
+        #self.server_project_map = self.app.server.project_map
 
         self.source_id = None
         self.current_row = 0
@@ -79,6 +79,10 @@ class Main(tk.Frame):
 
         self.image_detail = None
 
+        # fetch project/studyarea/deployment map
+        #print(self.app.server.project_map)
+        #self.app.server.get_project_map()
+        #print(self.app.server.project_map)
         # layout
         #self.grid_propagate(False)
         self.layout()
@@ -232,7 +236,7 @@ class Main(tk.Frame):
             text='檢視計畫',
             **label_args)
 
-        self.project_options = [x for x in self.server_project_map['project']]
+        self.project_options = [x for x in self.app.cached_project_map['project']]
         self.project_var = tk.StringVar(self)
         self.project_menu = tk.OptionMenu(
             self.ctrl_frame2,
@@ -534,16 +538,18 @@ class Main(tk.Frame):
         if status := self.source_data['source'][6]:
             self.data_helper.source_id_status = [self.source_id, status]
 
+        has_default = False
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
             # set init value
             parsed_project_id = None
             parsed_project_name = None
-
             # set order matter ! for dependency on_change
+            # TODO
             # 1) set studyarea
             if x := d.get('studyarea_name', ''):
                 self.studyarea_var.set(x)
+                has_default = True
             elif y:= d['parsed'].get('studyarea', ''):
                 if sa := self.server_project_map['studyarea'].get(y, ''):
                     self.studyarea_var.set(y)
@@ -557,14 +563,16 @@ class Main(tk.Frame):
             # 2) set project
             if x := d.get('project_name', ''):
                 self.project_var.set(x)
+                has_default = True
             elif parsed_project_name:
                 self.project_var.set(parsed_project_name)
 
             # 3) set deployment
             if x := d.get('deployment_name', ''):
                 self.deployment_var.set(x)
+                has_default = True
             elif y:= d['parsed'].get('deployment', ''):
-                if self.server_project_map['deployment'].get(y, ''):
+                if self.app.cached_project_map['deployment'].get(y, ''):
                     self.deployment_var.set(y)
                     d['deployment_name'] = y
                     d['deployment_id'] = self.server_project_map['deployment'][y]['id']
@@ -572,7 +580,7 @@ class Main(tk.Frame):
                     sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(d), self.source_id)
                     self.app.db.exec_sql(sql, True)
 
-        else:
+        if has_default is False:
             self.project_var.set('')
             self.studyarea_var.set('')
             self.deployment_var.set('')
@@ -668,18 +676,20 @@ class Main(tk.Frame):
         self.is_editing = True
 
     def project_option_changed(self, *args):
+        #print('proj', args)
         # reset studyarea & deployment
         self.studyarea_var.set('-- 選擇樣區 --')
         menu = self.studyarea_menu['menu']
         menu.delete(0, 'end')
 
         selected_proj = self.project_var.get()
-        if project := self.server_project_map['project'].get(selected_proj):
-            for name, value in self.server_project_map['studyarea'].items():
+        if project := self.app.cached_project_map['project'].get(selected_proj):
+            for name, value in self.app.cached_project_map['studyarea'].items():
                 if value['project_id'] == project['id']:
                     menu.add_command(label=name, command=lambda x=name: self.studyarea_var.set(x))
 
     def studyarea_option_changed(self, *args):
+        #print('sa', args)
         selected_sa = self.studyarea_var.get()
         if selected_sa == '' or selected_sa == '-- 選擇樣區 --':
             return
@@ -689,12 +699,17 @@ class Main(tk.Frame):
         menu = self.deployment_menu['menu']
         menu.delete(0, 'end')
 
-        studyarea = self.server_project_map['studyarea'][selected_sa]
-        for name, value in self.server_project_map['deployment'].items():
-            if value['studyarea_id'] == studyarea['id']:
-                menu.add_command(label=name, command=lambda x=name: self.deployment_var.set(x))
+        studyarea = self.app.cached_project_map['studyarea'][selected_sa]
+        items = []
+        for key, value in self.app.cached_project_map['deployment'].items():
+            if key == '{}::{}'.format(selected_sa, value['name']):
+                #menu.add_command(label=value['name'], command=lambda x=value['name']: self.deployment_var.set(x))
+                items.append(value['name'])
+        for name in human_sorting(items):
+            menu.add_command(label=name, command=lambda x=name: self.deployment_var.set(x))
 
     def deployment_option_changed(self, *args):
+        #print('dep', args)
         selected_dep = self.deployment_var.get()
         if selected_dep == '' or selected_dep == '-- 選擇相機位置 --':
             return
@@ -703,13 +718,14 @@ class Main(tk.Frame):
         studyarea_id = None
         project_id = None
         project_name = self.project_var.get()
-        if x := self.server_project_map['project'].get(project_name):
+        if x := self.app.cached_project_map['project'].get(project_name):
             project_id = x['id']
 
         studyarea_name = self.studyarea_var.get()
-        if x := self.server_project_map['studyarea'].get(studyarea_name):
+        if x := self.app.cached_project_map['studyarea'].get(studyarea_name):
             studyarea_id = x['id']
-        if x := self.server_project_map['deployment'][selected_dep]:
+            dep_key = '{}::{}'.format(studyarea_name, selected_dep)
+        if x := self.app.cached_project_map['deployment'][dep_key]:
             deployment_id = x['id']
 
         update_db = False
@@ -721,7 +737,6 @@ class Main(tk.Frame):
         else:
             # new
             update_db = True
-
         if update_db:
             descr.update({
                 'deployment_id': deployment_id,
