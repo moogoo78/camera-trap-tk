@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [v0.2.5a]
+
+fix:
+- many UI after 教育訓練
+- 改下拉選單邏輯 (避免相機位置同名)
+
+feat:
+- 檢查資料夾匯入格式
+
 ## [v0.2.4b]
 
 ### Changed:
