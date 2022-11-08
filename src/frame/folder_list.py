@@ -160,12 +160,13 @@ class FolderList(tk.Frame):
         # check folder name syntax
         parsed_format = None
         result = src.check_folder_name_format(folder_path.name)
+        logging.info(result)
 
         if err := result.get('error'):
-            tk.messagebox.showinfo('注意', f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd]\n 範例: HC04-20190304-20190506')
+            tk.messagebox.showerror('注意', f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd]\n 範例: HC04-20190304-20190506')
+            return
         else:
             parsed_format = result
-            logging.debug(f'parsed folder name result: {result}')
 
         image_list = src.get_image_list(folder_path)
         if num_images := len(image_list):
@@ -234,7 +235,6 @@ class FolderList(tk.Frame):
             #    title_font_size = 17
             # change line
             limiter = 23
-            print(len(r[3]))
             if len(r[3]) > limiter:
                 title1 = r[3][:limiter]
                 title2 = r[3][limiter:]

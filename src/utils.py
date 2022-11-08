@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 #from bson.objectid import ObjectId
 
 def validate_datetime(datetime_text, datetime_format=''):
@@ -51,3 +52,15 @@ def create_round_polygon(canvas, x, y, sharpness, **kwargs):
             points.append(y[0])
 
     return canvas.create_polygon(points, **kwargs, smooth=True)
+
+def human_sorting(alist):
+    # via: https://stackoverflow.com/a/5967539/644070
+    def atoi(text):
+        return int(text) if text.isdigit() else text
+
+    def sort_keys(text):
+        return [ atoi(c) for c in re.split(r'(\d+)', text) ]
+
+    alist.sort(key=sort_keys)
+
+    return alist
