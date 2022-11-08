@@ -1,0 +1,26 @@
+digraph G {
+        start -> select_folder [label="press import button"];
+        select_folder -> add_folder -> check_format -> error_format;
+        check_format -> match_format -> get_image_list -> import_dir;
+        import_dir -> add_folder_worker -> gen_import_file;
+        gen_import_file -> check_type -> image_type -> update_db;
+        check_type -> video_type -> update_db;
+        /*older_worker -> update_db [label="update database: source table"];*/
+        update_db -> end;
+
+        video_type [label="source.prepare_video_sql", shape=box];
+        image_type [label="source.prepare_image_sql_and_thumb", shape=box];
+        check_type [label="check media type", shape=diamond]
+        gen_import_file [label="source.gen_import_file", shape=box];
+        update_db [label="folder_list.exec_sql_list", shape=box];
+        add_folder_worker [label="folder_list.add_folder_worker", shape=box];
+        import_dir [label="source.create_import_directory", shape=box];
+        match_format [label="date (Ymd) match"];
+        get_image_list [label="source.get_image_list", shape=box];
+        error_format [label="date (Ymd) not match"];
+        check_format [label="source.check_folder_name_format", shape=diamond];
+        select_folder [label="(OS) Select Folder"];
+        add_folder [label="folder_list.add_folder", shape=box];
+        start [shape=Mdiamond];
+        end [shape=Msquare];
+}
