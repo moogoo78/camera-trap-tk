@@ -12,6 +12,7 @@ ssl_verify = 0
 
 [Mode]
 log_level = debug
+check_folder_format = 1
 
 [SQLite]
 dbfile = ct.db
