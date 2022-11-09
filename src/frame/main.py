@@ -70,7 +70,7 @@ class Main(tk.Frame):
         lifestage_choices = self.app.config.get('AnnotationFieldLifeStage', 'choices')
         species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         self.data_helper.columns['annotation_species']['choices'] = species_choices.split(',')
-        species_bird_choices = self.app.config.get('AnnotationSpeciesExtra', '1birds')
+        species_bird_choices = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         # self.data_helper.columns['annotation_species']['choices'] += species_bird_choices.split(',')
         self.data_helper.columns['annotation_species']['extra_choices'] = species_extra_birds.split(',')
         self.data_helper.columns['annotation_antler']['choices'] = antler_choices.split(',')
@@ -196,7 +196,6 @@ class Main(tk.Frame):
         export_button = tk.Button(
             self,
             text='匯出csv',
-            #image=self.enlarge_icon,
             relief='flat',
             command=self.export_csv,
             takefocus=0,
@@ -388,7 +387,7 @@ class Main(tk.Frame):
         self.test_foto_label.grid(row=5, column=0, **label_grid)
         self.test_foto_entry.grid(row=5, column=1, sticky='w', padx=(left_spacing+2, 0))
         self.test_foto_tip.grid(row=5, column=1, sticky='w', padx=(left_spacing+76, 0))
-        self.test_foto_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+402, 0))
+        self.test_foto_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+406, 0))
         self.test_foto_clear_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+462, 0))
 
         # upload button
@@ -422,15 +421,14 @@ class Main(tk.Frame):
             self.ctrl_frame2,
             text='看大圖',
             image=self.enlarge_icon,
-            #command=self.handle_image_viewer,
-            #command=self.app.toggle_image_viewer,
             relief='flat',
             background='#FFFFFF',
             command=self.show_image_detail,
             takefocus=0,
         )
         # self.image_viewer_button.place(x=416, y=270, anchor='nw')
-        self.image_viewer_button.grid(row=7, column=0, sticky='sw')
+        #self.image_viewer_button.grid(row=7, column=0, sticky='sw')
+        self.show_image_viewer_button()
 
     def config_table_frame(self):
         self.table_frame.grid_columnconfigure(0, weight=1)
@@ -1220,7 +1218,8 @@ class Main(tk.Frame):
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo
 
-        self.image_viewer_button.place(x=421-46, y=270, anchor='nw')
+        # self.image_viewer_button.place(x=421-46, y=270, anchor='nw')
+        self.show_image_viewer_button()
 
         self.update_idletasks()
 
@@ -1248,3 +1247,6 @@ class Main(tk.Frame):
             'height_adjusted': data_grid_height,
             'width_adjusted': event.width,
         })
+
+    def show_image_viewer_button(self):
+        self.image_viewer_button.grid(row=7, column=0, sticky='sw')
