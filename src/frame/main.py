@@ -378,11 +378,18 @@ class Main(tk.Frame):
             textvariable=self.test_foto_val,
             width=8,
         )
-
+        self.test_foto_clear_button = ttk.Button(
+            self.ctrl_frame2,
+            text='清除',
+            command=lambda: self.set_test_foto_by_time(is_clear=True),
+            takefocus=0,
+            width=4,
+        )
         self.test_foto_label.grid(row=5, column=0, **label_grid)
         self.test_foto_entry.grid(row=5, column=1, sticky='w', padx=(left_spacing+2, 0))
         self.test_foto_tip.grid(row=5, column=1, sticky='w', padx=(left_spacing+76, 0))
         self.test_foto_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+402, 0))
+        self.test_foto_clear_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+462, 0))
 
         # upload button
         self.upload_button = tk.Button(
@@ -1106,8 +1113,15 @@ class Main(tk.Frame):
         if cur_page > 1:
             self.custom_to_page()
 
-    def set_test_foto_by_time(self):
+    def set_test_foto_by_time(self, is_clear=False):
+        if is_clear:
+            if not tk.messagebox.askokcancel('確認', '確認要清空測試照設定？'):
+                return False
+
         time_str = self.test_foto_val.get()
+
+        set_value = '測試' if not is_clear else ''
+
         if time_str != '':
             if m := re.search(r'([0-9]{2}):([0-9]{2}):([0-9]{2})', time_str):
                 hh = m.group(1)
@@ -1121,24 +1135,26 @@ class Main(tk.Frame):
                         image_hms = datetime.fromtimestamp(item['time']).strftime('%H:%M:%S')
 
                         if image_hms == time_str:
-                            self.data_helper.update_annotation(row_key, 'annotation_species', '測試')
+                            self.data_helper.update_annotation(row_key, 'annotation_species', set_value)
 
 
                     sql = "UPDATE source SET test_foto_time='{}' WHERE source_id={}".format(time_str ,self.source_data['source'][0])
                     self.app.db.exec_sql(sql, True)
                     self.refresh()
-                    tk.messagebox.showinfo('info', f'已設定測試照 - {time_str}')
-        else:
-            if not tk.messagebox.askokcancel('確認', '確認要清空測試照設定？'):
-                return False
-            else:
-                for row_key, item in self.data_helper.data.items(): 
-                    self.data_helper.update_annotation(row_key, 'annotation_species', '')
 
-                sql = "UPDATE source SET test_foto_time='' WHERE source_id={}".format(self.source_data['source'][0])
-                self.app.db.exec_sql(sql, True)
-                self.refresh()
-                tk.messagebox.showinfo('info', f'已清空測試照')
+                    info_label = '已設定測試照' if not is_clear else '已清除設定照'
+                    tk.messagebox.showinfo('info', f'{info_label} - {time_str}')
+        # else:
+        #     if not tk.messagebox.askokcancel('確認', '確認要清空測試照設定？'):
+        #         return False
+        #     else:
+        #         for row_key, item in self.data_helper.data.items(): 
+        #             self.data_helper.update_annotation(row_key, 'annotation_species', '')
+
+        #         sql = "UPDATE source SET test_foto_time='' WHERE source_id={}".format(self.source_data['source'][0])
+        #         self.app.db.exec_sql(sql, True)
+        #         self.refresh()
+        #         tk.messagebox.showinfo('info', f'已清空測試照')
 
     # DEPRICATED
     def handle_entry_change(self, *args):
