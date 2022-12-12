@@ -629,6 +629,8 @@ class MainTable(tk.Canvas):
             self.set_data_value(row_key, col_key, value)
             self.delete('autocomplete_win')
 
+            self.remove_widgets('autocomplete')
+            self.set_keyboard_control(True)
 
         self.autocomplete = Autocomplete(self.parent, choices=choices, value='', after_update_entry=after_update_entry)
 
