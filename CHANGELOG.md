@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.6]
+
+- 物種下拉選單選定後，鍵盤上下鍵失效
+
+## [v0.2.5c1]
+
+- 改相機命名警告文字
+
+## [v0.2.5c]
+
+- 相機位置排序
+- 測試照清空 bug
+- 拿掉沒網路時的提醒
+- 照片放大按鈕消失 (有影片檔時才會發生)
+
+## [v0.2.5b]
+
+- 影片匯入問題
+- 表格上按左右鍵移動，horizontal scroll bar 也要跟著捲動
+- 原本上下鍵移動感覺 highlight 跑出去了，vertical scrollbar 也沒有捲動
 
 ## [v0.2.5]
 
