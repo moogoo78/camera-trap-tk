@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
-## [v0.2.5a]
+## [v0.2.5]
 
 fix:
 - many UI after 教育訓練

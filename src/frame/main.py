@@ -102,7 +102,7 @@ class Main(tk.Frame):
     def handle_panedwindow_release(self, event):
         w = self.right_frame.winfo_width()
         # border: 8, padx: 10
-        self.thumb_basewidth = w - 36
+        self.thumb_bhasewidth = w - 36
         data = self.get_current_item('data')
 
 
@@ -427,8 +427,7 @@ class Main(tk.Frame):
             takefocus=0,
         )
         # self.image_viewer_button.place(x=416, y=270, anchor='nw')
-        #self.image_viewer_button.grid(row=7, column=0, sticky='sw')
-        self.show_image_viewer_button()
+        self.image_viewer_button.grid(row=7, column=0, sticky='sw')
 
     def config_table_frame(self):
         self.table_frame.grid_columnconfigure(0, weight=1)
@@ -524,6 +523,7 @@ class Main(tk.Frame):
         self.seq_checkbox_val.set('N')
 
         self.current_row_key = ''
+        self.image_viewer_button.grid(row=7, column=0, sticky='sw')
         self.refresh(is_init_highlight=True)
 
 
@@ -1219,7 +1219,6 @@ class Main(tk.Frame):
         self.image_thumb_label.image = photo
 
         # self.image_viewer_button.place(x=421-46, y=270, anchor='nw')
-        self.show_image_viewer_button()
 
         self.update_idletasks()
 
@@ -1247,6 +1246,3 @@ class Main(tk.Frame):
             'height_adjusted': data_grid_height,
             'width_adjusted': event.width,
         })
-
-    def show_image_viewer_button(self):
-        self.image_viewer_button.grid(row=7, column=0, sticky='sw')

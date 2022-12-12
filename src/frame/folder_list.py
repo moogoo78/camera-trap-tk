@@ -166,7 +166,7 @@ class FolderList(tk.Frame):
                 logging.info(result)
 
                 if err := result.get('error'):
-                    tk.messagebox.showerror('注意', f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd]\n 範例: HC04-20190304-20190506')
+                    tk.messagebox.showerror('注意', f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd-YYYYmmdd]\n 範例: HC04-20190304-20190506')
                     return
                 else:
                     parsed_format = result
