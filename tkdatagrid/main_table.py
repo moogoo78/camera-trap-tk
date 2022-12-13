@@ -1011,6 +1011,7 @@ class MainTable(tk.Canvas):
             else:
                 col += 1
 
+
         # scroll while key up/down or left/right
         num_rows_display = int(self.ps['height_adjusted'] / self.ps['cell_height'])
         num_rows_display_middle = (num_rows_display / 2)
@@ -1019,8 +1020,9 @@ class MainTable(tk.Canvas):
 
         # adjust verticle scrollbar
         #if row >= num_rows_display_middle:
-        v_args = ('moveto',  (row - num_rows_display_middle) / self.ps['num_rows'])
-        self.parent.handle_yviews(*v_args)
+        if len(self.ps['data']) >= num_rows_display:  # don't scroll if data less than num_rows_display
+            v_args = ('moveto',  (row - num_rows_display_middle) / self.ps['num_rows'])
+            self.parent.handle_yviews(*v_args)
 
         # adjust horizontal scrollbar
         if self.ps['width_adjusted'] < self.width:
