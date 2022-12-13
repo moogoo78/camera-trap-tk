@@ -44,6 +44,12 @@ class HelpPage(tk.Frame):
         img = Image.open('./assets/help-content.png')
         to_size = aspect_ratio(img.size, width=self.app.app_width)
         self.photo = ImageTk.PhotoImage(img.resize(to_size))
+
+        self.img_qrcode_app = Image.open('./assets/qrcode-app.png')
+        self.img_qrcode_web = Image.open('./assets/qrcode-web.png')
+        self.photo = ImageTk.PhotoImage(img.resize(to_size))
+        self.photo_qrcode_app = ImageTk.PhotoImage(self.img_qrcode_app)
+        self.photo_qrcode_web = ImageTk.PhotoImage(self.img_qrcode_web)
         self.canvas = tk.Canvas(
             self,
             width=self.app.app_width,
@@ -74,4 +80,16 @@ class HelpPage(tk.Frame):
             anchor='nw',
         )
 
+        self.canvas.create_image(
+            184,
+            120,
+            image=self.photo_qrcode_app,
+            anchor='nw',
+        )
+        self.canvas.create_image(
+            760,
+            120,
+            image=self.photo_qrcode_web,
+            anchor='nw',
+        )
 
