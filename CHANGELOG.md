@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.2.6]
 
 - 物種下拉選單選定後，鍵盤上下鍵失效
+- 資料少 (比顯示範圍高度小)，鍵盤上下鍵會造成 vertical scroll 把資料排到中間
 
 ## [v0.2.5c1]
 
