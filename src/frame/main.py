@@ -102,7 +102,7 @@ class Main(tk.Frame):
     def handle_panedwindow_release(self, event):
         w = self.right_frame.winfo_width()
         # border: 8, padx: 10
-        self.thumb_bhasewidth = w - 36
+        self.thumb_basewidth = w - 36
         data = self.get_current_item('data')
 
 
