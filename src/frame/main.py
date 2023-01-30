@@ -1199,7 +1199,7 @@ class Main(tk.Frame):
         if not save_as:
             return False
 
-        with open(f'{save_as}', 'w', newline='') as csvfile:
+        with open(f'{save_as}', 'w', newline='', encoding='utf-8') as csvfile:
             spamwriter = csv.writer(
                 csvfile,
                 delimiter=',',
