@@ -6,6 +6,7 @@ from tkinter import (
     ttk,
     font,
  )
+#from memory_profiler import profile
 
 # log
 import logging

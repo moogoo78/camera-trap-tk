@@ -10,6 +10,7 @@ import queue
 import csv
 from datetime import datetime
 import subprocess
+#from memory_profiler import profile
 
 from PIL import ImageTk, Image
 
@@ -527,6 +528,7 @@ class Main(tk.Frame):
         self.refresh(is_init_highlight=True)
 
 
+    #@profile
     def refresh(self, is_init_highlight=False):
         self.is_editing = False
         logging.debug(f'refresh: {self.source_id}, current_row_key: {self.current_row_key}')
@@ -616,7 +618,6 @@ class Main(tk.Frame):
 
         # data list
         data = self.data_helper.read_image_list(self.source_data['image_list'])
-        #print (data)
 
         # consider pagination
         num = self.data_grid.state['pagination']['num_per_page']

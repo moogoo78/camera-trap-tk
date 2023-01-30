@@ -14,26 +14,63 @@ class Footer(tk.Frame):
         # layout
         self.grid_rowconfigure(0, weight=0)
         self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=1)
+
+        # pagination
+        self.page_var = tk.StringVar()
+        self.num_per_page_var = tk.StringVar()
+        self.num_per_page_label = tk.Label(self, text='每頁筆數')
+        self.page_menu = tk.OptionMenu(
+            self,
+            self.page_var,
+            '-')
+        self.num_per_page_menu = tk.OptionMenu(
+            self,
+            self.num_per_page_var,
+            100,
+            500,
+            2000,
+            3000,
+            command=self.on_num_per_page,
+        )
+
+        self.num_per_page_var.set(self.ps['pagination']['num_per_page'])
+        self.page_menu.grid(row=0, column=0, sticky='e')
+        self.num_per_page_label.grid(row=0, column=1, sticky='e', padx=(20, 0))
+        self.num_per_page_menu.grid(row=0, column=2, sticky='e')
+
+
+    def page_label(self, page):
+        '''render option label'''
+        return f'第 {page} 頁'
+
+    def on_num_per_page(self, *args):
+        if n := self.num_per_page_var.get():
+            self.ps['pagination']['current_page'] = 1
+            self.ps['pagination']['num_per_page'] = int(n)
+            self.parent.refresh()
+
+    def on_page(self, page):
+        self.parent.to_page(page)
+        self.page_var.set(self.page_label(page))
 
     def render(self):
         # clear
-        #for x in self.button_list: # mac strange error
-        #    x.destroy()
-        self.button_list = []
+        menu = self.page_menu['menu']
+        menu.delete(0, 'end')
+        #if not self.page_var.get():
+        #    self.page_var.set(self.page_label(1))
 
+        if cur := self.ps['pagination']['current_page']:
+            self.page_var.set(self.page_label(cur))
+
+        # set options
         for i in range(0, self.ps['pagination']['num_pages']):
             page = i+1
-            button = ttk.Button(
-                self,
-                text=f'{page}',
-                width=2,
-                command=lambda x=page: self.parent.to_page(x),
-            )
-            if i+1 == self.ps['pagination']['current_page']:
-                button.state(['pressed'])
+            menu.add_command(
+                label=self.page_label(page),
+                command=lambda x=page: self.on_page(x))
 
-            button.grid(row=0, column=i, sticky='nswe', padx=(0, 2))
-            self.button_list.append(button)
 
 class ColumnHeader(tk.Canvas):
 

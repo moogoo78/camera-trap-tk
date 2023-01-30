@@ -1,5 +1,7 @@
 import logging
 import math
+import tracemalloc
+#from memory_profiler import profile
 #import copy
 
 import tkinter as tk
@@ -156,6 +158,7 @@ class DataGrid(tk.Frame):
 
     def refresh(self, new_data={}, is_init_highlight=False, page=None):
         """now, only consider MainTable"""
+        #tracemalloc.start()
         self.clear()
         #print(page, 'refresh')
 
@@ -216,6 +219,8 @@ class DataGrid(tk.Frame):
 
         if is_init_highlight is True:
             self.main_table.init_highlight()
+
+        #print(tracemalloc.get_traced_memory(), 'hhhhhhhhhhhhhhhh')
 
     def clear(self):
         self.main_table.clear()
