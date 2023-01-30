@@ -124,3 +124,4 @@ class ImageDetail(tk.Toplevel):
     def change_image(self, image_path):
         self.orig_img = Image.open(image_path)
         self.fit_aspect_ratio(self.to_width)
+        self.title(f'Image Detail Window - {image_path}')
