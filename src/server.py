@@ -231,7 +231,10 @@ class Server(object):
             })
         else:
             # tk.messagebox.showerror('server error', resp['error'])
-            ret['error'] = resp['error']
+            if 'request error: 400' in resp['error']:
+                ret['error'] = '文字檔案太大'
+            else:
+                ret['error'] = resp['error']
             logging.error(f"error: {resp['error']}")
 
         if x:= resp.get('response'):
