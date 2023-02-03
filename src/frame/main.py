@@ -638,7 +638,7 @@ class Main(tk.Frame):
             self.data_grid.state['box_display_type'] = 'raise'
 
         # show first image if no select
-        if self.current_row_key == '':
+        if len(data) > 0 and self.current_row_key == '' :
             self.current_row_key = next(iter(data))
 
         if len(data) > 0:
@@ -651,7 +651,8 @@ class Main(tk.Frame):
             self.image_thumb_label.image = None
 
         self.data_grid.main_table.delete('row-img-seq')
-        self.data_grid.refresh(data, is_init_highlight=is_init_highlight)
+        if len(data) > 0:
+            self.data_grid.refresh(data, is_init_highlight=is_init_highlight)
 
         # draw img_seq
         # print(self.seq_info)
@@ -881,6 +882,9 @@ class Main(tk.Frame):
     def handle_delete(self):
         ans = tk.messagebox.askquestion('確認', f"確定要刪除資料夾: {self.source_data['source'][3]}?")
         if ans == 'no':
+            return False
+        ans2 = tk.messagebox.askquestion('確認', f"資料夾: {self.source_data['source'][3]} 內的文字資料跟縮圖照片都會刪除，無法恢復")
+        if ans2 == 'no':
             return False
 
         self.app.source.delete_folder(self.source_id)

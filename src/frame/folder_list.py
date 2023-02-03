@@ -27,6 +27,8 @@ class FolderList(tk.Frame):
 
         self.folder_importing = {}
 
+        #self.delete_button_list = []
+
         self.layout()
 
     def layout(self):
@@ -192,6 +194,11 @@ class FolderList(tk.Frame):
             item['prog_bar'].destroy()
             item['label'].destroy()
         self.folder_importing = {}
+        #print(self.delete_button_list)
+        # for i in self.delete_button_list:
+        #     print(i)
+        #     i.destroy()
+        #     del i
         row_count = 0
 
         # get all source from db
@@ -355,6 +362,26 @@ class FolderList(tk.Frame):
                 '<ButtonPress>',
                 lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
 
+            # 改成進入 frame.main 後再刪
+            # if r[6] == self.app.source.STATUS_START_IMPORT: # 匯入失敗
+            #     del_btn = tk.Button(
+            #         self,
+            #         text=f'刪除資料夾{r[0]}',
+            #         relief='flat',
+            #         command=lambda: self.remove_folder(r[0], r[3]),
+            #         takefocus=0,
+            #     )
+            #     self.delete_button_list.append(del_btn)
+
+            #     self.canvas.create_window(
+            #         x+170,
+            #         gap+10,
+            #         width=100,
+            #         window=del_btn,
+            #         anchor='center',
+            #         tags=('item')
+            #     )
+
 
             shift_x += 316  # 300 + 16
             if i > 0 and (i+1) % 3 == 0:
@@ -368,3 +395,16 @@ class FolderList(tk.Frame):
 
         # 不知道可不可以讓 卡片 點擊敏感一點?
         self.update_idletasks()
+
+    # def remove_folder(self, source_id, title):
+    #     if not source_id:
+    #         return
+
+    #     if not tk.messagebox.askokcancel('確認', f'確定是否刪除資料夾: {title}'):
+    #         return False
+
+    #     if not tk.messagebox.askokcancel('確認', f'資料夾: {title} 內的文字資料跟縮圖照片都會刪除，無法恢復'):
+    #         return False
+
+    #     self.app.source.delete_folder(source_id)
+    #     self.refresh_source_list()

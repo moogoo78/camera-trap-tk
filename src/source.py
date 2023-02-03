@@ -338,7 +338,9 @@ class Source(object):
         sql = f"DELETE FROM image WHERE source_id = {source_id}"
         self.db.exec_sql(sql, True)
 
-        shutil.rmtree(Path(f'./thumbnails/{source_id}'), ignore_errors=True)
+        thumb_dir_path = Path(f'./thumbnails/{source_id}')
+        if thumb_dir_path.exists():
+            shutil.rmtree(thumb_dir_path, ignore_errors=True)
 
     def check_folder_name_format(self, folder_name):
         # rules from config, too complicate
