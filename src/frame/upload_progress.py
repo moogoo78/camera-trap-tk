@@ -52,6 +52,7 @@ class UploadProgress(tk.Frame):
 
         self.refresh()
 
+
     def _layout(self):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -417,9 +418,14 @@ class UploadProgress(tk.Frame):
         source_id = item['source_data'][0]
         current_source_index = self._find_source_index(source_id)
         counter = 0
+        skip_media = self.app.config.get('Mode', 'skip_media_upload', fallback='0')
+        is_skip_media = False
+        if str(skip_media) not in ['0', 'False', 'false']:
+            is_skip_media = True
+
         for i, v in enumerate(item['images']):
             # if item['state'] == self.STATE_RUNNING:
-            if self.source_list[current_source_index]['state'] == self.STATE_RUNNING:
+            if not is_skip_media and self.source_list[current_source_index]['state'] == self.STATE_RUNNING:
                 logging.debug(f'🧵 uploading: {source_id}-{counter}/{num}')
                 counter = i + 1
                 path = v[1]

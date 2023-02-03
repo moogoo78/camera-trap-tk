@@ -60,7 +60,12 @@ class Main(tk.Frame):
         # self.thumb_basewidth = 550
         self.thumb_height = 309 # fixed height
         annotate_status_list = (self.app.source.STATUS_DONE_IMPORT, self.app.source.STATUS_START_ANNOTATE)
+
+        self.skip_media_display = self.app.config.get('Mode', 'skip_media_display', fallback='0')
         self.data_helper = DataHelper(self.app.db, annotate_status_list)
+        if self.skip_media_display not in ['0', False, '']:
+            self.data_helper.columns['thumb_hide'] = self.data_helper.columns.pop('thumb')
+
         self.annotation_entry_list = []
         self.species_copy = []
         self.keyboard_shortcuts = {}
@@ -731,8 +736,9 @@ class Main(tk.Frame):
         if x := self.app.cached_project_map['studyarea'].get(studyarea_name):
             studyarea_id = x['id']
             dep_key = '{}::{}'.format(studyarea_name, selected_dep)
-        if x := self.app.cached_project_map['deployment'][dep_key]:
-            deployment_id = x['id']
+
+            if x := self.app.cached_project_map['deployment'][dep_key]:
+                deployment_id = x['id']
 
         update_db = False
         descr = {}
@@ -950,6 +956,10 @@ class Main(tk.Frame):
         self.select_item(row_key, col_key)
 
     def show_image(self, thumb_path, size_key=''):
+
+        if self.skip_media_display not in ['0', False, '']:
+            return
+
         if size_key:
             thumb_path = thumb_path.replace('-q.jpg', '-{}.jpg'.format(size_key))
 
