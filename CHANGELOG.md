@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.0.1]
+
+### Changed
+
+- 匯入失敗後，可以進去編輯畫面刪除
+- 匯出 csv 遇到物種填 食蟹獴 會導致 app 錯誤
+- 大圖畫面按上下鍵標題 (檔案名稱) 也會跟著改
+
+### Added
+
+- 增加 debug 看問題使用的設定
+  - skip_media_upload (忽略照片檔案上傳)
+  - skip_media_display (忽略照片顯示) => 拿到別人的 ct.db 檔案，測試環境狀態用
+
+## [v1.0.0]
+
+### Added:
+
+- QRCode 說明頁
+
 ## [v0.2.6]
 
 - 物種下拉選單選定後，鍵盤上下鍵失效
@@ -31,11 +51,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.2.5]
 
-fix:
+### Changed:
 - many UI after 教育訓練
 - 改下拉選單邏輯 (避免相機位置同名)
 
-feat:
+### Added:
 - 檢查資料夾匯入格式
 
 ## [v0.2.4b]
