@@ -98,6 +98,7 @@ class Application(tk.Tk):
         self.server = Server(dict(config['Server']))
 
         self.cached_project_map = self.server.get_project_map()
+        # print(self.cached_project_map)
         # don't show alert, 2022-11-09
         #if err := self.cached_project_map.get('error'):
         #    tk.messagebox.showerror('server error', f'{err}\n (無法上傳檔案，但是其他功能可以運作)')

@@ -439,12 +439,15 @@ class MainTable(tk.Canvas):
         x_center = x_left + width / 2
         y_top = row * self.ps['cell_height'] + self.y_start
         y_center = y_top + self.ps['cell_height'] / 2
-        self.create_text(
+
+        a = self.create_text(
             x_center,
             y_center,
             text=value,
+            fill='#000000',
             tags=('cell', 'cell-text', tag)
         )
+
 
     def render_data(self):
         self.delete('cell')

@@ -29,8 +29,8 @@ class Footer(tk.Frame):
             self.num_per_page_var,
             100,
             500,
+            1000,
             2000,
-            3000,
             command=self.on_num_per_page,
         )
 

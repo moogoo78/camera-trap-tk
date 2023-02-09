@@ -711,14 +711,15 @@ class Main(tk.Frame):
         menu = self.deployment_menu['menu']
         menu.delete(0, 'end')
 
-        studyarea = self.app.cached_project_map['studyarea'][selected_sa]
-        items = []
-        for key, value in self.app.cached_project_map['deployment'].items():
-            if key == '{}::{}'.format(selected_sa, value['name']):
-                #menu.add_command(label=value['name'], command=lambda x=value['name']: self.deployment_var.set(x))
-                items.append(value['name'])
-        for name in human_sorting(items):
-            menu.add_command(label=name, command=lambda x=name: self.deployment_var.set(x))
+        if studyarea := self.app.cached_project_map['studyarea'].get(selected_sa, ''):
+            studyarea = self.app.cached_project_map['studyarea'][selected_sa]
+            items = []
+            for key, value in self.app.cached_project_map['deployment'].items():
+                if key == '{}::{}'.format(selected_sa, value['name']):
+                    #menu.add_command(label=value['name'], command=lambda x=value['name']: self.deployment_var.set(x))
+                    items.append(value['name'])
+            for name in human_sorting(items):
+                menu.add_command(label=name, command=lambda x=name: self.deployment_var.set(x))
 
     def deployment_option_changed(self, *args):
         #print('dep', args)
@@ -902,8 +903,6 @@ class Main(tk.Frame):
 
         # if self.seq_info:
             # has seq_info need re-render
-
-        self.refresh()
 
         # always refresh for status display
         #self.refresh() 先不要
