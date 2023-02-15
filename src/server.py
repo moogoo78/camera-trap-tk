@@ -8,6 +8,8 @@ from http.client import HTTPResponse
 import ssl
 import json
 from datetime import datetime
+from zipfile import ZipFile, ZIP_DEFLATED
+from pathlib import Path
 
 # ping, via: https://stackoverflow.com/a/32684938/644070
 import platform    # For getting the operating system name
@@ -217,11 +219,18 @@ class Server(object):
         }
         #url_encoded_data = urlencode(post_dict)
         #body, response = make_request(url, data=post_data)
+        json_str = json.dumps(post_dict)
+        # use zipped file instead of json data
+        now_str = datetime.now().strftime('%Y%m%d-%H%M%S')
+        fname = f'tmp-post-{now_str}'
+        with ZipFile(f'{fname}.zip', 'w', compression=ZIP_DEFLATED) as myzip:
+            myzip.writestr(f'{fname}.txt', json_str)
+
         resp = self.make_request(
             url,
-            data=post_dict,
-            is_json=True)
-
+            data=post_dict, # 有送 data 才會用 POST
+            filename=f'{fname}.zip',
+        )
         if not resp['error']:
             # data = to_json(resp['body'])
             data = resp['json']
@@ -239,6 +248,10 @@ class Server(object):
 
         if x:= resp.get('response'):
             x.close()
+
+        p = Path(f'{fname}.zip')
+        if p.exists():
+            p.unlink()
 
         return ret
 
@@ -280,7 +293,7 @@ class Server(object):
         result = subprocess.run(command, capture_output=True)
         return result.returncode == 0
 
-    def make_request(self, url, headers=None, data=None, is_json=False):
+    def make_request(self, url, headers=None, data=None, is_json=False, filename=None):
         ret = {
             'body': None,
             'response': None,
@@ -297,7 +310,10 @@ class Server(object):
         try:
             if data:
                 ret['method'] = 'POST'
-                response = requests.post(url, json=data, verify=ssl_verify)
+                if filename:
+                    response = requests.post(url, verify=ssl_verify, files={'file': open(filename, 'rb')})
+                else:
+                    response = requests.post(url, json=data, verify=ssl_verify)
             else:
                 response = requests.get(url, verify=ssl_verify)
 
