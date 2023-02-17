@@ -1064,6 +1064,7 @@ class Main(tk.Frame):
             sql = f"UPDATE image SET annotation='{json_data}' WHERE image_id={image_id}"
             self.app.db.exec_sql(sql, True)
 
+        self.current_row_key = ''
         # update source status & refresh
         sql = f"SELECT COUNT(*) FROM image WHERE source_id = {self.source_id}"
         res = self.app.db.fetch_sql(sql)
