@@ -25,6 +25,7 @@ class DataGrid(tk.Frame):
                  row_index_display='',
                  row_index_width=60,
                  num_per_page=1000,
+                 num_per_page_choices=[],
                  custom_menus=[],
                  custom_binding=None,
                  cols_on_ctrl_button_1=None,
@@ -52,6 +53,7 @@ class DataGrid(tk.Frame):
             'width_adjusted': width,
             'pagination': {
                 'num_per_page': num_per_page,
+                'num_per_page_choices': num_per_page_choices,
                 'current_page': 1,
                 'num_pages': 0,
                 'total': 0,
@@ -194,18 +196,21 @@ class DataGrid(tk.Frame):
             # print(iid, v)
         row_keys = list(new_data_iid.keys())
 
+        pagination = self.state['pagination']
+        print(pagination)
+        pagination.update({
+                'current_page': cur_page,
+                'num_pages': num_pages,
+                'total': total,
+                'num_per_page': self.state['pagination']['num_per_page'],
+        })
         self.state.update({
             'data': data_visible,  # only visible in certain page
             'data_all': new_data_iid,
             'num_rows': len(data_visible),
             'row_keys': row_keys,
             'height': len(data_visible) * self.state['cell_height'],
-            'pagination': {
-                'current_page': cur_page,
-                'num_pages': num_pages,
-                'total': total,
-                'num_per_page': self.state['pagination']['num_per_page'],
-            },
+            'pagination': pagination,
         })
 
 

@@ -1248,13 +1248,12 @@ class MainTable(tk.Canvas):
 
         self.init_highlight()
 
-        self.ps.update({
-            'pagination': {
-                'num_per_page': self.ps['pagination']['num_per_page'],
-                'current_page': 1,
-                'num_pages': 0,
-                'total': 0,
-            }
+        pagination = self.ps['pagination']
+        self.ps['pagination'].update({
+            'num_per_page': self.ps['pagination']['num_per_page'],
+            'current_page': 1,
+            'num_pages': 0,
+            'total': 0,
         })
 
     def clear_selected(self, to_refresh=True):

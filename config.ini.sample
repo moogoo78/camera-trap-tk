@@ -3,7 +3,7 @@ account_id = EXAMPLE
 
 [Server]
 host = http://test.camera-trap.tw
-image_annotation_api = /api/client/v1/image/annotation/
+image_annotation_api = /api/client/v1.1/image/annotation/
 image_update_api = /api/client/v1/image/update/
 update_upload_history_api = /update_upload_history/
 project_api = /api/client/v1/projects/
@@ -41,6 +41,7 @@ app_height = 760
 
 [DataGrid]
 num_per_page = 100
+num_per_page_choices=100,500,1000,2000
 
 [StudyAreaMap]
 PT = 屏東處

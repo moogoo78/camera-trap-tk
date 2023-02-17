@@ -465,6 +465,7 @@ class Main(tk.Frame):
             custom_binding['bind_list'].append(f'Control-Key-{n}')
 
         num_per_page = int(self.app.config.get('DataGrid', 'num_per_page'))
+        num_per_page_choices = [int(x) for x in self.app.config.get('DataGrid', 'num_per_page_choices', fallback='').split(',')]
         self.data_grid = DataGrid(
             self.table_frame,
             data={},
@@ -477,6 +478,7 @@ class Main(tk.Frame):
             custom_menus=menus,
             custom_binding=custom_binding,
             num_per_page=num_per_page,
+            num_per_page_choices=num_per_page_choices,
             rows_delete_type='CLONED',
             remove_rows_key_ignore_pattern='-0',
             column_header_bg= '#5B7464',

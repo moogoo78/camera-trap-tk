@@ -24,13 +24,11 @@ class Footer(tk.Frame):
             self,
             self.page_var,
             '-')
+        num_per_page_choices = self.ps['pagination']['num_per_page_choices']
         self.num_per_page_menu = tk.OptionMenu(
             self,
             self.num_per_page_var,
-            100,
-            500,
-            1000,
-            2000,
+            *num_per_page_choices,
             command=self.on_num_per_page,
         )
 
