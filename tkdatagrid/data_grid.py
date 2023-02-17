@@ -197,7 +197,6 @@ class DataGrid(tk.Frame):
         row_keys = list(new_data_iid.keys())
 
         pagination = self.state['pagination']
-        print(pagination)
         pagination.update({
                 'current_page': cur_page,
                 'num_pages': num_pages,
