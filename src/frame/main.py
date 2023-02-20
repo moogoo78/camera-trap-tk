@@ -779,6 +779,7 @@ class Main(tk.Frame):
     def handle_upload(self):
         '''check, upload annotation, and upload media
         '''
+        self.refresh()
         is_override = False
         deployment_journal_id = None
 
@@ -883,6 +884,10 @@ class Main(tk.Frame):
     def custom_set_data(self, row_key, col_key, value):
         # print('-----', row_key, col_key, value)
         res = self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
+
+        if self.seq_checkbox_val.get() == 'Y' and self.seq_interval_val.get():
+            self.refresh()
+
         #if not res:
         #    self.refresh()
 
