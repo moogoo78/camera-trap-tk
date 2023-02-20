@@ -235,8 +235,8 @@ class Server(object):
             # data = to_json(resp['body'])
             data = resp['json']
             ret.update({
-                'data': data['saved_image_ids'],
-                'deployment_journal_id': data['deployment_journal_id']
+                # 'data': data['saved_image_ids'],
+                'deployment_journal_id': data.get('deployment_journal_id')
             })
         else:
             # tk.messagebox.showerror('server error', resp['error'])
@@ -369,3 +369,10 @@ class Server(object):
                 data['error'] = result['error']
 
         return data
+
+    def check_upload_history(self, deployment_journal_id):
+        '''
+        deployment_journal_id:
+        '''
+        url = f"{self.config['host']}{self.config['check_upload_history_api']}{deployment_journal_id}/"
+        return self.make_request(url)

@@ -26,6 +26,7 @@ from toplevel import (
     ImageDetail,
     ConfigureKeyboardShortcut,
     VideoPlayer,
+    MainMessagebox,
 )
 from image import (
     check_thumb,
@@ -48,6 +49,9 @@ class Main(tk.Frame):
 
         self.source_data = {}
         self.bind('<Configure>', self.resize)
+
+        self.tmp_uploading = None
+        self.bind('<<event_action>>', self.event_action_callback)
 
         #self.server_project_map = self.app.server.project_map
 
@@ -400,8 +404,7 @@ class Main(tk.Frame):
         self.upload_button = tk.Button(
             self.ctrl_frame2,
             text='上傳資料夾',
-            # command=self.handle_upload2
-            command=self.handle_upload3,
+            command=self.handle_upload,
             foreground='#FFFFFF',
             background=self.app.app_primary_color,
             width=10,
@@ -773,10 +776,15 @@ class Main(tk.Frame):
             #tk.messagebox.showinfo('info', '已設定相機位置')
 
 
-    def handle_upload3(self):
+    def handle_upload(self):
+        '''check, upload annotation, and upload media
+        '''
+        is_override = False
+        deployment_journal_id = None
+
         # ==============
         # check & notify
-        # =============
+        # ==============
 
         # check deployment has set
         deployment_id = ''
@@ -787,7 +795,7 @@ class Main(tk.Frame):
             tk.messagebox.showwarning('注意', '末設定相機位置，無法上傳')
             return False
 
-        # ask check deployment/staudy area/project
+        # ask to check deployment/staudy area/project
         if not tk.messagebox.askokcancel('確認計畫', '請確認計畫、樣區、相機位置是否無誤？'):
             return False
 
@@ -796,23 +804,32 @@ class Main(tk.Frame):
             if not tk.messagebox.askokcancel('注意', '尚有照片未填寫物種'):
                 return False
 
-        # ======
-        # upload
-        # ======
+        # ask to check override or not
+        if self.app.source.is_done_upload(self.source_data['source'][6]):
+            ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
+            if ans == 'no':
+                return False
+            elif ans == 'yes':
+                # find deployment_journal_id exists
+                if dj_id := self.source_data['source'][12]:
+                    deployment_journal_id = dj_id
+                    is_override = True
+
+        # ==============
+        # prepare-upload
+        # ==============
         image_list = self.source_data['image_list']
         source_id = self.source_id
         account_id = self.app.config.get('Installation', 'account_id')
-        is_first_upload = False
 
+        source_status = 'START_OVERRIDE_UPLOAD'
+        # source.upload_created/upload_changed
         if not self.source_data['source'][13] and \
            not self.source_data['source'][14]:
-            is_first_upload = True
+            source_status = 'START_UPLOAD' # first upload
 
         now = int(time.time())
-        if is_first_upload:
-            self.app.source.update_status(source_id, 'START_UPLOAD', now=now)
-        else:
-            self.app.source.update_status(source_id, 'START_OVERRIDE_UPLOAD', now=now)
+        self.app.source.update_status(source_id, source_status, now=now)
 
         payload = {
             'image_list': image_list,
@@ -824,56 +841,31 @@ class Main(tk.Frame):
             'source_id': self.source_data['source'][0],
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
         }
-        # print(self.source_data['source'][6])
-        # check if re-post annotation
-        if self.app.source.is_done_upload(self.source_data['source'][6]):
-            ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
-            if ans == 'no':
-                return False
-            elif ans == 'yes':
-                res = self.app.server.post_annotation(payload)
-                if res['error']:
-                    self.app.source.update_status(source_id, 'OVERRIDE_ANNOTATION_UPLOAD_FAILED')
-                    tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
-                else:
-                    self.app.source.update_status(source_id, 'DONE_OVERRIDE_UPLOAD')
-                    tk.messagebox.showinfo('info', '文字資料更新成功 !')
 
-                    # let server send notification again
-                    if dj_id := self.source_data['source'][12]:
-                        deployment_journal_id = dj_id
-                        self.app.server.post_upload_history(deployment_journal_id, 'finished')
 
-                    return # stop uploading images again
-
-        # 1. post annotation to server
-        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
-        self.app.db.exec_sql(sql, True)
+        if not is_override:
+            sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
+            self.app.db.exec_sql(sql, True)
 
         res = self.app.server.post_annotation(payload)
         if res['error']:
-            self.app.source.update_status(source_id, 'ANNOTATION_UPLOAD_FAILED')
             tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
+            if is_override:
+                self.app.source.update_status(source_id, 'OVERRIDE_ANNOTATION_UPLOAD_FAILED')
+            else:
+                self.app.source.update_status(source_id, 'ANNOTATION_UPLOAD_FAILED')
+
             return
 
-        server_image_map = res['data']
-
-        # push info to server uploading start
-        deployment_journal_id = None
-        if dj_id := self.source_data['source'][12]:
-            deployment_journal_id = dj_id
-        else:
-            if dj_id := res.get('deployment_journal_id'):
-                sql = f"UPDATE source SET deployment_journal_id={dj_id} WHERE source_id={source_id}"
-                self.app.db.exec_sql(sql, True)
-                deployment_journal_id = dj_id
-
-        if deployment_journal_id != None:
-            res = self.app.server.post_upload_history(deployment_journal_id, 'uploading')
+        if deployment_journal_id := res.get('deployment_journal_id', ''):
+            res = self.app.server.post_upload_history(deployment_journal_id, 'image-text')
             if err := res['error']:
                 tk.messagebox.showerror('server error', err)
                 return
 
+            main_messagebox = MainMessagebox(self, self.app, deployment_journal_id)
+
+    def handle_upload_start(self, deployment_journal_id, server_image_map):
         for image_id, [server_image_id, server_image_uuid] in server_image_map.items():
             sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id}, object_id='{server_image_uuid}' WHERE image_id={image_id}"
             self.app.db.exec_sql(sql)
@@ -881,7 +873,7 @@ class Main(tk.Frame):
 
         self.app.on_upload_progress()
         self.app.contents['upload_progress'].handle_start(source_id)
-
+        
     def handle_delete(self):
         ans = tk.messagebox.askquestion('確認', f"確定要刪除資料夾: {self.source_data['source'][3]}?")
         if ans == 'no':
@@ -1263,3 +1255,22 @@ class Main(tk.Frame):
             'height_adjusted': data_grid_height,
             'width_adjusted': event.width,
         })
+
+    def event_action_callback(self, event):
+
+        # imege media exists, skip
+        if dj_id := self.source_data['source'][12]:
+            self.app.source.update_status(self.source_id, 'DONE_OVERRIDE_UPLOAD')
+            tk.messagebox.showinfo('info', '文字資料更新成功 !')
+            return
+
+        sql = f"UPDATE source SET deployment_journal_id={self.tmp_uploading['deployment_journal_id']} WHERE source_id={self.source_id}"
+        self.app.db.exec_sql(sql, True)
+
+        for image_id, [server_image_id, server_image_uuid] in self.tmp_uploading['saved_image_ids'].items():
+            sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id}, object_id='{server_image_uuid}' WHERE image_id={image_id}"
+            self.app.db.exec_sql(sql)
+        self.app.db.commit()
+
+        self.app.on_upload_progress()
+        self.app.contents['upload_progress'].handle_start(self.source_id)
