@@ -865,15 +865,6 @@ class Main(tk.Frame):
 
             main_messagebox = MainMessagebox(self, self.app, deployment_journal_id)
 
-    def handle_upload_start(self, deployment_journal_id, server_image_map):
-        for image_id, [server_image_id, server_image_uuid] in server_image_map.items():
-            sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id}, object_id='{server_image_uuid}' WHERE image_id={image_id}"
-            self.app.db.exec_sql(sql)
-        self.app.db.commit()
-
-        self.app.on_upload_progress()
-        self.app.contents['upload_progress'].handle_start(source_id)
-        
     def handle_delete(self):
         ans = tk.messagebox.askquestion('確認', f"確定要刪除資料夾: {self.source_data['source'][3]}?")
         if ans == 'no':
@@ -1257,7 +1248,7 @@ class Main(tk.Frame):
         })
 
     def event_action_callback(self, event):
-
+        '''handle upload start'''
         # imege media exists, skip
         if dj_id := self.source_data['source'][12]:
             self.app.source.update_status(self.source_id, 'DONE_OVERRIDE_UPLOAD')
