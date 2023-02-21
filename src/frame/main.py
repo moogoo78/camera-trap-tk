@@ -856,15 +856,18 @@ class Main(tk.Frame):
             else:
                 self.app.source.update_status(source_id, 'ANNOTATION_UPLOAD_FAILED')
 
-            return
+        logging.debug(f'post_annotation: {res}')
 
         if deployment_journal_id := res.get('deployment_journal_id', ''):
-            res = self.app.server.post_upload_history(deployment_journal_id, 'image-text')
-            if err := res['error']:
-                tk.messagebox.showerror('server error', err)
-                return
-
-            main_messagebox = MainMessagebox(self, self.app, deployment_journal_id)
+            #res = self.app.server.post_upload_history(deployment_journal_id, 'image-text')
+            if res := self.app.server.check_upload_history(deployment_journal_id):
+                if res['json'].get('status', '') == 'uploading':
+                    tk.messagebox.showinfo('info', f'文字上傳成功')
+                else:
+                    # wait
+                    logging.debug(f'update_history: {res}')
+                    main_messagebox = MainMessagebox(self, self.app, deployment_journal_id)
+        return
 
     def handle_delete(self):
         ans = tk.messagebox.askquestion('確認', f"確定要刪除資料夾: {self.source_data['source'][3]}?")

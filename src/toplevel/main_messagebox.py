@@ -53,7 +53,6 @@ class MainMessagebox(tk.Toplevel):
             logging.debug(f'wait server process image annotation: {i}')
 
             if res := self.app.server.check_upload_history(self.deployment_journal_id):
-                print(res)
                 if err := res['error']:
                     tk.messagebox.showerror('server error', err)
 
