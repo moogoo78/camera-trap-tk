@@ -859,12 +859,12 @@ class Main(tk.Frame):
         logging.debug(f'post_annotation: {res}')
 
         if deployment_journal_id := res.get('deployment_journal_id', ''):
-            #res = self.app.server.post_upload_history(deployment_journal_id, 'image-text')
             if res := self.app.server.check_upload_history(deployment_journal_id):
-                if res['json'].get('status', '') == 'uploading':
+                if res.get('json', '') and res['json'].get('status', '') == 'uploading':
                     tk.messagebox.showinfo('info', f'文字上傳成功')
                 else:
                     # wait
+                    res = self.app.server.post_upload_history(deployment_journal_id, 'image-text')
                     logging.debug(f'update_history: {res}')
                     main_messagebox = MainMessagebox(self, self.app, deployment_journal_id)
         return
