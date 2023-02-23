@@ -376,3 +376,10 @@ class Server(object):
         '''
         url = f"{self.config['host']}{self.config['check_upload_history_api']}{deployment_journal_id}/"
         return self.make_request(url)
+
+    def check_deployment_journal_upload_status(self, deployment_journal_id):
+        '''
+        deployment_journal_id:
+        '''
+        url = f"{self.config['host']}{self.config['check_deployment_journal_upload_status_api']}{deployment_journal_id}/"
+        return self.make_request(url)

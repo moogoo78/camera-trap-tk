@@ -841,6 +841,7 @@ class Main(tk.Frame):
             'folder_name': self.source_data['source'][3],
             'source_id': self.source_data['source'][0],
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
+            'deployment_journal_id': self.source_data['source'][12],
         }
 
 
@@ -849,6 +850,7 @@ class Main(tk.Frame):
             self.app.db.exec_sql(sql, True)
 
         res = self.app.server.post_annotation(payload)
+        logging.debug(f'post_annotation: {res}')
         if res['error']:
             tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
             if is_override:
@@ -856,16 +858,13 @@ class Main(tk.Frame):
             else:
                 self.app.source.update_status(source_id, 'ANNOTATION_UPLOAD_FAILED')
 
-        logging.debug(f'post_annotation: {res}')
-
         if deployment_journal_id := res.get('deployment_journal_id', ''):
-            if res := self.app.server.check_upload_history(deployment_journal_id):
-                if res.get('json', '') and res['json'].get('status', '') == 'uploading':
+
+            if res := self.app.server.check_deployment_journal_upload_status(deployment_journal_id):
+                if res.get('json', '') and res['json'].get('status', '') == 'start-media':
                     tk.messagebox.showinfo('info', f'文字上傳成功')
                 else:
                     # wait
-                    res = self.app.server.post_upload_history(deployment_journal_id, 'image-text')
-                    logging.debug(f'update_history: {res}')
                     main_messagebox = MainMessagebox(self, self.app, deployment_journal_id)
         return
 

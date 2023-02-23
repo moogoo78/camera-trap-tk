@@ -42,24 +42,22 @@ class MainMessagebox(tk.Toplevel):
 
     def check_task(self, b):
         img_ids = {}
-        for i in range(0, 65): # wait: ~=300s (1*5 + 3*5 + 5*55)
+        for i in range(0, 65): # wait: ~=300s (3*5 + 5*5 + 10*25)
             if i < 5:
-                time.sleep(1)
-            elif i >= 5 and i < 10:
                 time.sleep(3)
-            else:
+            elif i >= 5 and i < 10:
                 time.sleep(5)
+            else:
+                time.sleep(10)
 
             logging.debug(f'wait server process image annotation: {i}')
 
-            if res := self.app.server.check_upload_history(self.deployment_journal_id):
+            if res := self.app.server.check_deployment_journal_upload_status(self.deployment_journal_id):
                 if err := res['error']:
                     tk.messagebox.showerror('server error', err)
 
-                elif res['json'].get('status', '') == 'uploading':
-                    #res = self.app.server.post_upload_history(self.deployment_journal_id, 'uploading')
+                elif res['json'].get('upload_status', '') == 'start-media':
                     if img_ids := res['json'].get('saved_image_ids', None):
-                        #self.app.contents['main'].handle_upload_start(self.deployment_journal_id, img_ids)
                         self.app.contents['main'].tmp_uploading = {
                             'deployment_journal_id': self.deployment_journal_id,
                             'saved_image_ids': img_ids,
