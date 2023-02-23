@@ -6,6 +6,7 @@ host = http://test.camera-trap.tw
 image_annotation_api = /api/client/v1.1/image/annotation/
 image_update_api = /api/client/v1/image/update/
 update_upload_history_api = /update_upload_history/
+check_deployment_journal_upload_status_api = /api/client/v1/check_deployment_journal_upload_status/
 project_api = /api/client/v1/projects/
 project_option_list = 141::桌機上傳-2021
 ssl_verify = 0
