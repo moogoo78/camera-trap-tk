@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.0.2]
+
+### Changed
+
+- 連拍補齊畫面沒有 refresh
+- 文字上傳改流程 (上傳大資料不會 timeout)
+- 說明畫面更用 toplevel (節省記憶體)
+
 ## [v1.0.1]
 
 ### Changed
