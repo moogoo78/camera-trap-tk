@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 連拍補齊畫面沒有 refresh
 - 文字上傳改流程 (上傳大資料不會 timeout)
 - 說明畫面更用 toplevel (節省記憶體)
+- 匯入資料夾處理中時，不能同時匯入其他資料夾 (對話框阻擋)
 
 ## [v1.0.1]
 

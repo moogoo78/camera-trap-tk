@@ -217,7 +217,11 @@ class Application(tk.Tk):
 
     def on_add_folder(self, event=None):
         logging.debug(f'{event}')
-        self.contents['folder_list'].add_folder()
+
+        if len(self.contents['folder_list'].folder_importing) > 0:
+            tk.messagebox.showinfo('info', '其他資料夾正在匯入中')
+        else:
+            self.contents['folder_list'].add_folder()
 
         if self.panel.is_viewable is True:
             self.panel.hide()
