@@ -6,8 +6,10 @@ tkinter GUI
 
 - [Usage](./docs/usage.rst) (使用說明)
 - [System](./docs/system-design.rst)
-- [Workflow](./docs/workflow.md) (upload status)
-- [Test Case](./docs/test-case.rest)
+- [FAQ](./docs/test-case.rst)
+- [Workflow](./docs/workflow.md) (import folder, upload status)
+- [Test Case](./docs/test-case.rst)
+
 
 ## Development
 

@@ -105,19 +105,18 @@ class Source(object):
 
         return image_list
 
-    def create_import_directory(self, num_image_list, folder_path):
+    def create_import_directory(self, num_image_list, folder_path, parsed_format):
         db = self.db
         ts_now = int(time.time())
         dir_name = folder_path.stem # final path component
         sql = ''
         sql_jobs = []
-        # validate date format
-        if m := re.search(r'([0-9]{8})-([0-9]{8})',dir_name):
-            start = m.group(1)
-            end = m.group(2)
-            if validate_datetime(start, '%Y%m%d') and \
-               validate_datetime(end, '%Y%m%d'):
-                sql = "INSERT INTO source (source_type, path, name, count, created, status, trip_start, trip_end) VALUES('folder', '{}', '{}', {}, {}, '{}', '{}', '{}')".format(folder_path, dir_name, num_image_list, ts_now, self.STATUS_START_IMPORT, start, end)
+
+        if parsed_format:
+            descr = {
+                'parsed': parsed_format,
+            }
+            sql = "INSERT INTO source (source_type, path, name, count, created, status, description) VALUES('folder', '{}', '{}', {}, {}, '{}', '{}')".format(folder_path, dir_name, num_image_list, ts_now, self.STATUS_START_IMPORT, json.dumps(descr))
         else:
             sql = "INSERT INTO source (source_type, path, name, count, created, status) VALUES('folder', '{}', '{}', {}, {}, '{}')".format(folder_path, dir_name, num_image_list, ts_now, self.STATUS_START_IMPORT)
 
@@ -143,11 +142,19 @@ class Source(object):
                 'path': entry.as_posix(),
                 'name': entry.name,
             }
+
             if type_ == 'image':
                 data['img'] = ImageManager(entry)
+                ts, via = data['img'].get_timestamp()
+                data['timestamp'] = ts
+                data['via'] = via
                 sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
             elif type_ == 'video':
+                print(entry, 'video')
                 data['mov'] = entry
+                stat = data['mov'].stat()
+                data['timestamp'] = int(stat.st_mtime)
+                data['via'] = 'mtime'
                 sql = self.prepare_video_sql(data, ts_now, source_id, thumb_source_path)
                 # HACK: if video process too fast, folder_list.folder_importing will has empty value, cause error while update
                 time.sleep(0.5)
@@ -156,15 +163,12 @@ class Source(object):
 
     def prepare_video_sql(self, i, ts_now, source_id, thumb_source_path):
         db = self.db
-        stat = i['mov'].stat()
-        timestamp = int(stat.st_mtime)
-        via = 'mtime'
 
         sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, {}, '{}', 'video')".format(
             i['path'],
             i['name'],
-            timestamp,
-            via,
+            i['timestamp'],
+            i['via'],
             '10',
             '',
             '[]',
@@ -180,21 +184,11 @@ class Source(object):
 
         img_hash = i['img'].make_hash()
         exif  = i['img'].exif
-        dtime = exif.get('DateTimeOriginal', '')
-        via = 'exif'
-        if dtime:
-            dt = datetime.strptime(exif.get('DateTime', ''), '%Y:%m:%d %H:%M:%S')
-            timestamp = dt.timestamp()
-        else:
-            stat = i['img'].get_stat()
-            timestamp = int(stat.st_mtime)
-            via = 'mtime'
-
         sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, exif, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, '{}', {}, '{}', 'image')".format(
             i['path'],
             i['name'],
-            timestamp,
-            via,
+            i['timestamp'],
+            i['via'],
             '10',
             img_hash,
             '[]',
@@ -272,7 +266,7 @@ class Source(object):
                     'DeblockFilter': 'DISABLED',
                     'DenoiseFilter': 'DISABLED',
                     'TimecodeSource': 'EMBEDDED',
-                    'FileInput': f's3://camera-trap-21-dev/{object_name}',
+                    'FileInput': f's3://{bucket_name}/{object_name}',
                 },
             ],
             'OutputGroups': [
@@ -281,7 +275,7 @@ class Source(object):
                     'OutputGroupSettings': {
                         'Type': 'FILE_GROUP_SETTINGS',
                         'FileGroupSettings': {
-                            'Destination': f's3://camera-trap-21-dev/{output_folder}/',
+                            'Destination': f's3://{bucket_name}/{output_folder}/',
                             'DestinationSettings': {
                                 'S3Settings': {
                                     'AccessControl': {
@@ -344,4 +338,47 @@ class Source(object):
         sql = f"DELETE FROM image WHERE source_id = {source_id}"
         self.db.exec_sql(sql, True)
 
-        shutil.rmtree(Path(f'./thumbnails/{source_id}'), ignore_errors=True)
+        thumb_dir_path = Path(f'./thumbnails/{source_id}')
+        if thumb_dir_path.exists():
+            shutil.rmtree(thumb_dir_path, ignore_errors=True)
+
+    def check_folder_name_format(self, folder_name):
+        # rules from config, too complicate
+        # regex = self.app.config.get('Format', 'folder_name_regex')
+        # date_format = self.app.config.get('Format', 'date_format')
+
+        # regex = r'(HC|HL|LD|NT|CY|PT|DS|TD)([0-9]+)([A-Za-z]*)-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])'
+        # regex = r'(HC|HL|LD|NT|CY|PT|DS|TD)(.*)-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])'
+        regex = r'(.*)-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])-(19[0-9][0-9]|20[0-9][0-9])(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])'
+        date_format = '%Y-%m-%d'
+        result = {'error': ''}
+        try:
+            m = re.match(regex, folder_name)
+            if m:
+                sa_key = m.group(1)
+                studyarea_name = self.app.config.get('StudyAreaMap', sa_key, fallback='')
+                result.update({
+                    'studyarea_key': sa_key,
+                    'studyarea': studyarea_name,
+                    # 'deployment': '{}{}'.format(m.group(1), m.group(2)), #  '{}{}'.format(m.group(2), m.group(3)),
+                    'deployment': m.group(1), #  '{}{}'.format(m.group(2), m.group(3)),
+                })
+                # begin_date = '{}{}{}'.format(m.group(4), m.group(5), m.group(6))
+                # end_date = '{}{}{}'.format(m.group(7), m.group(8), m.group(9))
+                trip_start = '{}-{}-{}'.format(m.group(2), m.group(3), m.group(4))
+                trip_end = '{}-{}-{}'.format(m.group(5), m.group(6), m.group(7))
+                if validate_datetime(trip_start, date_format) and \
+                   validate_datetime(trip_end, date_format):
+                    # 目前用不到，只是判斷格式，也沒有上傳 (上傳有 folder_name可查)
+                    result.update({
+                        'trip_start': trip_start,
+                        'trip_end':  trip_end,
+                    })
+                else:
+                    result.update({'error': '日期錯誤 \n(請檢查年月日是否正確)'})
+            else:
+                result.update({'error': '格式錯誤'})
+        except Exception as err_msg:
+            result.update({'error': err_msg})
+
+        return result

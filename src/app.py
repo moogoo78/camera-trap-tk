@@ -6,6 +6,7 @@ from tkinter import (
     ttk,
     font,
  )
+#from memory_profiler import profile
 
 # log
 import logging
@@ -24,9 +25,11 @@ from frame import (
     Main,
     Landing,
     Footer,
+    # HelpPage,
+)
+from toplevel import (
     HelpPage,
 )
-
 
 from database import Database
 from source import Source
@@ -60,6 +63,8 @@ class Application(tk.Tk):
 
         self.protocol('WM_DELETE_WINDOW', self.quit)
         self.bind('<Configure>', self.resize)
+
+        self.is_help_open = False
 
         style = ttk.Style()
         style.theme_use('clam') # clam, classic
@@ -95,6 +100,13 @@ class Application(tk.Tk):
         self.config = config
         self.source = Source(self)
         self.server = Server(dict(config['Server']))
+
+        self.cached_project_map = self.server.get_project_map()
+        # print(self.cached_project_map)
+        # don't show alert, 2022-11-09
+        #if err := self.cached_project_map.get('error'):
+        #    tk.messagebox.showerror('server error', f'{err}\n (無法上傳檔案，但是其他功能可以運作)')
+
 
         #print(list(tk.font.families()))
         #Yu Gothic
@@ -144,7 +156,7 @@ class Application(tk.Tk):
             background='#F2F2F2')
 
         self.contents['upload_progress'] = UploadProgress(self)
-        self.contents['help_page'] = HelpPage(self)
+        # self.contents['help_page'] = HelpPage(self) # for performance, changed to TopLevel
 
         self.panel = Panel(
             self,
@@ -205,7 +217,11 @@ class Application(tk.Tk):
 
     def on_add_folder(self, event=None):
         logging.debug(f'{event}')
-        self.contents['folder_list'].add_folder()
+
+        if len(self.contents['folder_list'].folder_importing) > 0:
+            tk.messagebox.showinfo('info', '其他資料夾正在匯入中')
+        else:
+            self.contents['folder_list'].add_folder()
 
         if self.panel.is_viewable is True:
             self.panel.hide()
@@ -221,10 +237,14 @@ class Application(tk.Tk):
 
     def on_help_page(self, event=None):
         logging.debug(f'{event}')
-        self.show_content('help_page')
+        # self.show_content('help_page')
 
-        if self.panel.is_viewable is True:
-            self.panel.hide()
+        # if self.panel.is_viewable is True:
+        #     self.panel.hide()
+
+        if self.is_help_open is False:
+           self.is_help_open = True
+           HelpPage(self)
 
     def get_font(self, size_code='default'):
         SIZE_MAP = {
@@ -236,6 +256,7 @@ class Application(tk.Tk):
         }
         if size_code in SIZE_MAP:
             size = SIZE_MAP[size_code] if isinstance(size_code, str) else size_code
+
             return (self.app_font, size)
         elif int(size_code) > 0:
             return (self.app_font, int(size_code))

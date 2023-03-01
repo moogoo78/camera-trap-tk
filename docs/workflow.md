@@ -1,5 +1,11 @@
 # CameraTrap Desktop App Workflow
 
+
+## Import Folder
+
+![import-folder-flow](./import-folder-flow_221108.png)
+[Graphviz DOT source](./import-folder-flow.dot)
+
 ## Upload Status
 
 ### Source (Folder) Upload Status

@@ -45,7 +45,7 @@ class Panel(tk.Frame):
             120,
             50,
             text='加入資料夾',
-            font=self.app.get_font('display-3'),
+            font=self.app.get_font(16),
             fill=self.app.app_primary_color,
             tags=('import_folder'),
         )
@@ -66,7 +66,7 @@ class Panel(tk.Frame):
             120,
             120,
             text='現有資料夾',
-            font=self.app.get_font('display-3'),
+            font=self.app.get_font(16),
             fill=self.app.app_primary_color,
             tags=('list_folder'),
         )
@@ -87,7 +87,7 @@ class Panel(tk.Frame):
             120,
             190,
             text='上傳進度',
-            font=self.app.get_font('display-3'),
+            font=self.app.get_font(16),
             fill=self.app.app_primary_color,
             tags=('upload_progress'),
         )
@@ -108,7 +108,7 @@ class Panel(tk.Frame):
             120,
             260,
             text='教學說明',
-            font=self.app.get_font('display-3'),
+            font=self.app.get_font(16),
             fill=self.app.app_primary_color,
             tags=('help_page'),
         )

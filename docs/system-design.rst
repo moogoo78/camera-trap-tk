@@ -27,6 +27,15 @@ System Design
 ^^^^^^^^^^^^
 
 
+Local Schema
+=============
+
+source
+------------
+
+begin_date: 照片開始日期
+end_date: 照片結束日期
+
 FAQ
 ---------
 Q: 改資料夾名稱的話，再更新，資料庫那邊會發生什麼事?

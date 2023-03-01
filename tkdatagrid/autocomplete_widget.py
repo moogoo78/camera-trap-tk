@@ -76,7 +76,10 @@ class Autocomplete(ttk.Frame):
             self.event_generate('<<ItemSelect>>')
 
         self.after_update_entry(val)
-        self.listbox_frame.destroy()
+
+        # caused keyboard up/down erreor
+        # self.listbox_frame.destroy()
+        # self.listbox_frame.grid_remove()
 
     def handle_listbox_arrow_key(self, event, direction):
         if not hasattr(self, 'listbox'):
@@ -96,6 +99,7 @@ class Autocomplete(ttk.Frame):
                 self.listbox.see(select_index-2)
                 self.listbox.activate(select_index)
                 self.listbox.select_set(select_index)
+
 
 class Autocomplete2(ttk.Entry, object):
     def __init__(

@@ -1,6 +1,7 @@
 import threading
 from datetime import datetime
 import logging
+import re
 
 import tkinter as tk
 from tkinter import (
@@ -26,6 +27,8 @@ class FolderList(tk.Frame):
 
         self.folder_importing = {}
 
+        #self.delete_button_list = []
+
         self.layout()
 
     def layout(self):
@@ -49,7 +52,7 @@ class FolderList(tk.Frame):
         self.scrollbar.grid(row=0, column=1, sticky='ewns')
         self.canvas.config(yscrollcommand=self.scrollbar.set)
 
-        self.bg = ImageTk.PhotoImage(file='./assets/folder_list_vector.png')
+        #self.bg = ImageTk.PhotoImage(file='./assets/folder_list_vector.png')
         self.fresh_icon = ImageTk.PhotoImage(file='./assets/source_status_fresh.png')
         self.done_icon = ImageTk.PhotoImage(file='./assets/source_status_done.png')
         self.uploading_icon = ImageTk.PhotoImage(file='./assets/source_status_uploading.png')
@@ -60,12 +63,14 @@ class FolderList(tk.Frame):
         self.status_all_icon = ImageTk.PhotoImage(file='./assets/folder-list-status-all.png')
         self.status_pending_icon = ImageTk.PhotoImage(file='./assets/folder-list-status-pending.png')
         self.status_uploaded_icon = ImageTk.PhotoImage(file='./assets/folder-list-status-uploaded.png')
-        self.canvas.create_image(
-            620,
-            330,
-            image=self.bg,
-            anchor='nw',
-        )
+
+        # hide background vector
+        # self.canvas.create_image(
+        #     620,
+        #     330,
+        #     image=self.bg,
+        #     anchor='nw',
+        # )
         self.canvas.create_text(
             50,
             20,
@@ -120,13 +125,26 @@ class FolderList(tk.Frame):
 
     def add_folder_worker(self, src, source_id, image_list, folder_path):
         image_sql_list = []
+        folder_date_range = [0, 0]
         for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
             image_sql_list.append(sql)
+            # print (data)
+            if folder_date_range[0] == 0 or folder_date_range[1] == 0:
+                folder_date_range[0] = data['timestamp']
+                folder_date_range[1] = data['timestamp']
+            else:
+                if data['timestamp'] < folder_date_range[0]:
+                    folder_date_range[0] = data['timestamp']
+                elif data['timestamp'] > folder_date_range[1]:
+                    folder_date_range[1] = data['timestamp']
+
             #print(sql, self.folder_importing)
             if source_id in self.folder_importing:
                 self.folder_importing[source_id]['prog_bar']['value'] = i+1
                 self.folder_importing[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
 
+        sql_date_range = f'UPDATE source SET trip_start={folder_date_range[0]}, trip_end={folder_date_range[1]} WHERE source_id={source_id}'
+        image_sql_list.append(sql_date_range)
         self.app.after(100, lambda: self.exec_sql_list(image_sql_list, source_id))
 
     def add_folder(self):
@@ -141,9 +159,24 @@ class FolderList(tk.Frame):
             tk.messagebox.showinfo('info', '已經加過此資料夾')
             return False
 
+        # check folder name syntax
+        parsed_format = None
+        if check := self.app.config.get('Mode', 'check_folder_format', fallback=False):
+            # check falsy
+            if check not in ['False', '0', 0]:
+                result = src.check_folder_name_format(folder_path.name)
+                logging.info(result)
+
+                if err := result.get('error'):
+                    tk.messagebox.showerror('注意', f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd-YYYYmmdd]\n 範例: HC04-20190304-20190506')
+                    return
+                else:
+                    parsed_format = result
+
+
         image_list = src.get_image_list(folder_path)
         if num_images := len(image_list):
-            source_id = src.create_import_directory(num_images, folder_path)
+            source_id = src.create_import_directory(num_images, folder_path, parsed_format)
             self.refresh_source_list()
             threading.Thread(target=self.add_folder_worker, args=(src, source_id, image_list, folder_path)).start()
         else:
@@ -161,6 +194,11 @@ class FolderList(tk.Frame):
             item['prog_bar'].destroy()
             item['label'].destroy()
         self.folder_importing = {}
+        #print(self.delete_button_list)
+        # for i in self.delete_button_list:
+        #     print(i)
+        #     i.destroy()
+        #     del i
         row_count = 0
 
         # get all source from db
@@ -216,7 +254,7 @@ class FolderList(tk.Frame):
                     gap-10,
                     anchor='nw',
                     text=title1,
-                    font=self.app.get_font('display-3'),
+                    font=self.app.get_font('display-4'),
                     fill=self.app.app_primary_color,
                     tags=('item', status_cat, source_tag)
                 )
@@ -225,7 +263,7 @@ class FolderList(tk.Frame):
                     gap+10,
                     anchor='nw',
                     text=title2,
-                    font=self.app.get_font('display-3'),
+                    font=self.app.get_font('display-4'),
                     fill=self.app.app_primary_color,
                     tags=('item', status_cat, source_tag)
                 )
@@ -235,7 +273,7 @@ class FolderList(tk.Frame):
                     gap,
                     anchor='nw',
                     text=r[3],
-                    font=self.app.get_font('display-3'),
+                    font=self.app.get_font('15'),
                     fill=self.app.app_primary_color,
                     tags=('item', status_cat, source_tag)
                 )
@@ -324,6 +362,26 @@ class FolderList(tk.Frame):
                 '<ButtonPress>',
                 lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
 
+            # 改成進入 frame.main 後再刪
+            # if r[6] == self.app.source.STATUS_START_IMPORT: # 匯入失敗
+            #     del_btn = tk.Button(
+            #         self,
+            #         text=f'刪除資料夾{r[0]}',
+            #         relief='flat',
+            #         command=lambda: self.remove_folder(r[0], r[3]),
+            #         takefocus=0,
+            #     )
+            #     self.delete_button_list.append(del_btn)
+
+            #     self.canvas.create_window(
+            #         x+170,
+            #         gap+10,
+            #         width=100,
+            #         window=del_btn,
+            #         anchor='center',
+            #         tags=('item')
+            #     )
+
 
             shift_x += 316  # 300 + 16
             if i > 0 and (i+1) % 3 == 0:
@@ -337,3 +395,16 @@ class FolderList(tk.Frame):
 
         # 不知道可不可以讓 卡片 點擊敏感一點?
         self.update_idletasks()
+
+    # def remove_folder(self, source_id, title):
+    #     if not source_id:
+    #         return
+
+    #     if not tk.messagebox.askokcancel('確認', f'確定是否刪除資料夾: {title}'):
+    #         return False
+
+    #     if not tk.messagebox.askokcancel('確認', f'資料夾: {title} 內的文字資料跟縮圖照片都會刪除，無法恢復'):
+    #         return False
+
+    #     self.app.source.delete_folder(source_id)
+    #     self.refresh_source_list()

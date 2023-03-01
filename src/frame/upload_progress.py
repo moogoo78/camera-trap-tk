@@ -52,6 +52,7 @@ class UploadProgress(tk.Frame):
 
         self.refresh()
 
+
     def _layout(self):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -79,13 +80,14 @@ class UploadProgress(tk.Frame):
         #     window=self.foo
         # )
 
-        self.bg = ImageTk.PhotoImage(file='./assets/upload_progress_vector.png')
-        self.canvas.create_image(
-            690,
-            350,
-            image=self.bg,
-            anchor='nw',
-        )
+        # hide background vector
+        # self.bg = ImageTk.PhotoImage(file='./assets/upload_progress_vector.png')
+        # self.canvas.create_image(
+        #     690,
+        #     350,
+        #     image=self.bg,
+        #     anchor='nw',
+        # )
         self.canvas.create_text(
             50,
             20,
@@ -158,6 +160,7 @@ class UploadProgress(tk.Frame):
     def _render_box(self, row, start_x, start_y, shift_x, shift_y):
         r = row['source_data']
         source_id = r[0]
+        source_tag = f'source_{r[0]}'
         total = r[4]
         num = len(row['images'])
 
@@ -175,7 +178,7 @@ class UploadProgress(tk.Frame):
             #width=1,
             #outline="#82fB366",
             fill='#FFFFFF',
-            tags=('item'),
+            tags=('item', source_tag),
         )
         gap = y + 16
         # change font size
@@ -194,33 +197,33 @@ class UploadProgress(tk.Frame):
                 gap-10,
                 anchor='nw',
                 text=title1,
-                font=self.app.get_font('display-3'),
+                font=self.app.get_font('display-4'),
                 fill=self.app.app_primary_color,
-                tags=('item'))
+                tags=('item', source_tag))
             self.canvas.create_text(
                 x+50,
                 gap+10,
                 anchor='nw',
                 text=title2,
-                font=self.app.get_font('display-3'),
+                font=self.app.get_font('display-4'),
                 fill=self.app.app_primary_color,
-                tags=('item'))
+                tags=('item', source_tag))
         else:
             self.canvas.create_text(
                 x+50,
                 gap,
                 anchor='nw',
                 text=r[3],
-                font=self.app.get_font('display-3'),
+                font=self.app.get_font('15'),
                 fill=self.app.app_primary_color,
-                tags=('item'))
+                tags=('item', source_tag))
 
         self.canvas.create_image(
             x+20,
             gap,
             image=self.upload_folder_image,
             anchor='nw',
-            tags=('item'))
+            tags=('item', source_tag))
 
         gap += 40
         status_text = ''
@@ -233,7 +236,7 @@ class UploadProgress(tk.Frame):
         # different state display
         status_text = '資料夾上傳中...'
         # print('!!!',row['source_data'][6], row['state'])
-        if row['source_data'][6] == self.app.source.STATUS_DONE_UPLOAD:
+        if row['source_data'][6] in [self.app.source.STATUS_DONE_UPLOAD, self.app.source.STATUS_DONE_OVERRIDE_UPLOAD]:
             status_text = '資料夾上傳完畢'
             button_text = '確認並歸檔'
             button_cmd = lambda source_id=source_id: self.handle_archive(source_id)
@@ -252,15 +255,15 @@ class UploadProgress(tk.Frame):
             text=status_text,
             font=self.app.get_font('display-4'),
             fill='#464646',
-            tags=('item'))
+            tags=('item', source_tag))
 
-        if r[6] == self.app.source.STATUS_DONE_UPLOAD:
+        if r[6] in [self.app.source.STATUS_DONE_UPLOAD, self.app.source.STATUS_DONE_OVERRIDE_UPLOAD]:
             self.canvas.create_image(
                 x+204,
                 gap-36,
                 image=self.ok_image,
                 anchor='nw',
-                tags=('item'))
+                tags=('item', source_tag))
         else:
             self.canvas.create_text(
                 x+286,
@@ -269,7 +272,7 @@ class UploadProgress(tk.Frame):
                 text='{:.2f}%'.format(((progressbar_value) / total) * 100.0),
                 font=self.app.get_font('display-4'),
                 fill=self.app.app_primary_color,
-                tags=('item', f'{source_id}-text'))
+                tags=('item', f'{source_id}-text', source_tag))
 
             pb = ttk.Progressbar(self.canvas, orient=tk.HORIZONTAL, length=122, value=progressbar_value, mode='determinate', maximum=total)
             #pb.grid(row=0, column=0)
@@ -281,7 +284,7 @@ class UploadProgress(tk.Frame):
                 width=122,
                 window=pb,
                 anchor='nw',
-                tags=('item', f'{source_id}-pb_frame'),
+                tags=('item', f'{source_id}-pb_frame', source_tag),
             )
 
         gap += 22
@@ -292,28 +295,40 @@ class UploadProgress(tk.Frame):
             text=f'({progressbar_value}/{total})',
             font=self.app.get_font('display-4'),
             fill='#464646',
-            tags=('item', f'{source_id}-step'))
+            tags=('item', f'{source_id}-step', source_tag))
 
         gap += 22
-        btn = ttk.Button(
-            self.canvas,
-            text=button_text,
-            command=button_cmd)
-        row['action_button'] = btn
-        self.canvas.create_window(
-            x+20,
-            gap+4,
-            width=261,
-            height=36,
-            window=btn,
-            anchor='nw',
-            tags=('item')
-        )
+        if button_text != '確認並歸檔':
+            btn = ttk.Button(
+                self.canvas,
+                text=button_text,
+                command=button_cmd)
+            row['action_button'] = btn
+            self.canvas.create_window(
+                x+20,
+                gap+4,
+                width=261,
+                height=36,
+                window=btn,
+                anchor='nw',
+                tags=('item', source_tag)
+            )
+
+        self.canvas.tag_bind(
+            source_tag,
+            '<ButtonPress>',
+            lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
 
     def _find_source(self, source_id):
         for i, v in enumerate(self.source_list):
             if v['source_data'][0] == source_id:
                 return v
+        return None
+
+    def _find_source_index(self, source_id):
+        for i, v in enumerate(self.source_list):
+            if v['source_data'][0] == source_id:
+                return i
         return None
 
     def handle_archive(self, source_id):
@@ -401,9 +416,16 @@ class UploadProgress(tk.Frame):
 
         num = len(item['images'])
         source_id = item['source_data'][0]
+        current_source_index = self._find_source_index(source_id)
         counter = 0
+        skip_media = self.app.config.get('Mode', 'skip_media_upload', fallback='0')
+        is_skip_media = False
+        if str(skip_media) not in ['0', 'False', 'false']:
+            is_skip_media = True
+
         for i, v in enumerate(item['images']):
-            if item['state'] == self.STATE_RUNNING:
+            # if item['state'] == self.STATE_RUNNING:
+            if not is_skip_media and self.source_list[current_source_index]['state'] == self.STATE_RUNNING:
                 logging.debug(f'🧵 uploading: {source_id}-{counter}/{num}')
                 counter = i + 1
                 path = v[1]

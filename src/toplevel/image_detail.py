@@ -9,8 +9,8 @@ from image import aspect_ratio
 
 
 class ImageDetail(tk.Toplevel):
-    INIT_WIDTH = 1200
-    INIT_HEIGHT = 900
+    INIT_WIDTH = 800 # 1200
+    INIT_HEIGHT = 600 # 900
 
     def __init__(self, parent, image_path):
         super().__init__(parent)
@@ -30,8 +30,13 @@ class ImageDetail(tk.Toplevel):
         self.resize_ratio = 1
         self.to_width = self.INIT_WIDTH
         self.protocol('WM_DELETE_WINDOW', self.quit)
-
         self.layout()
+        '''
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        print("Screen width:", screen_width)
+        print("Screen height:", screen_height)
+        '''
 
     def layout(self):
         self.columnconfigure(0, weight=1)
@@ -103,6 +108,7 @@ class ImageDetail(tk.Toplevel):
         tmp = self.orig_img
         to_size = aspect_ratio(tmp.size, width=to_width)
         self.resize_ratio = to_width / float(tmp.size[0])
+        # print(self.resize_ratio, to_size)
         self.bg_img = ImageTk.PhotoImage(tmp.resize(to_size))
         self.bg_img_id = self.canvas.create_image(
             0,
@@ -118,3 +124,4 @@ class ImageDetail(tk.Toplevel):
     def change_image(self, image_path):
         self.orig_img = Image.open(image_path)
         self.fit_aspect_ratio(self.to_width)
+        self.title(f'Image Detail Window - {image_path}')

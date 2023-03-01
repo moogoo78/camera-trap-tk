@@ -1,5 +1,7 @@
 import logging
 import math
+import tracemalloc
+#from memory_profiler import profile
 #import copy
 
 import tkinter as tk
@@ -23,6 +25,7 @@ class DataGrid(tk.Frame):
                  row_index_display='',
                  row_index_width=60,
                  num_per_page=1000,
+                 num_per_page_choices=[],
                  custom_menus=[],
                  custom_binding=None,
                  cols_on_ctrl_button_1=None,
@@ -46,8 +49,11 @@ class DataGrid(tk.Frame):
             'columns': columns,
             'width': width,
             'height': height,
+            'height_adjusted': height,
+            'width_adjusted': width,
             'pagination': {
                 'num_per_page': num_per_page,
+                'num_per_page_choices': num_per_page_choices,
                 'current_page': 1,
                 'num_pages': 0,
                 'total': 0,
@@ -87,6 +93,7 @@ class DataGrid(tk.Frame):
             'custom_menus': custom_menus,
             'custom_binding': custom_binding,
             'row_index_display': row_index_display,
+            'row_index_width': row_index_width,
             'box_display_type': 'lower',
             'rows_delete_type': rows_delete_type,
             'remove_rows_key_ignore_pattern': remove_rows_key_ignore_pattern,
@@ -101,9 +108,9 @@ class DataGrid(tk.Frame):
         #logging.debug(self.state)
 
         self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
-        self.grid_columnconfigure(0, weight=0)
-        self.grid_rowconfigure(1, weight=1)        
 
         self.main_table = MainTable(self)
         self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'], height=column_header_height)
@@ -153,6 +160,7 @@ class DataGrid(tk.Frame):
 
     def refresh(self, new_data={}, is_init_highlight=False, page=None):
         """now, only consider MainTable"""
+        #tracemalloc.start()
         self.clear()
         #print(page, 'refresh')
 
@@ -188,29 +196,35 @@ class DataGrid(tk.Frame):
             # print(iid, v)
         row_keys = list(new_data_iid.keys())
 
+        pagination = self.state['pagination']
+        pagination.update({
+                'current_page': cur_page,
+                'num_pages': num_pages,
+                'total': total,
+                'num_per_page': self.state['pagination']['num_per_page'],
+        })
         self.state.update({
             'data': data_visible,  # only visible in certain page
             'data_all': new_data_iid,
             'num_rows': len(data_visible),
             'row_keys': row_keys,
             'height': len(data_visible) * self.state['cell_height'],
-            'pagination': {
-                'current_page': cur_page,
-                'num_pages': num_pages,
-                'total': total,
-                'num_per_page': self.state['pagination']['num_per_page'],
-            },
+            'pagination': pagination,
         })
+
 
         #self.main_table.render_selected(0, 0)
         self.main_table.render()
         if self.state['row_index_display']:
             self.row_index.render()
+
         self.column_header.render()
         self.footer.render()
 
         if is_init_highlight is True:
             self.main_table.init_highlight()
+
+        #print(tracemalloc.get_traced_memory(), 'hhhhhhhhhhhhhhhh')
 
     def clear(self):
         self.main_table.clear()
@@ -248,6 +262,7 @@ class DataGrid(tk.Frame):
         })
 
     def handle_yviews(self, *args):
+        # print('yviews', *args)
         self.main_table.yview(*args)
         if self.state['row_index_display']:
             self.row_index.yview(*args)
@@ -256,8 +271,7 @@ class DataGrid(tk.Frame):
 
     def handle_xviews(self, *args):
         self.main_table.xview(*args)
-        if self.state['row_index_display']:
-            self.row_index.xview(*args)
+        self.column_header.xview(*args)
 
     def get_row_list(self):
         # row_list = []
@@ -268,14 +282,6 @@ class DataGrid(tk.Frame):
         selected = self.main_table.selected
         if selected['box'][0] is not None:
             return list(range(selected['box'][0], selected['box'][2] + 1))
-
-    def update_state_DEPRICATED(self, key, value):
-        if key in self.state and self.state[key] != value:
-            logging.debug(f'update state: {key}: {value}')
-            self.state[key] = value
-            return True
-
-        return False
 
     def update_state(self, new_state):
         self.state.update(new_state)

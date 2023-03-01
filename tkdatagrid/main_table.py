@@ -76,7 +76,6 @@ class MainTable(tk.Canvas):
 
         self.width = self.ps['width']
         self.height = self.ps['height']
-
         self.entry_queue = {}
 
         self.ps['after_row_index_selected'] = self.handle_row_index_selected
@@ -389,7 +388,7 @@ class MainTable(tk.Canvas):
         self.render_copy_box(self.selected['box'])
 
     def render(self):
-        # print ('render', self.height, self.width, self.ps['height'])
+        # print ('render', self.height, self.width, self.ps['height'], self.ps['width'])
         self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
         self.render_grid()
         self.render_data()
@@ -440,12 +439,15 @@ class MainTable(tk.Canvas):
         x_center = x_left + width / 2
         y_top = row * self.ps['cell_height'] + self.y_start
         y_center = y_top + self.ps['cell_height'] / 2
-        self.create_text(
+
+        a = self.create_text(
             x_center,
             y_center,
             text=value,
+            fill='#000000',
             tags=('cell', 'cell-text', tag)
         )
+
 
     def render_data(self):
         self.delete('cell')
@@ -630,6 +632,8 @@ class MainTable(tk.Canvas):
             self.set_data_value(row_key, col_key, value)
             self.delete('autocomplete_win')
 
+            self.remove_widgets('autocomplete')
+            self.set_keyboard_control(True)
 
         self.autocomplete = Autocomplete(self.parent, choices=choices, value='', after_update_entry=after_update_entry)
 
@@ -1010,18 +1014,30 @@ class MainTable(tk.Canvas):
             else:
                 col += 1
 
-        lower_boundry = self.ps['visible_rows'] - 1
-        if row >= lower_boundry:
-            #self.to_scroll('down')
-            y_ratio = row - int(lower_boundry / 2)  # keep highlight on center 
-            args = ('moveto', y_ratio /self.ps['num_rows'])
-            self.parent.handle_yviews(*args)
-            # print('move', args, y_ratio, lower_boundry)
-        else:
-            args = ('moveto', 0)
-            self.parent.handle_yviews(*args)
 
+        # scroll while key up/down or left/right
+        num_rows_display = int(self.ps['height_adjusted'] / self.ps['cell_height'])
+        num_rows_display_middle = (num_rows_display / 2)
+        # print(row, self.ps['height'], self.ps['height_adjusted'], num_rows_display)
         # print(self.canvasx(0), self.canvasy(0), self.canvasx(self.winfo_width()), self.canvasy(self.winfo_height()))
+
+        # adjust verticle scrollbar
+        #if row >= num_rows_display_middle:
+        if len(self.ps['data']) >= num_rows_display:  # don't scroll if data less than num_rows_display
+            v_args = ('moveto',  (row - num_rows_display_middle) / self.ps['num_rows'])
+            self.parent.handle_yviews(*v_args)
+
+        # adjust horizontal scrollbar
+        if self.ps['width_adjusted'] < self.width:
+            right_width = self.ps['column_width_list'][col+1]+self.ps['row_index_width']
+            left_width = self.ps['column_width_list'][col]+self.ps['row_index_width']
+            if col == 0 or right_width <= self.ps['width_adjusted']:
+                h_args = ('moveto', 0)
+            else:
+                h_args = ('moveto',  right_width / self.width)
+            self.parent.handle_xviews(*h_args)
+            # print(left_width, right_width, self.ps['width_adjusted'], self.width)
+
         self.selected.update({
             'action': 'key-arrow',
             'drag_start': [row, col],
@@ -1232,13 +1248,12 @@ class MainTable(tk.Canvas):
 
         self.init_highlight()
 
-        self.ps.update({
-            'pagination': {
-                'num_per_page': self.ps['pagination']['num_per_page'],
-                'current_page': 1,
-                'num_pages': 0,
-                'total': 0,
-            }
+        pagination = self.ps['pagination']
+        self.ps['pagination'].update({
+            'num_per_page': self.ps['pagination']['num_per_page'],
+            'current_page': 1,
+            'num_pages': 0,
+            'total': 0,
         })
 
     def clear_selected(self, to_refresh=True):

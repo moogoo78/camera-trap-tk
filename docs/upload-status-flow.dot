@@ -15,8 +15,8 @@ digraph G {
     b1a -> b1 [label="clicked upload button"];
     b1-> b2 [style=dashed];
     b2 -> b3 [label="create threading\n(Singlaton)"];
-    b3 -> b4 [style=dashed];
-    b4 -> b1;
+    b3 -> b2c [style=dashed];
+    b2c -> b1;
     b1 -> c1 [color=orange, label="1. re-upload (modify annotation)", style=dashed];
     c1 -> c2 [color=orange, style=dashed];
     c1 -> c1a [color=orange, style=dashed];
@@ -42,15 +42,15 @@ digraph G {
   serv_anno -> b1a;
   b1 -> b1a [style=dashed, label="failed"];
   serv_anno -> b2 [label="succeed"];
-  b3 -> serv_s3 -> b4 [label="succeed"];
+  b3 -> serv_s3 -> b2c [label="succeed"];
   serv_s3 -> b3a [label="failed"];
   serv_anno -> c1a [color=orange];
   b1 -> serv_anno [color=orange];
-  b3 -> serv_media -> b4;
+  b3 -> serv_media -> b2c;
   serv_anno -> c2 [color=orange];
   c2 -> end;
-  b4 -> end;
-  b4 -> d -> end;
+  b2c -> end;
+  b2c -> d -> end;
   c2 -> d;
   /*
   b1 -> serv_anno -> b2 -> b1 [color=orange, style=dashed, label="2. re-upload annotation"];
@@ -59,12 +59,12 @@ digraph G {
   a2 -> b1;
   b3b -> serv_s3 -> b3b;
   serv_s3 -> b5;
-  b4 -> end;
-  b4 -> c;
-  b4 -> a3;
+  b2c -> end;
+  b2c -> c;
+  b2c -> a3;
   a3 -> b1 [label="1. re-upload (modify annotation)", color=orange];
   b5 -> end;
-  b4 -> a3 [label="update annotation, upload last failed files"];
+  b2c -> a3 [label="update annotation, upload last failed files"];
   b5 -> c -> end;
 
   serv_anno -> b5 [color=orange, style=dashed];
@@ -78,9 +78,9 @@ digraph G {
   c1a [label="override upload failed\n(c1a) 上傳失敗", color=tan, style=filled];
   c1 [label="start override upload\n(c1)", color=tan, style=filled];
 
-  b4 [label="upload done\n(b4) 完成"];
+  b2c [label="upload done\n(b2c) 完成"];
   b3a [label="upload media failed\n (b3a) 上傳失敗 (檔案不完全)"];
-  b3 [label="uploading media files\n(b3) 上傳中"];
+  b3 [label="uploading media files\n(b3) 上傳覆寫"];
   b2 [label="pending upload media files\n(b2) 上傳中"];
   b1a [label="upload annotation failed\n(b1a) 上傳失敗"];
   b1 [label="start upload\n(b1)"];

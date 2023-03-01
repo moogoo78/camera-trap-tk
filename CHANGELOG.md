@@ -7,6 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.0.2]
+
+### Changed
+
+- 連拍補齊畫面沒有 refresh
+- 文字上傳改流程 (上傳大資料不會 timeout)
+- 說明畫面更用 toplevel (節省記憶體)
+- 匯入資料夾處理中時，不能同時匯入其他資料夾 (對話框阻擋)
+
+## [v1.0.1]
+
+### Changed
+
+- 匯入失敗後，可以進去編輯畫面刪除
+- 匯出 csv 遇到物種填 食蟹獴 會導致 app 錯誤
+- 大圖畫面按上下鍵標題 (檔案名稱) 也會跟著改
+
+### Added
+
+- 增加 debug 看問題使用的設定
+  - skip_media_upload (忽略照片檔案上傳)
+  - skip_media_display (忽略照片顯示) => 拿到別人的 ct.db 檔案，測試環境狀態用
+
+## [v1.0.0]
+
+### Added:
+
+- QRCode 說明頁
+
+## [v0.2.6]
+
+- 物種下拉選單選定後，鍵盤上下鍵失效
+- 資料少 (比顯示範圍高度小)，鍵盤上下鍵會造成 vertical scroll 把資料排到中間
+
+## [v0.2.5c1]
+
+- 改相機命名警告文字
+
+## [v0.2.5c]
+
+- 相機位置排序
+- 測試照清空 bug
+- 拿掉沒網路時的提醒
+- 照片放大按鈕消失 (有影片檔時才會發生)
+
+## [v0.2.5b]
+
+- 影片匯入問題
+- 表格上按左右鍵移動，horizontal scroll bar 也要跟著捲動
+- 原本上下鍵移動感覺 highlight 跑出去了，vertical scrollbar 也沒有捲動
+
+## [v0.2.5]
+
+### Changed:
+- many UI after 教育訓練
+- 改下拉選單邏輯 (避免相機位置同名)
+
+### Added:
+- 檢查資料夾匯入格式
+
+## [v0.2.4b]
+
+### Changed:
+fix:
+- if upload_progress has multiple folder to upload, pause not work
+- update annotation will let server send notification like upload finish
+
+## [v0.2.4a]
+
+### Changed:
+fix:
+- server.make_request use requests package
+- config.ini add ssl_verify
+
+## [v0.2.3a]
+
+### Changed:
+
+fix:
+- 更新文字，上傳進度要變綠勾勾
+- 上下鍵要到第28列畫面才會跳過去
+- SSL 網路問題
+
+### Added:
+
+- 輸入資料的原則與影像定義附掛於介面上
+
 ## [v0.2.2a]
 
 ### Changed:

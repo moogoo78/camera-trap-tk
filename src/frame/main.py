@@ -10,6 +10,7 @@ import queue
 import csv
 from datetime import datetime
 import subprocess
+#from memory_profiler import profile
 
 from PIL import ImageTk, Image
 
@@ -25,12 +26,13 @@ from toplevel import (
     ImageDetail,
     ConfigureKeyboardShortcut,
     VideoPlayer,
+    MainMessagebox,
 )
 from image import (
     check_thumb,
     aspect_ratio,
 )
-from worker import UpdateAction
+from utils import human_sorting
 
 sys.path.insert(0, '') # TODO: pip install -e .
 from tkdatagrid import DataGrid
@@ -46,18 +48,12 @@ class Main(tk.Frame):
         self.background_color = kwargs.get('background','')
 
         self.source_data = {}
-        # self.projects = self.app.server.projects
-        # self.id_map = {
-        #     'project': {},
-        #     'studyarea': {},
-        #     'deployment': {},
-        #     'sa_to_d': {}
-        # }
-        # self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
-        # self.bind('<Configure>', self.resize)
+        self.bind('<Configure>', self.resize)
 
-        self.projects = []
-        self.update_project_options()
+        self.tmp_uploading = None
+        self.bind('<<event_action>>', self.event_action_callback)
+
+        #self.server_project_map = self.app.server.project_map
 
         self.source_id = None
         self.current_row = 0
@@ -68,7 +64,12 @@ class Main(tk.Frame):
         # self.thumb_basewidth = 550
         self.thumb_height = 309 # fixed height
         annotate_status_list = (self.app.source.STATUS_DONE_IMPORT, self.app.source.STATUS_START_ANNOTATE)
+
+        self.skip_media_display = self.app.config.get('Mode', 'skip_media_display', fallback='0')
         self.data_helper = DataHelper(self.app.db, annotate_status_list)
+        if self.skip_media_display not in ['0', False, '']:
+            self.data_helper.columns['thumb_hide'] = self.data_helper.columns.pop('thumb')
+
         self.annotation_entry_list = []
         self.species_copy = []
         self.keyboard_shortcuts = {}
@@ -79,6 +80,8 @@ class Main(tk.Frame):
         lifestage_choices = self.app.config.get('AnnotationFieldLifeStage', 'choices')
         species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         self.data_helper.columns['annotation_species']['choices'] = species_choices.split(',')
+        species_bird_choices = self.app.config.get('AnnotationSpeciesExtra', 'birds')
+        # self.data_helper.columns['annotation_species']['choices'] += species_bird_choices.split(',')
         self.data_helper.columns['annotation_species']['extra_choices'] = species_extra_birds.split(',')
         self.data_helper.columns['annotation_antler']['choices'] = antler_choices.split(',')
         self.data_helper.columns['annotation_sex']['choices'] = sex_choices.split(',')
@@ -86,6 +89,10 @@ class Main(tk.Frame):
 
         self.image_detail = None
 
+        # fetch project/studyarea/deployment map
+        #print(self.app.server.project_map)
+        #self.app.server.get_project_map()
+        #print(self.app.server.project_map)
         # layout
         #self.grid_propagate(False)
         self.layout()
@@ -186,20 +193,6 @@ class Main(tk.Frame):
         )
 
         self.label_folder.grid(row=0, column=0, padx=4, pady=10, sticky='nw')
-        self.enlarge_icon = ImageTk.PhotoImage(file='./assets/enlarge.png')
-
-        self.image_viewer_button = tk.Button(
-            self,
-            text='看大圖',
-            image=self.enlarge_icon,
-            #command=self.handle_image_viewer,
-            #command=self.app.toggle_image_viewer,
-            relief='flat',
-            background='#FFFFFF',
-            command=self.show_image_detail,
-            takefocus=0,
-        )
-        self.image_viewer_button.place(x=416, y=270, anchor='nw')
 
         conf_kb_shortcut_button = tk.Button(
             self,
@@ -213,7 +206,6 @@ class Main(tk.Frame):
         export_button = tk.Button(
             self,
             text='匯出csv',
-            #image=self.enlarge_icon,
             relief='flat',
             command=self.export_csv,
             takefocus=0,
@@ -253,7 +245,7 @@ class Main(tk.Frame):
             text='檢視計畫',
             **label_args)
 
-        self.project_options = [x['name'] for x in self.projects]
+        self.project_options = [x for x in self.app.cached_project_map['project']]
         self.project_var = tk.StringVar(self)
         self.project_menu = tk.OptionMenu(
             self.ctrl_frame2,
@@ -273,7 +265,6 @@ class Main(tk.Frame):
             **label_args)
 
         self.studyarea_var = tk.StringVar(self)
-        self.studyarea_options = []
         self.studyarea_menu = tk.OptionMenu(
             self.ctrl_frame2,
             self.studyarea_var,
@@ -289,7 +280,6 @@ class Main(tk.Frame):
             text='相機位置',
             **label_args)
 
-        self.deployment_options = []
         self.deployment_var = tk.StringVar(self)
         self.deployment_var.trace('w', self.deployment_option_changed)
         self.deployment_menu = tk.OptionMenu(
@@ -320,14 +310,16 @@ class Main(tk.Frame):
             self.ctrl_frame2,
             textvariable=self.trip_start_var,
             width=10,
+            state=tk.DISABLED,
         )
         self.trip_end_entry = ttk.Entry(
             self.ctrl_frame2,
             textvariable=self.trip_end_var,
             width=10,
+            state=tk.DISABLED,
         )
-        self.trip_start_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_start'))
-        self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
+        # self.trip_start_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_start'))
+        # self.trip_end_var.trace('w', lambda *args: self.handle_entry_change(args, 'trip_end'))
 
         self.trip_label.grid(row=3, column=0, **label_grid)
         self.trip_start_entry.grid(row=3, column=1, sticky='w', padx=(left_spacing+2, 0))
@@ -395,18 +387,24 @@ class Main(tk.Frame):
             textvariable=self.test_foto_val,
             width=8,
         )
-
+        self.test_foto_clear_button = ttk.Button(
+            self.ctrl_frame2,
+            text='清除',
+            command=lambda: self.set_test_foto_by_time(is_clear=True),
+            takefocus=0,
+            width=4,
+        )
         self.test_foto_label.grid(row=5, column=0, **label_grid)
         self.test_foto_entry.grid(row=5, column=1, sticky='w', padx=(left_spacing+2, 0))
         self.test_foto_tip.grid(row=5, column=1, sticky='w', padx=(left_spacing+76, 0))
-        self.test_foto_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+402, 0))
+        self.test_foto_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+406, 0))
+        self.test_foto_clear_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+462, 0))
 
         # upload button
         self.upload_button = tk.Button(
             self.ctrl_frame2,
             text='上傳資料夾',
-            # command=self.handle_upload2
-            command=self.handle_upload3,
+            command=self.handle_upload,
             foreground='#FFFFFF',
             background=self.app.app_primary_color,
             width=10,
@@ -426,6 +424,19 @@ class Main(tk.Frame):
 
         self.upload_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+110), pady=(18,0))
         self.delete_button.grid(row=6, column=1, sticky='e', padx=(20, 0), pady=(18, 0))
+
+        self.enlarge_icon = ImageTk.PhotoImage(file='./assets/enlarge.png')
+        self.image_viewer_button = tk.Button(
+            self.ctrl_frame2,
+            text='看大圖',
+            image=self.enlarge_icon,
+            relief='flat',
+            background='#FFFFFF',
+            command=self.show_image_detail,
+            takefocus=0,
+        )
+        # self.image_viewer_button.place(x=416, y=270, anchor='nw')
+        self.image_viewer_button.grid(row=7, column=0, sticky='sw')
 
     def config_table_frame(self):
         self.table_frame.grid_columnconfigure(0, weight=1)
@@ -457,11 +468,12 @@ class Main(tk.Frame):
             custom_binding['bind_list'].append(f'Control-Key-{n}')
 
         num_per_page = int(self.app.config.get('DataGrid', 'num_per_page'))
+        num_per_page_choices = [int(x) for x in self.app.config.get('DataGrid', 'num_per_page_choices', fallback='').split(',')]
         self.data_grid = DataGrid(
             self.table_frame,
             data={},
             columns=self.data_helper.columns,
-            height= 1000,#760-480, #self.app.app_height-480, #760-480,
+            height= 1600-480, #self.app.app_height - 480, #760-480
             width=1200,
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
@@ -469,6 +481,7 @@ class Main(tk.Frame):
             custom_menus=menus,
             custom_binding=custom_binding,
             num_per_page=num_per_page,
+            num_per_page_choices=num_per_page_choices,
             rows_delete_type='CLONED',
             remove_rows_key_ignore_pattern='-0',
             column_header_bg= '#5B7464',
@@ -493,22 +506,22 @@ class Main(tk.Frame):
         self.data_grid.grid(row=0, column=0, sticky='nsew')
 
 
-    def update_project_options(self):
-        if len(self.projects) <= 0:
-            self.projects = self.app.server.get_projects()
-            self.id_map = {
-                'project': {},
-                'studyarea': {},
-                'deployment': {},
-                'sa_to_d': {}
-            }
-            self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
-            logging.info('server: get project options')
+    # def update_project_options(self):
+    #     if len(self.projects) <= 0:
+    #         self.projects = self.app.server.get_projects()
+    #         self.id_map = {
+    #             'project': {},
+    #             'studyarea': {},
+    #             'deployment': {},
+    #             'sa_to_d': {}
+    #         }
+    #         self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
+    #         logging.info('server: get project options')
 
     def change_source(self, source_id=None):
         logging.debug('source_id: {}'.format(source_id))
 
-        self.update_project_options()
+        # self.update_project_options()
         self.source_id = source_id
 
         # reset current_row
@@ -521,9 +534,11 @@ class Main(tk.Frame):
         self.seq_checkbox_val.set('N')
 
         self.current_row_key = ''
+        self.image_viewer_button.grid(row=7, column=0, sticky='sw')
         self.refresh(is_init_highlight=True)
 
 
+    #@profile
     def refresh(self, is_init_highlight=False):
         self.is_editing = False
         logging.debug(f'refresh: {self.source_id}, current_row_key: {self.current_row_key}')
@@ -539,13 +554,50 @@ class Main(tk.Frame):
         self.source_data = self.app.source.get_source(self.source_id)
         if status := self.source_data['source'][6]:
             self.data_helper.source_id_status = [self.source_id, status]
+
+        has_default = False
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
             # set init value
-            self.project_var.set(d.get('project_name', ''))
-            self.studyarea_var.set(d.get('studyarea_name', ''))
-            self.deployment_var.set(d.get('deployment_name', ''))
-        else:
+            parsed_project_id = None
+            parsed_project_name = None
+            # set order matter ! for dependency on_change
+            # TODO
+            # 1) set studyarea
+            if x := d.get('studyarea_name', ''):
+                self.studyarea_var.set(x)
+                has_default = True
+            elif y:= d['parsed'].get('studyarea', ''):
+                if sa := self.server_project_map['studyarea'].get(y, ''):
+                    self.studyarea_var.set(y)
+                    d['studyarea_name'] = y
+                    d['studyarea_id'] = sa.get('id', '')
+                    parsed_project_id = self.server_project_map['studyarea'][y].get('project_id', '')
+                    for name, value in self.server_project_map['project'].items():
+                        if value['id'] == parsed_project_id:
+                            parsed_project_name = name
+
+            # 2) set project
+            if x := d.get('project_name', ''):
+                self.project_var.set(x)
+                has_default = True
+            elif parsed_project_name:
+                self.project_var.set(parsed_project_name)
+
+            # 3) set deployment
+            if x := d.get('deployment_name', ''):
+                self.deployment_var.set(x)
+                has_default = True
+            elif y:= d['parsed'].get('deployment', ''):
+                if self.app.cached_project_map['deployment'].get(y, ''):
+                    self.deployment_var.set(y)
+                    d['deployment_name'] = y
+                    d['deployment_id'] = self.server_project_map['deployment'][y]['id']
+                    # save to db
+                    sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(d), self.source_id)
+                    self.app.db.exec_sql(sql, True)
+
+        if has_default is False:
             self.project_var.set('')
             self.studyarea_var.set('')
             self.deployment_var.set('')
@@ -555,16 +607,6 @@ class Main(tk.Frame):
             self.data_helper.test_foto_time = test_foto_time
         else:
             self.test_foto_val.set('')
-
-        if trip_start := self.source_data['source'][9]:
-            self.trip_start_var.set(trip_start)
-        else:
-            self.trip_start_var.set('')
-
-        if trip_end := self.source_data['source'][10]:
-            self.trip_end_var.set(trip_end)
-        else:
-            self.trip_end_var.set('')
 
         # update upload_button
         source_status = self.source_data['source'][6]
@@ -586,7 +628,6 @@ class Main(tk.Frame):
 
         # data list
         data = self.data_helper.read_image_list(self.source_data['image_list'])
-        #print (data)
 
         # consider pagination
         num = self.data_grid.state['pagination']['num_per_page']
@@ -602,7 +643,7 @@ class Main(tk.Frame):
             self.data_grid.state['box_display_type'] = 'raise'
 
         # show first image if no select
-        if self.current_row_key == '':
+        if len(data) > 0 and self.current_row_key == '' :
             self.current_row_key = next(iter(data))
 
         if len(data) > 0:
@@ -615,7 +656,9 @@ class Main(tk.Frame):
             self.image_thumb_label.image = None
 
         self.data_grid.main_table.delete('row-img-seq')
-        self.data_grid.refresh(data, is_init_highlight=is_init_highlight)
+        if len(data) > 0:
+            self.data_grid.refresh(data, is_init_highlight=is_init_highlight)
+
         # draw img_seq
         # print(self.seq_info)
         for i, (iid, row) in enumerate(data.items()):
@@ -640,93 +683,109 @@ class Main(tk.Frame):
 
         # trip start/end
         if trip_start := self.source_data['source'][9]:
-            self.trip_start_var.set(trip_start)
+            ts = datetime.fromtimestamp(trip_start)
+            self.trip_start_var.set(ts.strftime('%Y%m%d'))
         if trip_end := self.source_data['source'][10]:
             self.trip_end_var.set(trip_end)
+            ts = datetime.fromtimestamp(trip_end)
+            self.trip_end_var.set(ts.strftime('%Y%m%d'))
 
         self.is_editing = True
 
     def project_option_changed(self, *args):
-        name = self.project_var.get()
-        id_ = self.id_map['project'].get(name,'')
-        if id_ == '':
-            return
-
-        # reset
-        self.studyarea_options = []
-        self.id_map['studyarea'] = {}
-        self.id_map['deployment'] = {}
-        self.id_map['sa_to_d'] = {}
-
-        res = self.app.server.get_projects(id_)
-        for i in res['studyareas']:
-            self.id_map['studyarea'][i['name']] = i['studyarea_id']
-            self.studyarea_options.append(i['name'])
-
-            if i['name'] not in self.id_map['sa_to_d']:
-                self.id_map['sa_to_d'][i['name']] = []
-            for j in i['deployments']:
-                self.id_map['sa_to_d'][i['name']].append(j)
-                self.id_map['deployment'][j['name']] = j['deployment_id']
-        # refresh
-        #print (self.studyarea_options)
-        #print (self.id_map['studyarea'], self.id_map['deployment'])
-        # refresh studyarea_options
+        #print('proj', args)
+        # reset studyarea & deployment
         self.studyarea_var.set('-- 選擇樣區 --')
         menu = self.studyarea_menu['menu']
         menu.delete(0, 'end')
-        for sa_name in self.studyarea_options:
-            menu.add_command(label=sa_name, command=lambda x=sa_name: self.studyarea_var.set(x))
+
+        selected_proj = self.project_var.get()
+        if project := self.app.cached_project_map['project'].get(selected_proj):
+            for name, value in self.app.cached_project_map['studyarea'].items():
+                if value['project_id'] == project['id']:
+                    menu.add_command(label=name, command=lambda x=name: self.studyarea_var.set(x))
 
     def studyarea_option_changed(self, *args):
+        #print('sa', args)
         selected_sa = self.studyarea_var.get()
-        self.deployment_options = []
-        for i in self.id_map['sa_to_d'].get('selected_sa', []):
-            self.deployment_options.append(i['name'])
-        # refresh studyarea_options
+        if selected_sa == '' or selected_sa == '-- 選擇樣區 --':
+            return
+
+        # refresh deployment options
         self.deployment_var.set('-- 選擇相機位置 --')
         menu = self.deployment_menu['menu']
         menu.delete(0, 'end')
-        for d in self.id_map['sa_to_d'].get(selected_sa, []):
-            menu.add_command(label=d['name'], command=lambda x=d['name']: self.deployment_var.set(x))
+
+        if studyarea := self.app.cached_project_map['studyarea'].get(selected_sa, ''):
+            studyarea = self.app.cached_project_map['studyarea'][selected_sa]
+            items = []
+            for key, value in self.app.cached_project_map['deployment'].items():
+                if key == '{}::{}'.format(selected_sa, value['name']):
+                    #menu.add_command(label=value['name'], command=lambda x=value['name']: self.deployment_var.set(x))
+                    items.append(value['name'])
+            for name in human_sorting(items):
+                menu.add_command(label=name, command=lambda x=name: self.deployment_var.set(x))
 
     def deployment_option_changed(self, *args):
-        d_name = self.deployment_var.get()
-        if deployment_id := self.id_map['deployment'].get(d_name, ''):
-            #print ('set deployment_id: ', deployment_id, d_name, )
-            sa_name = self.studyarea_var.get()
-            p_name = self.project_var.get()
-            descr = {
-                'deployment_id': deployment_id,
-                'deployment_name': d_name,
-                'studyarea_id': self.id_map['studyarea'].get(sa_name, ''),
-                'studyarea_name': sa_name,
-                'project_id': self.id_map['project'].get(p_name, ''),
-                'project_name': p_name,
-            }
-            #print (descr)
-            update_db = False
-            if db_descr := self.source_data['source'][7]:
-                d = json.loads(db_descr)
-                if deployment_id != d['deployment_id']:
-                    update_db = True
-            else:
-                # new
+        #print('dep', args)
+        selected_dep = self.deployment_var.get()
+        if selected_dep == '' or selected_dep == '-- 選擇相機位置 --':
+            return
+
+        deployment_id = None
+        studyarea_id = None
+        project_id = None
+        project_name = self.project_var.get()
+        if x := self.app.cached_project_map['project'].get(project_name):
+            project_id = x['id']
+
+        studyarea_name = self.studyarea_var.get()
+        if x := self.app.cached_project_map['studyarea'].get(studyarea_name):
+            studyarea_id = x['id']
+            dep_key = '{}::{}'.format(studyarea_name, selected_dep)
+
+            if x := self.app.cached_project_map['deployment'][dep_key]:
+                deployment_id = x['id']
+
+        update_db = False
+        descr = {}
+        if db_descr := self.source_data['source'][7]:
+            descr = json.loads(db_descr)
+            if deployment_id != descr.get('deployment_id'):
                 update_db = True
-            if update_db:
-                # save to db
-                sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(descr), self.source_id)
-                self.app.db.exec_sql(sql, True)
+        else:
+            # new
+            update_db = True
+        if update_db:
+            descr.update({
+                'deployment_id': deployment_id,
+                'deployment_name': selected_dep,
+                'studyarea_id': studyarea_id,
+                'studyarea_name': studyarea_name,
+                'project_id': project_id,
+                'project_name': project_name,
+            })
+
+            # save to db
+            sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(descr), self.source_id)
+            self.app.db.exec_sql(sql, True)
 
             # update source_data (for upload: first time import folder, get no deployment_id even if selected)
             self.source_data = self.app.source.get_source(self.source_id)
-            # TODO
+
             #tk.messagebox.showinfo('info', '已設定相機位置')
 
-    def handle_upload3(self):
+
+    def handle_upload(self):
+        '''check, upload annotation, and upload media
+        '''
+        self.refresh()
+        is_override = False
+        deployment_journal_id = None
+
         # ==============
         # check & notify
-        # =============
+        # ==============
 
         # check deployment has set
         deployment_id = ''
@@ -737,7 +796,7 @@ class Main(tk.Frame):
             tk.messagebox.showwarning('注意', '末設定相機位置，無法上傳')
             return False
 
-        # ask check deployment/staudy area/project
+        # ask to check deployment/staudy area/project
         if not tk.messagebox.askokcancel('確認計畫', '請確認計畫、樣區、相機位置是否無誤？'):
             return False
 
@@ -746,23 +805,32 @@ class Main(tk.Frame):
             if not tk.messagebox.askokcancel('注意', '尚有照片未填寫物種'):
                 return False
 
-        # ======
-        # upload
-        # ======
+        # ask to check override or not
+        if self.app.source.is_done_upload(self.source_data['source'][6]):
+            ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
+            if ans == 'no':
+                return False
+            elif ans == 'yes':
+                # find deployment_journal_id exists
+                if dj_id := self.source_data['source'][12]:
+                    deployment_journal_id = dj_id
+                    is_override = True
+
+        # ==============
+        # prepare-upload
+        # ==============
         image_list = self.source_data['image_list']
         source_id = self.source_id
         account_id = self.app.config.get('Installation', 'account_id')
-        is_first_upload = False
 
+        source_status = 'START_OVERRIDE_UPLOAD'
+        # source.upload_created/upload_changed
         if not self.source_data['source'][13] and \
            not self.source_data['source'][14]:
-            is_first_upload = True
+            source_status = 'START_UPLOAD' # first upload
 
         now = int(time.time())
-        if is_first_upload:
-            self.app.source.update_status(source_id, 'START_UPLOAD', now=now)
-        else:
-            self.app.source.update_status(source_id, 'START_OVERRIDE_UPLOAD', now=now)
+        self.app.source.update_status(source_id, source_status, now=now)
 
         payload = {
             'image_list': image_list,
@@ -773,70 +841,44 @@ class Main(tk.Frame):
             'folder_name': self.source_data['source'][3],
             'source_id': self.source_data['source'][0],
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
+            'deployment_journal_id': self.source_data['source'][12],
         }
-        # print(self.source_data['source'][6])
-        # check if re-post annotation
-        if self.app.source.is_done_upload(self.source_data['source'][6]):
-            ans = tk.messagebox.askquestion('上傳確認', '已經上傳過了，確定要重新上傳 ? (只有文字資料會覆蓋)')
-            if ans == 'no':
-                return False
-            elif ans == 'yes':
-                res = self.app.server.post_annotation(payload)
-                if res['error']:
-                    self.app.source.update_status(source_id, 'OVERRIDE_ANNOTATION_UPLOAD_FAILED')
-                    tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
-                else:
-                    self.app.source.update_status(source_id, 'DONE_OVERRIDE_UPLOAD')
-                    tk.messagebox.showinfo('info', '文字資料更新成功 !')
-                    return # stop uploading images again
 
-        # 1. post annotation to server
-        sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
-        self.app.db.exec_sql(sql, True)
+
+        if not is_override:
+            sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
+            self.app.db.exec_sql(sql, True)
 
         res = self.app.server.post_annotation(payload)
+        logging.debug(f'post_annotation: {res}')
         if res['error']:
-            self.app.source.update_status(source_id, 'ANNOTATION_UPLOAD_FAILED')
             tk.messagebox.showerror('上傳失敗 (server error)', f"{res['error']}")
-            return
+            if is_override:
+                self.app.source.update_status(source_id, 'OVERRIDE_ANNOTATION_UPLOAD_FAILED')
+            else:
+                self.app.source.update_status(source_id, 'ANNOTATION_UPLOAD_FAILED')
 
-        server_image_map = res['data']
+        if deployment_journal_id := res.get('deployment_journal_id', ''):
 
-        # push info to server uploading start
-        deployment_journal_id = None
-        if dj_id := self.source_data['source'][12]:
-            deployment_journal_id = dj_id
-        else:
-            if dj_id := res.get('deployment_journal_id'):
-                sql = f"UPDATE source SET deployment_journal_id={dj_id} WHERE source_id={source_id}"
-                self.app.db.exec_sql(sql, True)
-                deployment_journal_id = dj_id
-
-        if deployment_journal_id != None:
-            res = self.app.server.post_upload_history(deployment_journal_id, 'uploading')
-            if err := res['error']:
-                tk.messagebox.showerror('server error', err)
-                return
-
-        for image_id, [server_image_id, server_image_uuid] in server_image_map.items():
-            sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id}, object_id='{server_image_uuid}' WHERE image_id={image_id}"
-            self.app.db.exec_sql(sql)
-        self.app.db.commit()
-
-        self.app.on_upload_progress()
-        self.app.contents['upload_progress'].handle_start(source_id)
+            if res := self.app.server.check_deployment_journal_upload_status(deployment_journal_id):
+                if res.get('json', '') and res['json'].get('status', '') == 'start-media':
+                    tk.messagebox.showinfo('info', f'文字上傳成功')
+                else:
+                    # wait
+                    main_messagebox = MainMessagebox(self, self.app, deployment_journal_id)
+        return
 
     def handle_delete(self):
         ans = tk.messagebox.askquestion('確認', f"確定要刪除資料夾: {self.source_data['source'][3]}?")
         if ans == 'no':
             return False
+        ans2 = tk.messagebox.askquestion('確認', f"資料夾: {self.source_data['source'][3]} 內的文字資料跟縮圖照片都會刪除，無法恢復")
+        if ans2 == 'no':
+            return False
 
         self.app.source.delete_folder(self.source_id)
-        #self.app.frames['folder_list'].refresh_source_list()\
-
-        '''TODO_LAYOUT
-        self.app.frames['landing'].show(True)
-        '''
+        #self.app.frames['folder_list'].refresh_source_list()
+        self.app.on_folder_list()
 
     def custom_to_page(self):
         self.refresh()
@@ -844,13 +886,15 @@ class Main(tk.Frame):
     def custom_set_data(self, row_key, col_key, value):
         # print('-----', row_key, col_key, value)
         res = self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
+
+        if self.seq_checkbox_val.get() == 'Y' and self.seq_interval_val.get():
+            self.refresh()
+
         #if not res:
         #    self.refresh()
 
         # if self.seq_info:
             # has seq_info need re-render
-
-        self.refresh()
 
         # always refresh for status display
         #self.refresh() 先不要
@@ -902,10 +946,15 @@ class Main(tk.Frame):
             item = self.data_helper.data[row_key]
             image_path = item['thumb'].replace('-q.', '-o.')
             self.image_detail.change_image(image_path)
+
     def custom_mouse_click(self, row_key, col_key):
         self.select_item(row_key, col_key)
 
     def show_image(self, thumb_path, size_key=''):
+
+        if self.skip_media_display not in ['0', False, '']:
+            return
+
         if size_key:
             thumb_path = thumb_path.replace('-q.jpg', '-{}.jpg'.format(size_key))
 
@@ -924,7 +973,7 @@ class Main(tk.Frame):
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo # 一定要用這樣設，圖片不然出不來
 
-        self.image_viewer_button.place(x=resize_to[0]-46, y=270, anchor='nw')
+        #self.image_viewer_button.place(x=resize_to[0]-46, y=270, anchor='nw')
 
         self.update_idletasks()
 
@@ -1007,6 +1056,7 @@ class Main(tk.Frame):
             sql = f"UPDATE image SET annotation='{json_data}' WHERE image_id={image_id}"
             self.app.db.exec_sql(sql, True)
 
+        self.current_row_key = ''
         # update source status & refresh
         sql = f"SELECT COUNT(*) FROM image WHERE source_id = {self.source_id}"
         res = self.app.db.fetch_sql(sql)
@@ -1068,8 +1118,16 @@ class Main(tk.Frame):
         if cur_page > 1:
             self.custom_to_page()
 
-    def set_test_foto_by_time(self):
-        if time_str := self.test_foto_val.get():
+    def set_test_foto_by_time(self, is_clear=False):
+        if is_clear:
+            if not tk.messagebox.askokcancel('確認', '確認要清空測試照設定？'):
+                return False
+
+        time_str = self.test_foto_val.get()
+
+        set_value = '測試' if not is_clear else ''
+
+        if time_str != '':
             if m := re.search(r'([0-9]{2}):([0-9]{2}):([0-9]{2})', time_str):
                 hh = m.group(1)
                 mm = m.group(2)
@@ -1082,14 +1140,28 @@ class Main(tk.Frame):
                         image_hms = datetime.fromtimestamp(item['time']).strftime('%H:%M:%S')
 
                         if image_hms == time_str:
-                            self.data_helper.update_annotation(row_key, 'annotation_species', '測試')
+                            self.data_helper.update_annotation(row_key, 'annotation_species', set_value)
 
 
                     sql = "UPDATE source SET test_foto_time='{}' WHERE source_id={}".format(time_str ,self.source_data['source'][0])
                     self.app.db.exec_sql(sql, True)
                     self.refresh()
-                    tk.messagebox.showinfo('info', f'已設定測試照 - {time_str}')
 
+                    info_label = '已設定測試照' if not is_clear else '已清除設定照'
+                    tk.messagebox.showinfo('info', f'{info_label} - {time_str}')
+        # else:
+        #     if not tk.messagebox.askokcancel('確認', '確認要清空測試照設定？'):
+        #         return False
+        #     else:
+        #         for row_key, item in self.data_helper.data.items(): 
+        #             self.data_helper.update_annotation(row_key, 'annotation_species', '')
+
+        #         sql = "UPDATE source SET test_foto_time='' WHERE source_id={}".format(self.source_data['source'][0])
+        #         self.app.db.exec_sql(sql, True)
+        #         self.refresh()
+        #         tk.messagebox.showinfo('info', f'已清空測試照')
+
+    # DEPRICATED
     def handle_entry_change(self, *args):
         if self.is_editing is False:
             return
@@ -1133,7 +1205,7 @@ class Main(tk.Frame):
         if not save_as:
             return False
 
-        with open(f'{save_as}', 'w', newline='') as csvfile:
+        with open(f'{save_as}', 'w', newline='', encoding='utf-8') as csvfile:
             spamwriter = csv.writer(
                 csvfile,
                 delimiter=',',
@@ -1153,7 +1225,7 @@ class Main(tk.Frame):
         self.image_thumb_label.configure(image=photo)
         self.image_thumb_label.image = photo
 
-        self.image_viewer_button.place(x=421-46, y=270, anchor='nw')
+        # self.image_viewer_button.place(x=421-46, y=270, anchor='nw')
 
         self.update_idletasks()
 
@@ -1172,3 +1244,31 @@ class Main(tk.Frame):
     #def resize_datagrid(self):
     #    self.data_grid.update_state({'height': 900})
     #    self.data_grid.main_table.config(height=900)
+
+    def resize(self, event):
+        logging.debug(f'resize {event.width}x{event.height}')
+        data_grid_height = max(event.height - 400, 40) # at last 40
+        # print('dgh:', data_grid_height)
+        self.data_grid.update_state({
+            'height_adjusted': data_grid_height,
+            'width_adjusted': event.width,
+        })
+
+    def event_action_callback(self, event):
+        '''handle upload start'''
+        # imege media exists, skip
+        if dj_id := self.source_data['source'][12]:
+            self.app.source.update_status(self.source_id, 'DONE_OVERRIDE_UPLOAD')
+            tk.messagebox.showinfo('info', '文字資料更新成功 !')
+            return
+
+        sql = f"UPDATE source SET deployment_journal_id={self.tmp_uploading['deployment_journal_id']} WHERE source_id={self.source_id}"
+        self.app.db.exec_sql(sql, True)
+
+        for image_id, [server_image_id, server_image_uuid] in self.tmp_uploading['saved_image_ids'].items():
+            sql = f"UPDATE image SET upload_status='110', server_image_id={server_image_id}, object_id='{server_image_uuid}' WHERE image_id={image_id}"
+            self.app.db.exec_sql(sql)
+        self.app.db.commit()
+
+        self.app.on_upload_progress()
+        self.app.contents['upload_progress'].handle_start(self.source_id)

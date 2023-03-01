@@ -13,7 +13,7 @@ column type:
 
 text, image listbox, entry(default)
 
-
+height 設定會被 refresh() 是 用 data_visible (number of items per page) x cell_height 決定
 
 ## Layout
 

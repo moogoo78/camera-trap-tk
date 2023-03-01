@@ -3,14 +3,19 @@ account_id = EXAMPLE
 
 [Server]
 host = http://test.camera-trap.tw
-image_annotation_api = /api/client/v1/image/annotation/
+image_annotation_api = /api/client/v1.1/image/annotation/
 image_update_api = /api/client/v1/image/update/
 update_upload_history_api = /update_upload_history/
+check_deployment_journal_upload_status_api = /api/client/v1/check_deployment_journal_upload_status/
 project_api = /api/client/v1/projects/
 project_option_list = 141::桌機上傳-2021
+ssl_verify = 0
 
 [Mode]
 log_level = debug
+check_folder_format = 1
+skip_media_upload = 0
+skip_media_display = 0
 
 [SQLite]
 dbfile = ct.db
@@ -37,6 +42,17 @@ app_height = 760
 
 [DataGrid]
 num_per_page = 100
+num_per_page_choices=100,500,1000,2000
+
+[StudyAreaMap]
+PT = 屏東處
+TD = 台東處
+HL = 花蓮處
+LD = 羅東處
+HC = 新竹處
+DS = 東勢處
+CY = 嘉義處
+NT = 南投處
 
 [Column]
 label_list = filename:原始檔案,datetime:日期時間,species:物種,lifestage:年齡,sex:性別,antler:角況,animal_id:個體ID,remarks:備註
@@ -58,7 +74,7 @@ control-key-9 = 鳥
 [AnnotationFieldSpecies]
 type = select
 mutiple = 1
-choices = 工作照,測試,空拍,無法辨識,水鹿,山羌,獼猴,山羊,野豬,鼬獾,白鼻心,食蟹獴,鳥,鼠,松鼠,飛鼠,黃喉貂,黃鼠狼,小黃鼠狼,麝香貓,黑熊,石虎,穿山甲,狗,貓,梅花鹿,野兔,蝙蝠,人,獵人,其他
+choices = 工作照,測試,空拍,無法辨識,水鹿,山羌,獼猴,山羊,野豬,鼬獾,白鼻心,食蟹獴,鳥,鼠或鼩形目,松鼠,飛鼠,黃喉貂,黃鼠狼,小黃鼠狼,麝香貓,黑熊,石虎,穿山甲,狗,貓,梅花鹿,野兔,蝙蝠,人,獵人,其他
 label = 物種
 
 [AnnotationFieldLifeStage]

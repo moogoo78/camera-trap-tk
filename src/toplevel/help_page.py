@@ -9,13 +9,16 @@ from PIL import (
 
 from image import aspect_ratio
 
-
-class HelpPage(tk.Frame):
+class HelpPage(tk.Toplevel):
 
     def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, *args, **kwargs)
+        #tk.Frame.__init__(self, parent, *args, **kwargs)
+        super().__init__(parent, bg='#eeeeee')
         self.app = parent
 
+        self.protocol('WM_DELETE_WINDOW', self.quit)
+        self.geometry(f'{self.app.app_width}x{self.app.app_height-50-25}')
+        self.title('說明')
         self.layout()
 
     def handle_mouse_wheel(self, event):
@@ -93,3 +96,6 @@ class HelpPage(tk.Frame):
             anchor='nw',
         )
 
+    def quit(self):
+        self.destroy()
+        self.app.is_help_open = False
