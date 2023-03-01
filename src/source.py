@@ -266,7 +266,7 @@ class Source(object):
                     'DeblockFilter': 'DISABLED',
                     'DenoiseFilter': 'DISABLED',
                     'TimecodeSource': 'EMBEDDED',
-                    'FileInput': f's3://camera-trap-21-dev/{object_name}',
+                    'FileInput': f's3://{bucket_name}/{object_name}',
                 },
             ],
             'OutputGroups': [
@@ -275,7 +275,7 @@ class Source(object):
                     'OutputGroupSettings': {
                         'Type': 'FILE_GROUP_SETTINGS',
                         'FileGroupSettings': {
-                            'Destination': f's3://camera-trap-21-dev/{output_folder}/',
+                            'Destination': f's3://{bucket_name}/{output_folder}/',
                             'DestinationSettings': {
                                 'S3Settings': {
                                     'AccessControl': {
