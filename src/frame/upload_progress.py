@@ -170,6 +170,8 @@ class UploadProgress(tk.Frame):
         xlist = [x, x + 300, x + 300, x]
         ylist = [y, y, y + 150, y + 150]
 
+        is_lock_editing = False
+
         create_round_polygon(
             self.canvas,
             xlist,
@@ -265,6 +267,7 @@ class UploadProgress(tk.Frame):
                 anchor='nw',
                 tags=('item', source_tag))
         else:
+            is_lock_editing = True
             self.canvas.create_text(
                 x+286,
                 gap,
@@ -314,10 +317,12 @@ class UploadProgress(tk.Frame):
                 tags=('item', source_tag)
             )
 
-        self.canvas.tag_bind(
-            source_tag,
-            '<ButtonPress>',
-            lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
+
+        if is_lock_editing is not True:
+            self.canvas.tag_bind(
+                source_tag,
+                '<ButtonPress>',
+                lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
 
     def _find_source(self, source_id):
         for i, v in enumerate(self.source_list):
