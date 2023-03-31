@@ -99,14 +99,43 @@ class Application(tk.Tk):
 
         self.config = config
         self.source = Source(self)
-        self.server = Server(dict(config['Server']))
+        #self.server = Server(dict(config['Server']))
+        self.server = Server(self)
 
         self.cached_project_map = self.server.get_project_map()
+
         # print(self.cached_project_map)
         # don't show alert, 2022-11-09
         #if err := self.cached_project_map.get('error'):
         #    tk.messagebox.showerror('server error', f'{err}\n (無法上傳檔案，但是其他功能可以運作)')
 
+        # check latest version
+        resp = self.server.check_update()
+        if err_msg := resp.get('error', ''):
+            tk.messagebox.showerror('network error', f'{err_msg}\n (無法上傳檔案，但是其他功能可以運作)')
+
+            # no network still show info
+            logging.info('App version: {} ({})'.format(self.version, 'outdated'))
+            tk.messagebox.showinfo('注意', "請至官網下載最新版本軟體")
+        else:
+            is_outdated_value = self.config.get('State', 'is_outdated', fallback='t')
+            if resp['json']['is_latest'] is True:
+                logging.info('App version: {} ({})'.format(self.version, 'latest'))
+                if str(is_outdated_value).lower() not in ['false', '0', '']:
+                    self.config.set('State', 'is_outdated', '0')
+                    self.config.overwrite()
+                else:
+                    # still latest, do nothing
+                    pass
+            else:
+                logging.info('App version: {} ({})'.format(self.version, 'outdated !!'))
+                tk.messagebox.showinfo('注意', f"請至官網下載最新版本軟體 ({resp['json']['version']['latest']})")
+                if str(is_outdated_value).lower() in ['false', '0', '']:
+                    self.config.set('State', 'is_outdated', '1')
+                    self.config.overwrite()
+                else:
+                    # still outdated, do nothing
+                    pass
 
         #print(list(tk.font.families()))
         #Yu Gothic

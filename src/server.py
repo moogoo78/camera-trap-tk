@@ -88,10 +88,11 @@ def make_request_urllib(url, headers=None, data=None, is_json=False):
         return ret
 
 class Server(object):
-    def __init__(self, config):
-        'config already transform to dict'
-        self.config = config
-        if config.get('no_network', '') == 'yes':
+    def __init__(self, parent):
+        #'config already transform to dict'
+        self.app = parent
+        self.config = dict(parent.config['Server'])
+        if self.config.get('no_network', '') == 'yes':
             return None
 
         #has_network = self.ping()
@@ -382,4 +383,9 @@ class Server(object):
         deployment_journal_id:
         '''
         url = f"{self.config['host']}{self.config['check_deployment_journal_upload_status_api']}{deployment_journal_id}/"
+        return self.make_request(url)
+
+    def check_update(self):
+        ver = self.app.version.split(' ')[0]
+        url = f"{self.config['host']}{self.config['check_update_api']}{ver}/"
         return self.make_request(url)

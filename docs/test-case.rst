@@ -2,6 +2,12 @@ Test Case
 ================
 
 
+Landing
+-----------------------
+- 測試 server 連線失敗反應: config.ini 改 `[Server] host={error host address}` ，應該跳出 "連線失敗，請檢查網路連線..." 的提醒
+- 桌機軟體不是最新版本: 伺服器的 Announcement 改版本，ex: `v:0.0.0` ， 應該跳出 "請至官網下載最新版本軟體" 的提醒，config.ini 的 is_outdated 應該會變成 `1`, ex: `[State] is_outdated = 1`
+- 桌機軟體確定最新版本: 伺服器的 Announcement 改回原本版本，ex: `v:1.1.2` ， 沒有任何訊息跳出，config.ini 的 is_outdated 應該會變回成 `0`, ex: `[State] is_outdated = 0`
+
 Editing/Annotation
 -----------------------
 
