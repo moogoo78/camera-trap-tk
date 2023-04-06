@@ -126,7 +126,14 @@ class FolderList(tk.Frame):
     def add_folder_worker(self, src, source_id, image_list, folder_path):
         image_sql_list = []
         folder_date_range = [0, 0]
+        count_image = 0
         for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
+
+            if data.get('img', '') == '' or not sql:
+                tk.messagebox.showerror('error', f"{data['path']} 檔案損毀無法讀取")
+                continue
+
+            count_image += 1
             image_sql_list.append(sql)
             # print (data)
             if folder_date_range[0] == 0 or folder_date_range[1] == 0:
@@ -145,6 +152,9 @@ class FolderList(tk.Frame):
 
         sql_date_range = f'UPDATE source SET trip_start={folder_date_range[0]}, trip_end={folder_date_range[1]} WHERE source_id={source_id}'
         image_sql_list.append(sql_date_range)
+
+        sql_count_image = f'UPDATE source SET count={count_image} WHERE source_id={source_id}'
+        image_sql_list.append(sql_count_image)
         self.app.after(100, lambda: self.exec_sql_list(image_sql_list, source_id))
 
     def add_folder(self):

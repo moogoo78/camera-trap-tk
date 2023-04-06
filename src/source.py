@@ -138,19 +138,23 @@ class Source(object):
 
         for entry, type_ in image_list:
             img = None
+            sql = ''
             data = {
                 'path': entry.as_posix(),
                 'name': entry.name,
             }
 
             if type_ == 'image':
-                data['img'] = ImageManager(entry)
-                ts, via = data['img'].get_timestamp()
-                data['timestamp'] = ts
-                data['via'] = via
-                sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
+                img = ImageManager(entry)
+                if img.pil_handle:
+                    data['img'] = img
+                    ts, via = data['img'].get_timestamp()
+                    data['timestamp'] = ts
+                    data['via'] = via
+                    sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
+
             elif type_ == 'video':
-                print(entry, 'video')
+                #print(entry, 'video')
                 data['mov'] = entry
                 stat = data['mov'].stat()
                 data['timestamp'] = int(stat.st_mtime)
@@ -158,6 +162,7 @@ class Source(object):
                 sql = self.prepare_video_sql(data, ts_now, source_id, thumb_source_path)
                 # HACK: if video process too fast, folder_list.folder_importing will has empty value, cause error while update
                 time.sleep(0.5)
+
             yield (data, sql)
 
 
