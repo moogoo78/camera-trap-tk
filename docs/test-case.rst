@@ -59,6 +59,10 @@ DataGrid
 
 
 
+Import Folder
+-----------------
+
+- 資料夾內有壞掉的照片，測試檔 https://drive.proton.me/urls/1SBH4FW02W#CJ5mIwlH3EFc
 
 Upload
 -------------------

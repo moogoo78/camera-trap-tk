@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v1.0.2]
+## [v1.1.1]
+
+### Added
+
+- 檢查 App是否最新版
+- 資料夾上傳時不能編輯 (鎖住無法進入編輯畫面)
+- 上傳檔案如果有壞掉，會回傳錯誤對話框，並重新計算正確的照片數量
+- 匯入資料夾前先檢查伺服器上有無存在
+
+## [v1.0.2/v1.1.0]
 
 ### Changed
 
@@ -15,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 文字上傳改流程 (上傳大資料不會 timeout)
 - 說明畫面更用 toplevel (節省記憶體)
 - 匯入資料夾處理中時，不能同時匯入其他資料夾 (對話框阻擋)
+- 影片無法播放 (測試站跟正式站在 AWS 的設定不同造成)
 
 ## [v1.0.1]
 
