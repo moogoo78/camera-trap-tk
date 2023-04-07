@@ -183,7 +183,13 @@ class FolderList(tk.Frame):
                 else:
                     parsed_format = result
 
+        # check folder name uploaded in server
+        resp = self.app.server.check_folder(folder_path.name)
+        if resp['json']['is_exist'] is True:
+            tk.messagebox.showwarning('注意', '此計畫下之目錄名稱已存在，請至網頁確認')
+            return
 
+        # start import
         image_list = src.get_image_list(folder_path)
         if num_images := len(image_list):
             source_id = src.create_import_directory(num_images, folder_path, parsed_format)

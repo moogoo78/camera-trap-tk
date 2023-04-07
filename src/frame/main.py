@@ -829,6 +829,9 @@ class Main(tk.Frame):
            not self.source_data['source'][14]:
             source_status = 'START_UPLOAD' # first upload
 
+        folder_name = self.source_data['source'][3]
+        deployment_journal_id = self.source_data['source'][12]
+
         now = int(time.time())
         self.app.source.update_status(source_id, source_status, now=now)
 
@@ -838,12 +841,11 @@ class Main(tk.Frame):
             'deployment_id': deployment_id,
             'trip_start':self.trip_start_var.get(),
             'trip_end': self.trip_end_var.get(),
-            'folder_name': self.source_data['source'][3],
+            'folder_name': folder_name,
             'source_id': self.source_data['source'][0],
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
-            'deployment_journal_id': self.source_data['source'][12],
+            'deployment_journal_id': deployment_journal_id,
         }
-
 
         if not is_override:
             sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))

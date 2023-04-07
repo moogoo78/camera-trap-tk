@@ -389,3 +389,7 @@ class Server(object):
         ver = self.app.version.split(' ')[0]
         url = f"{self.config['host']}{self.config['check_update_api']}{ver}/"
         return self.make_request(url)
+
+    def check_folder(self, name=''):
+        url = f"{self.config['host']}{self.config['check_folder_api']}{name}/"
+        return self.make_request(url)
