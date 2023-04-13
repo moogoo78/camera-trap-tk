@@ -129,7 +129,7 @@ class FolderList(tk.Frame):
         count_image = 0
         for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
 
-            if data.get('img', '') == '' or not sql:
+            if not sql:
                 tk.messagebox.showerror('error', f"{data['path']} 檔案損毀無法讀取")
                 continue
 
@@ -225,6 +225,7 @@ class FolderList(tk.Frame):
         shift_x = 0 # shift
         shift_y = 0
         for i, r in enumerate(rows):
+            is_lock_editing = False
             # print(r[0],r[6],  'xxxxxxxxxxxxxxxxxxxx')
             upload_created = datetime.fromtimestamp(r[13]).strftime('%Y-%m-%d %H:%M') if r[13] else ''
             upload_changed = datetime.fromtimestamp(r[14]).strftime('%Y-%m-%d %H:%M') if r[14] else ''
@@ -365,6 +366,7 @@ class FolderList(tk.Frame):
                 icon = self.override_icon
             elif r[6][0] == 'b': #TODO
                 icon = self.uploading_icon
+                is_lock_editing = True
 
             self.canvas.create_image(
                 x+228,
@@ -373,10 +375,11 @@ class FolderList(tk.Frame):
                 anchor='nw',
                 tags=('item', status_cat, source_tag))
 
-            self.canvas.tag_bind(
-                source_tag,
-                '<ButtonPress>',
-                lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
+            if is_lock_editing is not True:
+                self.canvas.tag_bind(
+                    source_tag,
+                    '<ButtonPress>',
+                    lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
 
             # 改成進入 frame.main 後再刪
             # if r[6] == self.app.source.STATUS_START_IMPORT: # 匯入失敗
