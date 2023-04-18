@@ -184,10 +184,12 @@ class FolderList(tk.Frame):
                     parsed_format = result
 
         # check folder name uploaded in server
-        resp = self.app.server.check_folder(folder_path.name)
-        if resp['json']['is_exist'] is True:
-            tk.messagebox.showwarning('注意', '此計畫下之目錄名稱已存在，請至網頁確認')
-            return
+        if check := self.app.config.get('Mode', 'check_folder', fallback='1'):
+            if check not in ['False', '0', 0]:
+                resp = self.app.server.check_folder(folder_path.name)
+                if resp['json']['is_exist'] is True:
+                    tk.messagebox.showwarning('注意', '此計畫下之目錄名稱已存在，請至網頁確認')
+                    return
 
         # start import
         image_list = src.get_image_list(folder_path)
@@ -380,6 +382,8 @@ class FolderList(tk.Frame):
                     source_tag,
                     '<ButtonPress>',
                     lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
+            else:
+                self.canvas.tag_unbind(source_tag, '<ButtonPress>')
 
             # 改成進入 frame.main 後再刪
             # if r[6] == self.app.source.STATUS_START_IMPORT: # 匯入失敗
