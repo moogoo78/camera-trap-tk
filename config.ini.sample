@@ -19,6 +19,7 @@ ssl_verify = 0
 [Mode]
 log_level = debug
 check_folder_format = 1
+check_folder = 1
 skip_media_upload = 0
 skip_media_display = 0
 
