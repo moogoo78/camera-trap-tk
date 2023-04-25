@@ -112,7 +112,7 @@ class Application(tk.Tk):
         # check latest version
         resp = self.server.check_update()
         if err_msg := resp.get('error', ''):
-            tk.messagebox.showerror('network error', f'{err_msg}\n (無法上傳檔案，但是其他功能可以運作)')
+            tk.messagebox.showerror('network error', f'{err_msg}\n (無法匯入及上傳檔案，但是其他功能可以運作)')
 
             # no network still show info
             logging.info('App version: {} ({})'.format(self.version, 'outdated'))

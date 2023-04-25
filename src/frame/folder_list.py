@@ -158,6 +158,13 @@ class FolderList(tk.Frame):
         self.app.after(100, lambda: self.exec_sql_list(image_sql_list, source_id))
 
     def add_folder(self):
+
+        # check network first
+        resp = self.app.server.check_folder('FAKE-FOLDER-NAME-FOR-CHECK-NETWORK')
+        if err_msg := resp.get('error', ''):
+            tk.messagebox.showwarning('注意', err_msg)
+            return
+
         directory = fd.askdirectory()
         if not directory:
             return False
@@ -187,9 +194,13 @@ class FolderList(tk.Frame):
         if check := self.app.config.get('Mode', 'check_folder', fallback='1'):
             if check not in ['False', '0', 0]:
                 resp = self.app.server.check_folder(folder_path.name)
-                if resp['json']['is_exist'] is True:
-                    tk.messagebox.showwarning('注意', '此計畫下之目錄名稱已存在，請至網頁確認')
+                if err_msg := resp.get('error', ''):
+                    tk.messagebox.showwarning('注意', err_msg)
                     return
+                else:
+                    if resp['json']['is_exist'] is True:
+                        tk.messagebox.showwarning('注意', '此計畫下之目錄名稱已存在，請至網頁確認')
+                        return
 
         # start import
         image_list = src.get_image_list(folder_path)

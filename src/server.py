@@ -43,7 +43,7 @@ def make_request_urllib(url, headers=None, data=None, is_json=False):
         method = 'GET' if data == None else 'POST'
         logging.info(f'{method} {url} | {response.status}')
         ret['body'] = response.read() # 如果先 return response, read() 內容會不見
-        ret['response'] = response        
+        ret['response'] = response
         '''urlopen
         # ssl._create_default_https_context = ssl._create_unverified_context
         context = ssl._create_unverified_context() # bad idea for disabled check
