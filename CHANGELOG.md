@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 資料夾上傳時不能編輯 (鎖住無法進入編輯畫面)
 - 上傳檔案如果有壞掉，會回傳錯誤對話框，並重新計算正確的照片數量
 - 匯入資料夾前先檢查伺服器上有無存在
+- 匯入資料夾還沒處理晚離開 App 會跳出通知 (不能離開)
 
 ## [v1.0.2/v1.1.0]
 
