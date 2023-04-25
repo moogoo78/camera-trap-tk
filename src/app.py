@@ -310,8 +310,11 @@ class Application(tk.Tk):
                 self.frames['image_viewer'].grid_remove()
 
     def quit(self):
-        self.contents['upload_progress'].terminate_upload_task()
+        if len(self.contents['folder_list'].folder_importing) > 0:
+            tk.messagebox.showwarning('注意', f'尚有資料夾正在匯入中，請等候匯入完成再離開')
+            return
 
+        self.contents['upload_progress'].terminate_upload_task()
         # don't save
         # if h:= self.app_height_resize_to:
         #     try:
