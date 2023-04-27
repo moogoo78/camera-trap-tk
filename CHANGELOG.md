@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 匯入資料夾前先檢查伺服器上有無存在
 - 匯入資料集前先檢查網路 [rc2]
 - 匯入資料夾還沒處理晚離開 App 會跳出通知 (不能離開) [rc3]
+- 照片標註完狀態要馬上顯示 "已標"
 
 ## [v1.0.2/v1.1.0]
 
