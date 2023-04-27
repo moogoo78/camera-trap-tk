@@ -1181,8 +1181,9 @@ class MainTable(tk.Canvas):
                 target_row_key, target_col_key = self.get_rc_key(row, col)
                 self.set_data_value(target_row_key, target_col_key, value)
         self.delete('copy-box')
-        # return (buf, res)
-        # return (clip, self.selected)
+
+        # should return tuple to activate custom_action wrapper
+        return (clip, )
 
     def clear_pattern(self):
         self.pattern_copy = []

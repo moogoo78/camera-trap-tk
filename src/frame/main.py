@@ -499,8 +499,8 @@ class Main(tk.Frame):
                 'arrow_key': ('after', self.custom_arrow_key),
                 'set_data': ('after', self.custom_set_data),
                 'to_page': self.custom_to_page,  # after
+                'paste_from_buffer': ('after', self.custom_paste_from_buffer),
                 #'apply_pattern': self.custom_apply_pattern,
-                # 'paste_from_buffer': self.custom_paste_from_buffer,
             },
         })
         self.data_grid.grid(row=0, column=0, sticky='nsew')
@@ -1068,8 +1068,8 @@ class Main(tk.Frame):
             # self.app.frames['folder_list'].refresh_source_list()
             self.refresh()
 
-    def custom_paste_from_buffer(self, buf, rows):
-        #print('paste !!', buf, rows)
+    def custom_paste_from_buffer(self, buf):
+        # print('paste !!', buf)
         self.refresh()
 
     # def custom_apply_pattern(self, pattern_copy, selected):
