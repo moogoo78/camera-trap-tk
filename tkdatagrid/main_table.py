@@ -1172,6 +1172,11 @@ class MainTable(tk.Canvas):
         #        selected['drag_start'][0] + num_clip_row - 1,
         #        selected['drag_start'][1] + num_clip_col - 1
         #    ]
+
+        # prevent no source error, source: [None, None, None]
+        if None in source:
+            return
+
         for i, row in enumerate(range(source[0],source[2] + 1)):
             row_key = clip_keys[i % num_clip_row]
             for j, col in enumerate(range(source[1], source[3] + 1)):
