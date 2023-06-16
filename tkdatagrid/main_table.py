@@ -287,7 +287,9 @@ class MainTable(tk.Canvas):
 
             # scroll if mouse drag down
             # donnot use canvasy(), y will accumulate while scroll down
-            if event.y >= self.height-20:
+            #print('----', self.height, event.y, self.ps['height_adjusted'])
+            h_limit = self.ps.get('height_adjusted', 0)
+            if event.y >= h_limit - 20:
                 self.to_scroll('down')
             elif event.y <= 20:
                 self.to_scroll('up')

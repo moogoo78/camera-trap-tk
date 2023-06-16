@@ -262,7 +262,7 @@ class DataGrid(tk.Frame):
         })
 
     def handle_yviews(self, *args):
-        # print('yviews', *args)
+        #print('yviews', *args)
         self.main_table.yview(*args)
         if self.state['row_index_display']:
             self.row_index.yview(*args)

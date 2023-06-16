@@ -473,7 +473,7 @@ class Main(tk.Frame):
             self.table_frame,
             data={},
             columns=self.data_helper.columns,
-            height= 1600-480, #self.app.app_height - 480, #760-480
+            height= 1600-480, # for user to drag window height #self.app.app_height - 480, #760-480
             width=1200,
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
