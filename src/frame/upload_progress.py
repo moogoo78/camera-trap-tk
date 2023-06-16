@@ -10,7 +10,7 @@ from datetime import datetime
 import random
 import sys
 import pathlib
-
+import math
 import threading
 from queue import Queue
 
@@ -37,6 +37,9 @@ class UploadProgress(tk.Frame):
         self.LABEL_PAUSE = '暫停上傳'
 
         self.app = parent
+
+        self.NUMBER_PER_ROW = 3
+
         self._layout()
 
         # self.async_loop = asyncio.get_event_loop()
@@ -68,6 +71,10 @@ class UploadProgress(tk.Frame):
             relief='ridge',
         )
         self.canvas.grid(row=0, column=0, sticky='ewns')
+        self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.canvas.yview)
+        self.scrollbar.grid(row=0, column=1, sticky='ewns')
+        self.canvas.config(yscrollcommand=self.scrollbar.set)
+
 
         # self.foo = ttk.Button(
         #     self.canvas,
@@ -147,6 +154,12 @@ class UploadProgress(tk.Frame):
         self.fetch_source() # update source_list
 
         self.progress_bars = {}
+
+        self.source_list = self.source_list * 7
+        num_rows = math.ceil(len(self.source_list) / self.NUMBER_PER_ROW)
+        if num_rows > 2:
+            self.canvas.configure(scrollregion=(0,0,self.app.app_width, (num_rows * 300)))
+        #self.canvas.configure(scrollregion=self.canvas.bbox('all'))
 
         for i, row in enumerate(self.source_list):
             # print(row)
