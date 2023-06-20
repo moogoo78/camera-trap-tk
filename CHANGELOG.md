@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.1.2]
+
+### 修改
+
+- 影像匯入中，點擊資料夾會當掉
+- 複製內容 drag handle (小藍方塊) 上下拉時，scrollbar 要跟著動
+- 編輯表單的 drag handle (小藍方塊) 拉超出表表格會出現錯誤訊息
+- 上傳進度頁加上 scrollbar
+- 現有目錄頁篩選某些狀態會造成爆框問題 (一欄超過 3 個項目)
+- 上傳中，現有資料夾還是可以點進去編輯 (要擋掉)
+
 ## [v1.1.1]
 
 ### Added
