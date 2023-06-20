@@ -237,6 +237,7 @@ class FolderList(tk.Frame):
         start_y = 124
         shift_x = 0 # shift
         shift_y = 0
+        display_item_counter = 0
         for i, r in enumerate(rows):
             is_lock_editing = False
             # print(r[0],r[6],  'xxxxxxxxxxxxxxxxxxxx')
@@ -257,6 +258,7 @@ class FolderList(tk.Frame):
             ylist = [y, y, y + 150, y + 150]
 
             source_tag = f'source_{r[0]}'
+            #print(xlist, ylist, r[3], r[6])
             create_round_polygon(
                 self.canvas,
                 xlist,
@@ -419,17 +421,16 @@ class FolderList(tk.Frame):
 
 
             shift_x += 316  # 300 + 16
-            if i > 0 and (i+1) % 3 == 0:
+            if display_item_counter > 0 and (display_item_counter+1) % 3 == 0:
                 row_count += 1
                 shift_y += 162  # 150 + 12
                 shift_x = 0
+            display_item_counter += 1
 
         # reset scrollregion
         if row_count > 2:
             self.canvas.configure(scrollregion=(0,0,self.app.app_width, (row_count*300)))
 
-        # 不知道可不可以讓 卡片 點擊敏感一點?
-        self.update_idletasks()
 
     # def remove_folder(self, source_id, title):
     #     if not source_id:

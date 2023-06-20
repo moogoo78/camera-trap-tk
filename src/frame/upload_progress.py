@@ -155,7 +155,6 @@ class UploadProgress(tk.Frame):
 
         self.progress_bars = {}
 
-        self.source_list = self.source_list * 7
         num_rows = math.ceil(len(self.source_list) / self.NUMBER_PER_ROW)
         if num_rows > 2:
             self.canvas.configure(scrollregion=(0,0,self.app.app_width, (num_rows * 300)))
