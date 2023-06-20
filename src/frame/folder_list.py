@@ -18,7 +18,6 @@ from PIL import (
 
 from utils import create_round_polygon
 
-
 class FolderList(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
@@ -381,7 +380,8 @@ class FolderList(tk.Frame):
                 icon = self.override_icon
             elif r[6][0] == 'b': #TODO
                 icon = self.uploading_icon
-            elif r[6] == self.app.source.STATUS_START_IMPORT:
+                is_lock_editing = True
+            elif  r[6] == self.app.source.STATUS_START_IMPORT:
                 is_lock_editing = True
 
             self.canvas.create_image(
