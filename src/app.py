@@ -317,6 +317,13 @@ class Application(tk.Tk):
                 self.frames['image_viewer'].grid_remove()
 
     def quit(self):
+        is_force_quit = self.config.get('Mode', 'force_quit', fallback='0')
+        if str(is_force_quit).lower() not in ['false', '0', '']:
+            self.destroy()
+            # TODO if other thread is running, may wait for the thread (importing, uploading ?)
+            logging.info('force quit app')
+            return
+
         if len(self.contents['folder_list'].import_deque) > 0:
             tk.messagebox.showwarning('注意', f'尚有資料夾正在匯入中，請等候匯入完成再離開')
             return
