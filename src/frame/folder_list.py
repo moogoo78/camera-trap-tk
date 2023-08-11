@@ -1,4 +1,5 @@
 import threading
+from collections import deque
 from datetime import datetime
 import logging
 import re
@@ -24,8 +25,8 @@ class FolderList(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.app = parent
 
-        self.folder_importing = {}
-
+        self.progress_map = {}
+        self.import_deque = deque() # now only accept one importing
         #self.delete_button_list = []
 
         self.layout()
@@ -122,7 +123,12 @@ class FolderList(tk.Frame):
         self.refresh_source_list()
         showinfo(message='完成匯入資料夾')
 
+        done_source_id = self.import_deque.popleft()
+        logging.info(f'done folder import and create source_id: {done_source_id}')
+
     def add_folder_worker(self, src, source_id, image_list, folder_path):
+        self.import_deque.append(source_id)
+
         image_sql_list = []
         folder_date_range = [0, 0]
         count_image = 0
@@ -144,10 +150,10 @@ class FolderList(tk.Frame):
                 elif data['timestamp'] > folder_date_range[1]:
                     folder_date_range[1] = data['timestamp']
 
-            #print(sql, self.folder_importing)
-            if source_id in self.folder_importing:
-                self.folder_importing[source_id]['prog_bar']['value'] = i+1
-                self.folder_importing[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
+            if source_id in self.progress_map:
+                # update progress bar
+                self.progress_map[source_id]['prog_bar']['value'] = i+1
+                self.progress_map[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
 
         sql_date_range = f'UPDATE source SET trip_start={folder_date_range[0]}, trip_end={folder_date_range[1]} WHERE source_id={source_id}'
         image_sql_list.append(sql_date_range)
@@ -218,10 +224,10 @@ class FolderList(tk.Frame):
 
         # clear items
         self.canvas.delete('item')
-        for _, item in self.folder_importing.items():
+        for _, item in self.progress_map.items():
             item['prog_bar'].destroy()
             item['label'].destroy()
-        self.folder_importing = {}
+        self.progress_map = {}
         #print(self.delete_button_list)
         # for i in self.delete_button_list:
         #     print(i)
@@ -341,13 +347,13 @@ class FolderList(tk.Frame):
             )
 
             if r[6] == self.app.source.STATUS_START_IMPORT:
-                # importing progress bar
+                # for display importing progress bar
                 box = tk.Frame(self, width=180, background='#FFFFFF')
                 prog_bar = ttk.Progressbar(box, orient=tk.HORIZONTAL, length=180, value=0, mode='determinate', maximum=r[4])
                 prog_bar.grid(row=0, column=0)
                 label = ttk.Label(box, text='', background='#FFFFFF')
                 label.grid(row=1, column=0)
-                self.folder_importing[r[0]] = {'prog_bar': prog_bar, 'label': label}
+                self.progress_map[r[0]] = {'prog_bar': prog_bar, 'label': label}
                 self.canvas.create_window(
                     x+94,
                     gap-1,
@@ -381,8 +387,10 @@ class FolderList(tk.Frame):
             elif r[6][0] == 'b': #TODO
                 icon = self.uploading_icon
                 is_lock_editing = True
-            elif  r[6] == self.app.source.STATUS_START_IMPORT:
-                is_lock_editing = True
+            #elif  r[6] == self.app.source.STATUS_START_IMPORT:
+            #    if len(self.import_deque) > 0 and r[0] == self.import_deque[0]:
+            #        print(self.import_deque, r[0], self.import_deque[0])
+            #        self.is_lock_editing = True
 
             self.canvas.create_image(
                 x+228,

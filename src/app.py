@@ -237,6 +237,13 @@ class Application(tk.Tk):
 
     def on_folder_detail(self, event, tag):
         logging.debug(f'click on tag: {tag}')
+
+        # check while import, do not enter editing page
+        _, source_id = tag.split('_')
+        d = self.contents['folder_list'].import_deque
+        if len(d) > 0 and d[0] == int(source_id):
+            return False
+
         if event:
             logging.debug(f'evoked by {event}')
         source_id = tag.replace('source_', '')
@@ -247,7 +254,7 @@ class Application(tk.Tk):
     def on_add_folder(self, event=None):
         logging.debug(f'{event}')
 
-        if len(self.contents['folder_list'].folder_importing) > 0:
+        if len(self.contents['folder_list'].import_deque) > 0:
             tk.messagebox.showinfo('info', '其他資料夾正在匯入中')
         else:
             self.contents['folder_list'].add_folder()
@@ -310,7 +317,7 @@ class Application(tk.Tk):
                 self.frames['image_viewer'].grid_remove()
 
     def quit(self):
-        if len(self.contents['folder_list'].folder_importing) > 0:
+        if len(self.contents['folder_list'].import_deque) > 0:
             tk.messagebox.showwarning('注意', f'尚有資料夾正在匯入中，請等候匯入完成再離開')
             return
 

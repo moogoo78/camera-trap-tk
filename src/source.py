@@ -161,6 +161,7 @@ class Source(object):
                 data['via'] = 'mtime'
                 sql = self.prepare_video_sql(data, ts_now, source_id, thumb_source_path)
                 # HACK: if video process too fast, folder_list.folder_importing will has empty value, cause error while update
+                # maybe, change folder_list.folder_importing to folder_list.progress_map and add folder_list.import_deque, don't need to sleep(05) here, 230811
                 time.sleep(0.5)
 
             yield (data, sql)
