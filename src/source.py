@@ -232,8 +232,8 @@ class Source(object):
         }
 
     def add_media_convert(self, object_name):
-        key = self.app.config.get('AWSConfig', 'access_key_id')
-        secret = self.app.config.get('AWSConfig', 'secret_access_key')
+        key = self.app.secret.get('AWSConfig', 'access_key_id')
+        secret = self.app.secret.get('AWSConfig', 'secret_access_key')
         bucket_name = self.app.config.get('AWSConfig', 'bucket_name')
         region = self.app.config.get('AWSConfig', 'mediaconvert_region')
         endpoint = self.app.config.get('AWSConfig', 'mediaconvert_endpoint')
@@ -304,8 +304,8 @@ class Source(object):
         )
 
     def upload_to_s3(self, file_path, object_name):
-        key = self.app.config.get('AWSConfig', 'access_key_id')
-        secret = self.app.config.get('AWSConfig', 'secret_access_key')
+        key = self.app.secret.get('aws_access_key_id', '')
+        secret = self.app.secret.get()
         bucket_name = self.app.config.get('AWSConfig', 'bucket_name')
         ret = {
             'data': {},

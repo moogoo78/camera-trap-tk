@@ -46,7 +46,7 @@ class Application(tk.Tk):
             self.user_hostname = hostname
         else:
             self.user_hostname = '--'
-        #print (config)
+
         #self.iconbitmap('trees.ico')
         self.app_width = 1200
         self.app_height = int(config.get('Layout', 'app_height'))
@@ -56,6 +56,7 @@ class Application(tk.Tk):
         self.app_secondary_color = '#8AC731'
         self.app_comp_color = '#FF8C23'  # Complementary color
         self.app_font = 'Microsoft JhengHei UI' #'Yu Gothic'  #'Arial'
+        self.secrets = None
 
         self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
@@ -92,12 +93,13 @@ class Application(tk.Tk):
         # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s
         self.logger = logging.getLogger('ct-tk')
 
+        #logging.info(f'starting camera-trap app, version: {self.version}')
 
         # == helpers ==
         self.db = Database(config.get('SQLite', 'dbfile'))
         self.db.init()
-
         self.config = config
+
         self.source = Source(self)
         #self.server = Server(dict(config['Server']))
         self.server = Server(self)
@@ -147,6 +149,20 @@ class Application(tk.Tk):
             'h3': tk.font.Font(family='Yu Gotic', size=12),
             'h4': tk.font.Font(family='Yu Gotic', size=10),
         }
+
+        # append secrets
+        try:
+            import credentials
+
+            aws_key = credentials.get_aws_key()
+            self.secrets = {
+                'aws_access_key_id': aws_key['access_key_id'],
+                'aws_secret_access_key': aws_key['secret_access_key']
+            }
+            logging.debug('credentials loaded: aws s3')
+        except ModuleNotFoundError:
+                logging.debug('credentials not found')
+
 
         self.layout()
 

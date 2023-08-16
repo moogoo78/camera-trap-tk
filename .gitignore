@@ -5,12 +5,13 @@ __pycache__
 venv
 
 config.ini
-credentials.json
-
+src/credentials.py
+ct-log.txt
+thumbnails
+*.db
 tmp
 
 dist
 build
+app.*
 *.spec
-*.db
-thumbnails
