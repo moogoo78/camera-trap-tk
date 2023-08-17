@@ -10,6 +10,7 @@ from tkinter import (
 
 # log
 import logging
+from logging.handlers import RotatingFileHandler
 import sys
 import socket
 
@@ -76,9 +77,12 @@ class Application(tk.Tk):
             ll = ll.upper()
             log_level = getattr(logging, ll)
 
-        file_handler = logging.FileHandler(
-            filename='ct-log.txt',
-            encoding='utf-8', mode='a+')
+        file_handler = logging.handlers.RotatingFileHandler(
+            filename='ct-app.log',
+            encoding='utf-8',
+            mode='a',
+            backupCount=10,
+            maxBytes=10000000)
         stdout_handler = logging.StreamHandler(sys.stdout)
         #text_handler = TextHandler(text)
         logging.basicConfig(
