@@ -386,7 +386,8 @@ class FolderList(tk.Frame):
                 icon = self.override_icon
             elif r[6][0] == 'b': #TODO
                 icon = self.uploading_icon
-                is_lock_editing = True
+
+            #is_lock_editing = True
             #elif  r[6] == self.app.source.STATUS_START_IMPORT:
             #    if len(self.import_deque) > 0 and r[0] == self.import_deque[0]:
             #        print(self.import_deque, r[0], self.import_deque[0])

@@ -15,15 +15,16 @@ tkinter GUI
 
 ### Requirements
 
-- Python 3.6+ 
+- Python 3.6+
 
 Note: Python 3.9.6 cannot be used on Windows 7 or earlier - [Python Releases for Windows](https://www.python.org/downloads/windows/)
 
 **Dependency**
-- Pillow
+- Pillow: after 9.5.0 (10.0.0) not suppert 32-bit wheels
 - requests
 - boto3
 - pyinstaller (for build win exe)
+- nuitka (after version 1.1.3)
 
 ### Usage
 

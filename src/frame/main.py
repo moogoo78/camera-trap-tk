@@ -25,7 +25,7 @@ from frame import (
 from toplevel import (
     ImageDetail,
     ConfigureKeyboardShortcut,
-    VideoPlayer,
+    #VideoPlayer,
     MainMessagebox,
 )
 from image import (
@@ -636,7 +636,12 @@ class Main(tk.Frame):
         end = cur_page * num
 
         self.seq_info = None
-        seq_int = self.seq_interval_val.get()
+        try:
+            seq_int = self.seq_interval_val.get()
+            seq_int = int(seq_int)
+        except ValueError:
+            seq_int = 0
+
         if self.seq_checkbox_val.get() == 'Y' and seq_int:
             self.seq_info = self.data_helper.group_image_sequence(seq_int)
             # change DataGrid.main_table.render_box color
@@ -910,6 +915,7 @@ class Main(tk.Frame):
         current_row is already set by DataGrid
         set current_image_data
         '''
+        logging.debug(f'select_item: {row_key}, {col_key}')
         if row_key is None or col_key is None:
             return
 
@@ -939,10 +945,16 @@ class Main(tk.Frame):
             #row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
             #self.data_grid.main_table.set_data_value(row_key, col_key, 'vv')
             # update status_display
-            self.data_helper.set_status_display(row_key, status_code='20')
-            self.data_grid.main_table.render()
+            updated_display = self.data_helper.set_status_display(row_key, status_code='20')
+
+
+            #self.data_grid.main_table.render() # donnot re-render, super slow!
+            tag = f'cell-text:{row_key}_status_display'
+            #self.data_grid.main_table.itemconfig(tag, text=updated_display)
+            self.data_grid.update_text(tag, updated_display)
 
     def custom_arrow_key(self, row_key, col_key):
+        print(row_key, col_key)
         self.select_item(row_key, col_key)
         if self.image_detail:
             item = self.data_helper.data[row_key]

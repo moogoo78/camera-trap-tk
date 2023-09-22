@@ -287,3 +287,5 @@ class DataGrid(tk.Frame):
         self.state.update(new_state)
         self.state.update({'visible_rows': int(self.state['height'] / self.state['cell_height'])})
 
+    def update_text(self, item_tag, text):
+        self.main_table.itemconfig(item_tag, text=text)

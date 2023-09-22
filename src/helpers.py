@@ -137,8 +137,13 @@ class DataHelper(object):
 
         if len(status_code) == 2:
             self.data[row_key]['status_display'] = make_status_display(STATUS_MAP.get(status_code, '-'), orig_upload_status)
+
         elif len(status_code) == 3:
             self.data[row_key]['status_display'] = make_status_display(orig_status, UPLOAD_STATUS_MAP.get(status_code, '-'))
+
+        # return updated result
+        return self.data[row_key]['status_display']
+
 
     def update_annotation(self, row_key, col_key, value, seq_info=None):
         print('! update_annotation', row_key, col_key, value)

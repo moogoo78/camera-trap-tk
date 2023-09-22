@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+- 連拍分組輸入如果不是數字會跳出錯誤
+- 大分頁
+
+
+## [v1.1.4]
+
+### 修改
+
+- remove imageio, imageio-ffmpeg (will cause run error on certain labtop)
+
+## [v1.1.3]
+
+### 修改
+
+- 資料夾狀態卡住，無法繼續上傳的問題
+- python 套件更新，棄 PyInstaller 改用 nuitka 產生 exe 檔
+- AWS 的 secret key 改用 module import (不會留在 config 或外部讀取的 credentials 檔案)
+- ct-log.txt 改成 ct-app.log (超過10MB 會自動輪替, rotate)
+
+
 ## [v1.1.2]
 
 ### 修改

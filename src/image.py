@@ -130,8 +130,9 @@ class ImageManager(object):
         via = 'exif'
         dtime = self.exif.get('DateTimeOriginal', '')
         timestamp = None
+
         if dtime:
-            dt = datetime.strptime(self.exif.get('DateTime', ''), '%Y:%m:%d %H:%M:%S')
+            dt = datetime.strptime(self.exif.get('DateTimeOriginal', ''), '%Y:%m:%d %H:%M:%S')
             timestamp = dt.timestamp()
         else:
             stat = self.get_stat()

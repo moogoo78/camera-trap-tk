@@ -268,6 +268,10 @@ class Application(tk.Tk):
             logging.debug(f'evoked by {event}')
         source_id = tag.replace('source_', '')
 
+        # TODO detect can enter main page or not
+        #result = self.db.fetch_sql(f'SELECT status FROM source WHERE source_id={source_id}')
+        #print(result, '--------------')
+
         self.contents['main'].change_source(int(source_id))
         self.show_content('main')
 

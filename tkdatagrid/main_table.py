@@ -985,7 +985,6 @@ class MainTable(tk.Canvas):
     def handle_arrow_key(self, event):
         row, col = self.current_rc
         last_rc = self.current_rc
-
         if row == None:
             return
 
