@@ -118,6 +118,7 @@ class Application(tk.Tk):
         # check latest version
         resp = self.server.check_update()
         if err_msg := resp.get('error', ''):
+            self.wait_visibility()
             tk.messagebox.showerror('network error', f'{err_msg}\n (無法匯入及上傳檔案，但是其他功能可以運作)')
 
             # no network still show info
@@ -135,7 +136,11 @@ class Application(tk.Tk):
                     pass
             else:
                 logging.info('App version: {} ({})'.format(self.version, 'outdated !!'))
+
+                # via: https://stackoverflow.com/a/65734843/644070
+                self.wait_visibility()
                 tk.messagebox.showinfo('注意', f"請至官網下載最新版本軟體 ({resp['json']['version']['latest']})")
+
                 if str(is_outdated_value).lower() in ['false', '0', '']:
                     self.config.set('State', 'is_outdated', '1')
                     self.config.overwrite()
