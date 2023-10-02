@@ -282,7 +282,7 @@ class DataHelper(object):
                 'upload_status': i[12],
                 'time': i[3],
                 'seq': 0,
-                'sys_note': json.loads(i[13]),
+                'sys_note': json.loads(i[13]) if i[13] else '',
                 'thumb': thumb,
                 'image_index': i_index,
                 'media_type': i[15]

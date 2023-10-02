@@ -3,6 +3,7 @@ import argparse
 import tkinter as tk
 from tkinter import (
     Label,
+    Menu,
     ttk,
     font,
  )
@@ -30,6 +31,7 @@ from frame import (
 )
 from toplevel import (
     HelpPage,
+    ImportData,
 )
 
 from database import Database
@@ -67,6 +69,7 @@ class Application(tk.Tk):
         self.bind('<Configure>', self.resize)
 
         self.is_help_open = False
+        self.import_data = None
 
         style = ttk.Style()
         style.theme_use('clam') # clam, classic
@@ -114,6 +117,11 @@ class Application(tk.Tk):
         # don't show alert, 2022-11-09
         #if err := self.cached_project_map.get('error'):
         #    tk.messagebox.showerror('server error', f'{err}\n (無法上傳檔案，但是其他功能可以運作)')
+
+
+        menubar = Menu(self)
+        menubar.add_command(label='匯入', command=self.on_import_data)
+        self.configure(menu=menubar)
 
         # check latest version
         resp = self.server.check_update()
@@ -310,6 +318,10 @@ class Application(tk.Tk):
         if self.is_help_open is False:
            self.is_help_open = True
            HelpPage(self)
+
+    def on_import_data(self):
+        if not self.import_data:
+            self.import_data = ImportData(self)
 
     def get_font(self, size_code='default'):
         SIZE_MAP = {

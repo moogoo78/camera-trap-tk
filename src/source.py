@@ -167,6 +167,44 @@ class Source(object):
             yield (data, sql)
 
 
+    def gen_import_file2(self, source_id, image_map, folder_path):
+        '''for import from annotation file'''
+
+        # mkdir thumbnails dir
+        thumb_conf = 'thumbnails' # TODO config
+        thumb_path = Path(thumb_conf)
+        if not thumb_path.exists():
+            thumb_path.mkdir()
+
+        thumb_source_path = thumb_path.joinpath(f'{source_id}')
+        if not thumb_source_path.exists():
+            thumb_source_path.mkdir()
+
+        for name, data in image_map.items():
+            data['_img'] = None
+            data['_file_path_posix'] = data['_file_path'].as_posix()
+            if data['_file_type'] == 'image':
+                img = ImageManager(data['_file_path'])
+                if img.pil_handle:
+                    data['_img'] = img
+                    data['_exif'] = img.exif
+                    data['_img_hash'] = img.make_hash()
+                    make_thumb(data['_file_path'], thumb_source_path)
+
+            # elif type_ == 'video': # TODO
+            #     #print(entry, 'video')
+            #     data['mov'] = entry
+            #     stat = data['mov'].stat()
+            #     data['timestamp'] = int(stat.st_mtime)
+            #     data['via'] = 'mtime'
+                #sql = self.prepare_video_sql(data, ts_now, source_id, thumb_source_path)
+                # HACK: if video process too fast, folder_list.folder_importing will has empty value, cause error while update
+                # maybe, change folder_list.folder_importing to folder_list.progress_map and add folder_list.import_deque, don't need to sleep(05) here, 230811
+                time.sleep(0.5)
+
+            yield data
+
+
     def prepare_video_sql(self, i, ts_now, source_id, thumb_source_path):
         db = self.db
 
