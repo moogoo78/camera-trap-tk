@@ -14,6 +14,7 @@ import sys
 import socket
 
 from PIL import ImageTk
+import webbrowser
 
 from version import __version__
 from frame import (
@@ -130,7 +131,7 @@ class Application(tk.Tk):
         settingbar = tk.Menu(menubar)
         toolbar = tk.Menu(menubar)
         toolbar.add_command(label='匯入', command=self.on_import_data)
-        settingbar.add_command(label='登入', command=self.on_login_form)
+        settingbar.add_command(label='ORCID登入', command=self.on_login_form)
         settingbar.add_command(label='設定快捷鍵')
         menubar.add_cascade(label='settings', menu=settingbar)
         menubar.add_cascade(label='tools', menu=toolbar)
@@ -337,9 +338,12 @@ class Application(tk.Tk):
             self.toplevels['import_data'] = ImportData(self)
 
     def on_login_form(self):
-        if not self.toplevels['login_form']:
-            self.toplevels['login_form'] = LoginForm(self)
-
+        #if not self.toplevels['login_form']:
+        #    self.toplevels['login_form'] = LoginForm(self)
+        host = self.config.get('Server', 'host')
+        client_id = self.config.get('Server', 'orcid_client_id')
+        webbrowser.open(f'https://orcid.org/oauth/authorize?client_id={client_id}&response_type=code&scope=/authenticate&redirect_uri={host}/callback/orcid/auth?next=/')
+        
     def get_font(self, size_code='default'):
         SIZE_MAP = {
             'display-1': 32,

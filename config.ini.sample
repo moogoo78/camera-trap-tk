@@ -15,6 +15,7 @@ check_update_api = /api/client/v1/check_update/
 check_folder_api = /api/client/v1/check_folder/
 project_option_list = 141::桌機上傳-2021
 ssl_verify = 0
+orcid_client_id= APP-xxxx
 
 [Mode]
 log_level = debug
