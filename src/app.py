@@ -2,11 +2,9 @@ import os
 import argparse
 import tkinter as tk
 from tkinter import (
-    Label,
-    Menu,
     ttk,
     font,
- )
+)
 #from memory_profiler import profile
 
 # log
@@ -32,6 +30,7 @@ from frame import (
 from toplevel import (
     HelpPage,
     ImportData,
+    LoginForm,
 )
 
 from database import Database
@@ -69,7 +68,10 @@ class Application(tk.Tk):
         self.bind('<Configure>', self.resize)
 
         self.is_help_open = False
-        self.import_data = None
+        self.toplevels = {
+            'import_data': False,
+            'login_form': False,
+        }
 
         style = ttk.Style()
         style.theme_use('clam') # clam, classic
@@ -119,8 +121,14 @@ class Application(tk.Tk):
         #    tk.messagebox.showerror('server error', f'{err}\n (無法上傳檔案，但是其他功能可以運作)')
 
 
-        menubar = Menu(self)
-        menubar.add_command(label='匯入', command=self.on_import_data)
+        menubar = tk.Menu(self)
+        settingbar = tk.Menu(menubar)
+        toolbar = tk.Menu(menubar)
+        toolbar.add_command(label='匯入', command=self.on_import_data)
+        settingbar.add_command(label='登入', command=self.on_login_form)
+        settingbar.add_command(label='設定快捷鍵')
+        menubar.add_cascade(label='settings', menu=settingbar)
+        menubar.add_cascade(label='tools', menu=toolbar)
         self.configure(menu=menubar)
 
         # check latest version
@@ -320,8 +328,12 @@ class Application(tk.Tk):
            HelpPage(self)
 
     def on_import_data(self):
-        if not self.import_data:
-            self.import_data = ImportData(self)
+        if not self.toplevels['import_data']:
+            self.toplevels['import_data'] = ImportData(self)
+
+    def on_login_form(self):
+        if not self.toplevels['login_form']:
+            self.toplevels['login_form'] = LoginForm(self)
 
     def get_font(self, size_code='default'):
         SIZE_MAP = {

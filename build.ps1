@@ -5,6 +5,7 @@ $TargetDir = ".\dist\a-$Today"
 
 ## build by nuitka
 #.\venv\Scripts\nuitka.bat --onefile --enable-plugin=tk-inter --include-data-dir=./assets/=assets .\src\app.py
+#.\venv\Scripts\nuitka.bat --onefile --enable-plugin=tk-inter --include-data-dir=./assets/=assets --windows-icon-from-ico=./logo-leaf.png .\src\app.py
 .\venv\Scripts\nuitka.bat --onefile --enable-plugin=tk-inter --include-data-dir=./assets/=assets .\src\app.py
 
 # --windows-icon-from-ico=ct-logo.png

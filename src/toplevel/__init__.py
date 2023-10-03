@@ -4,3 +4,4 @@ from .configure_keyboard_shortcut import ConfigureKeyboardShortcut
 from .main_messagebox import MainMessagebox
 from .help_page import HelpPage
 from .import_data import ImportData
+from .login_form import LoginForm
