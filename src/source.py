@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 import json
 import re
+import logging
 
 import boto3
 from botocore.exceptions import ClientError
@@ -84,14 +85,6 @@ class Source(object):
                 self.STATUS_DONE_OVERRIDE_UPLOAD]:
             return True
         return False
-
-    def get_folder_path(self, folder):
-        db = self.db
-        folder_path = Path(folder)
-        exist = self.db.fetch_sql("SELECT * FROM source WHERE path='{}'".format(folder_path))
-        if exist:
-            return ''
-        return folder_path
 
     def get_image_list(self, folder_path):
         db = self.db
@@ -386,7 +379,49 @@ class Source(object):
         if thumb_dir_path.exists():
             shutil.rmtree(thumb_dir_path, ignore_errors=True)
 
-    def check_folder_name_format(self, folder_name):
+    def check_import_folder(self, folder_path):
+        '''combine check folder rules
+        ret: error_message, results
+        '''
+
+        results = {
+            'error': ''
+        }
+
+        # check network
+        resp = self.app.server.check_folder('FAKE-FOLDER-NAME-FOR-CHECK-NETWORK')
+
+        if err_msg := resp.get('error', ''):
+            results['error'] = err_msg
+            return results
+
+        resp = self.app.server.check_folder(folder_path)
+        if resp['error'] == '' and resp['json'].get('is_exist') == True:
+            results['error'] = '伺服器上已經有同名的資料夾'
+            return results
+
+        if exist := self.app.db.fetch_sql(f"SELECT * FROM source WHERE path='{folder_path}'"):
+            results['error'] = '已經加過此資料夾'
+            return results
+
+        # check folder name syntax
+        parsed_format = None
+        if check := self.app.config.get('Mode', 'check_folder_format', fallback=False):
+            # check falsy
+            if check not in ['False', '0', 0]:
+                parsed_format = self._check_folder_name_format(folder_path.name)
+                logging.info(parsed_format)
+
+                if err := parsed_format.get('error'):
+                    results['error'] = f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd-YYYYmmdd]\n 範例: HC04-20190304-20190506'
+                    return results
+                else:
+                    #parsed_format = result
+                    results['parsed_format'] = parsed_format
+
+        return results
+
+    def _check_folder_name_format(self, folder_name):
         # rules from config, too complicate
         # regex = self.app.config.get('Format', 'folder_name_regex')
         # date_format = self.app.config.get('Format', 'date_format')

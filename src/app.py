@@ -343,7 +343,7 @@ class Application(tk.Tk):
         host = self.config.get('Server', 'host')
         client_id = self.config.get('Server', 'orcid_client_id')
         webbrowser.open(f'https://orcid.org/oauth/authorize?client_id={client_id}&response_type=code&scope=/authenticate&redirect_uri={host}/callback/orcid/auth?next=/')
-        
+
     def get_font(self, size_code='default'):
         SIZE_MAP = {
             'display-1': 32,

@@ -3,6 +3,7 @@ from collections import deque
 from datetime import datetime
 import logging
 import re
+from pathlib import Path
 
 import tkinter as tk
 from tkinter import (
@@ -164,48 +165,19 @@ class FolderList(tk.Frame):
 
     def add_folder(self):
 
-        # check network first
-        resp = self.app.server.check_folder('FAKE-FOLDER-NAME-FOR-CHECK-NETWORK')
-        if err_msg := resp.get('error', ''):
-            tk.messagebox.showwarning('注意', err_msg)
-            return
-
         directory = fd.askdirectory()
         if not directory:
             return False
 
+        folder_path = Path(directory)
         src = self.app.source
-        folder_path = src.get_folder_path(directory)
 
-        if not folder_path:
-            tk.messagebox.showinfo('info', '已經加過此資料夾')
-            return False
+        result = src.check_import_folder(folder_path)
+        if err_msg := result.get('error'):
+            tk.messagebox.showinfo('注意', err_msg)
+            return
 
-        # check folder name syntax
-        parsed_format = None
-        if check := self.app.config.get('Mode', 'check_folder_format', fallback=False):
-            # check falsy
-            if check not in ['False', '0', 0]:
-                result = src.check_folder_name_format(folder_path.name)
-                logging.info(result)
-
-                if err := result.get('error'):
-                    tk.messagebox.showerror('注意', f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd-YYYYmmdd]\n 範例: HC04-20190304-20190506')
-                    return
-                else:
-                    parsed_format = result
-
-        # check folder name uploaded in server
-        if check := self.app.config.get('Mode', 'check_folder', fallback='1'):
-            if check not in ['False', '0', 0]:
-                resp = self.app.server.check_folder(folder_path.name)
-                if err_msg := resp.get('error', ''):
-                    tk.messagebox.showwarning('注意', err_msg)
-                    return
-                else:
-                    if resp['json']['is_exist'] is True:
-                        tk.messagebox.showwarning('注意', '此計畫下之目錄名稱已存在，請至網頁確認')
-                        return
+        parsed_format = result.get('parsed_format', '')
 
         # start import
         image_list = src.get_image_list(folder_path)

@@ -20,6 +20,7 @@ ERROR_MAP = {
     'INVALID_FORMAT': '文字標註檔格式不符',
     'UNSUPPORT_TYPE': '不支援的格式',
     'DATETIME_ERROR': '日期時間格式錯誤',
+    'UNCONTROLLED_TERM': '內容非控制詞彙',
 }
 HEADER_MAP = {
     'filename': {
@@ -171,23 +172,45 @@ class ImportData(tk.Toplevel):
 
 
     def on_import(self):
-        if file_ := self.file_path.get():
-            file_path = Path(file_)
-        else:
+        file_path = self.file_path.get()
+        if not file_path:
             tk.messagebox.showwarning('注意', '請選檔案')
-            return False
+            return
 
-        if image_dir := self.dir_path.get():
-            image_dir_path = Path(image_dir)
-        else:
+        image_dir_path = self.dir_path.get()
+        if not image_dir_path:
             tk.messagebox.showwarning('注意', '請選資料夾')
-            return False
+            return
 
+        # cast str to Path
+        file_path = Path(file_path)
+        image_dir_path = Path(image_dir_path)
 
         # reset error_list
         self.treeview.delete(*self.treeview.get_children())
 
-        # check format
+
+        src = self.app.source # source.py is much like a helper
+
+        result = src.check_import_folder(image_dir_path)
+        if err_msg := result.get('error'):
+            tk.messagebox.showinfo('注意', err_msg)
+            return
+
+        # check annotation contents
+
+        species_choices = self.app.config.get('AnnotationFieldSpecies', 'choices')
+        antler_choices = self.app.config.get('AnnotationFieldAntler', 'choices')
+        sex_choices = self.app.config.get('AnnotationFieldSex', 'choices')
+        lifestage_choices = self.app.config.get('AnnotationFieldLifeStage', 'choices')
+
+        CONTROLLED_TERMS = {
+            '物種': species_choices.split(','),
+            '年齡': antler_choices.split(','),
+            '性別': sex_choices.split(','),
+            '角況': lifestage_choices.split(','),
+        }
+
         with open(file_path, encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile, delimiter=',')
             #next(reader)
@@ -201,7 +224,8 @@ class ImportData(tk.Toplevel):
                 #tk.messagebox.showerror('錯誤', ERROR_MAP['INVALID_FORMAT'])
             else:
                 annotation_header = [v['label'] for k, v in HEADER_MAP.items()]
-                for row in reader:
+                for index, row in enumerate(reader):
+                    index1 = index + 1
                     file_path = Path(image_dir_path, row['檔名'])
                     if not file_path.exists():
                         err_msg = (ERROR_MAP['NOT_EXIST'], file_path)
@@ -215,12 +239,21 @@ class ImportData(tk.Toplevel):
                         annotation = {}
                         for col in annotation_header:
                             if value := row.get(col):
-                                annotation[col] = value
+                                if terms := CONTROLLED_TERMS.get(col):
+                                    if value in terms:
+                                        annotation[col] = value
+                                    else:
+                                        err = f'#{index1}: [{col}] {value}, 允許詞彙: {terms}'
+                                        err_msg = (ERROR_MAP['UNCONTROLLED_TERM'], err)
+                                        self.treeview.insert('', tk.END, values=err_msg)
+
+                                else:
+                                    annotation[col] = value
 
                         try:
                             ts = datetime.strptime(row['日期時間'], '%Y-%m-%d %H:%M:%S').timestamp()
                         except ValueError as value_err:
-                            err_msg = (ERROR_MAP['DATETIME_ERROR'], f"{file_path}, {row['日期時間']}")
+                            err_msg = (ERROR_MAP['DATETIME_ERROR'], f"#{index1}, {row['日期時間']}")
                             self.treeview.insert('', tk.END, values=err_msg)
 
                         name = row['檔名']
@@ -238,11 +271,8 @@ class ImportData(tk.Toplevel):
             return
 
         # start process import
-        src = self.app.source
-
-        ## TODO: check folder syntax, exist..., parsed_format
         if num_images := len(self.image_map):
-            source_id = src.create_import_directory(num_images, image_dir_path, '') # TODO check format
+            source_id = src.create_import_directory(num_images, image_dir_path, '')
 
             #self.app.contents['folder_list'].refresh_source_list()
             foo_th = threading.Thread(
@@ -327,7 +357,7 @@ class ImportData(tk.Toplevel):
         if not annotation_file:
             return False
 
-        self.file_path.set(annotation_file)
+        self.file_path.set(Path(annotation_file))
 
 
     def open_image_dir(self):
@@ -335,9 +365,7 @@ class ImportData(tk.Toplevel):
         if not directory:
             return False
 
-        #print(directory, type(directory))
-        #self.dir_path.config(text=directory)
-        self.dir_path.set(directory)
+        self.dir_path.set(Path(directory))
 
 
     def quit(self):
@@ -345,4 +373,4 @@ class ImportData(tk.Toplevel):
             logging.info('importing file, cannot quit')
         else:
             self.destroy()
-            self.app.import_data = None
+            self.app.toplevels['import_data'] = None
