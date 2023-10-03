@@ -13,6 +13,8 @@ from logging.handlers import RotatingFileHandler
 import sys
 import socket
 
+from PIL import ImageTk
+
 from version import __version__
 from frame import (
     #Toolbar,
@@ -49,7 +51,10 @@ class Application(tk.Tk):
         else:
             self.user_hostname = '--'
 
+        app_logo = ImageTk.PhotoImage(file='./assets/logo-leaf.png')
+        self.iconphoto(False, app_logo)
         #self.iconbitmap('trees.ico')
+
         self.app_width = 1200
         self.app_height = int(config.get('Layout', 'app_height'))
         self.app_width_resize_to = 0
