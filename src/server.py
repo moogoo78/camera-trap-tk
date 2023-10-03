@@ -130,6 +130,10 @@ class Server(object):
     def get_projects_server(self, source_id=0):
         config = self.config
         project_api_prefix = f"{config['host']}{config['project_api']}"
+        if user_id := self.app.db.fetch_sql("SELECT value FROM state WHERE name = 'user_id'"):
+            print(user_id)
+        else:
+            print('no')
         if source_id:
             # r = requests.get(f'{project_api_prefix}{source_id}/')
             # return r.json()
@@ -392,4 +396,8 @@ class Server(object):
 
     def check_folder(self, name=''):
         url = f"{self.config['host']}{self.config['check_folder_api']}{name}/"
+        return self.make_request(url)
+
+    def find_user(self, verify_code):
+        url = f"{self.config['host']}{self.config['find_user_api']}?verify_code={verify_code}"
         return self.make_request(url)

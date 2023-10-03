@@ -34,6 +34,7 @@ from toplevel import (
     HelpPage,
     ImportData,
     LoginForm,
+    ConfigureKeyboardShortcut,
 )
 
 from database import Database
@@ -119,6 +120,8 @@ class Application(tk.Tk):
         #self.server = Server(dict(config['Server']))
         self.server = Server(self)
 
+        #self.server.get_projects_server()
+
         self.cached_project_map = self.server.get_project_map()
 
         # print(self.cached_project_map)
@@ -127,15 +130,15 @@ class Application(tk.Tk):
         #    tk.messagebox.showerror('server error', f'{err}\n (無法上傳檔案，但是其他功能可以運作)')
 
 
-        menubar = tk.Menu(self)
-        settingbar = tk.Menu(menubar)
-        toolbar = tk.Menu(menubar)
+        self.menubar = tk.Menu(self)
+        userbar = tk.Menu(self.menubar, tearoff=False)
+        toolbar = tk.Menu(self.menubar, tearoff=False)
         toolbar.add_command(label='匯入', command=self.on_import_data)
-        settingbar.add_command(label='ORCID登入', command=self.on_login_form)
-        settingbar.add_command(label='設定快捷鍵')
-        menubar.add_cascade(label='settings', menu=settingbar)
-        menubar.add_cascade(label='tools', menu=toolbar)
-        self.configure(menu=menubar)
+        toolbar.add_command(label='設定快捷鍵', command=lambda: ConfigureKeyboardShortcut(self))
+        userbar.add_command(label='ORCID登入', command=self.on_login_form)
+        self.menubar.add_cascade(label='login', menu=userbar)
+        self.menubar.add_cascade(label='tools', menu=toolbar)
+        self.configure(menu=self.menubar)
 
         # check latest version
         resp = self.server.check_update()
@@ -337,12 +340,11 @@ class Application(tk.Tk):
         if not self.toplevels['import_data']:
             self.toplevels['import_data'] = ImportData(self)
 
+
     def on_login_form(self):
-        #if not self.toplevels['login_form']:
-        #    self.toplevels['login_form'] = LoginForm(self)
-        host = self.config.get('Server', 'host')
-        client_id = self.config.get('Server', 'orcid_client_id')
-        webbrowser.open(f'https://orcid.org/oauth/authorize?client_id={client_id}&response_type=code&scope=/authenticate&redirect_uri={host}/callback/orcid/auth?next=/')
+        if not self.toplevels['login_form']:
+            self.toplevels['login_form'] = LoginForm(self)
+
 
     def get_font(self, size_code='default'):
         SIZE_MAP = {

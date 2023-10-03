@@ -24,7 +24,7 @@ from frame import (
 )
 from toplevel import (
     ImageDetail,
-    ConfigureKeyboardShortcut,
+    #ConfigureKeyboardShortcut,
     #VideoPlayer,
     MainMessagebox,
 )
@@ -194,14 +194,15 @@ class Main(tk.Frame):
 
         self.label_folder.grid(row=0, column=0, padx=4, pady=10, sticky='nw')
 
-        conf_kb_shortcut_button = tk.Button(
-            self,
-            text='設定快捷鍵',
-            relief='flat',
-            command=lambda: ConfigureKeyboardShortcut(self.app),
-            takefocus=0,
-        )
-        conf_kb_shortcut_button.grid(row=0, column=0, padx=4, pady=34, sticky='ne')
+        # conf_kb_shortcut_button = tk.Button(
+        #     self,
+        #     text='設定快捷鍵',
+        #     relief='flat',
+        #     command=lambda: ConfigureKeyboardShortcut(self.app),
+        #     takefocus=0,
+        # )
+
+        # conf_kb_shortcut_button.grid(row=0, column=0, padx=4, pady=34, sticky='ne')
 
         export_button = tk.Button(
             self,

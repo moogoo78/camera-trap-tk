@@ -41,6 +41,13 @@ CREATE TABLE IF NOT EXISTS image (
   FOREIGN KEY (source_id) REFERENCES source(source_id)
 );'''
 
+SQL_INIT_STATE = '''
+CREATE TABLE IF NOT EXISTS state (
+  name TEXT PRIMARY KEY,
+  value TEXT,
+  changed INTEGER
+);'''
+
 class Database(object):
     conn = None
     cursor = None
@@ -57,6 +64,7 @@ class Database(object):
     def init(self):
         self.cursor.execute(SQL_INIT_SOURCE)
         self.cursor.execute(SQL_INIT_IMAGE)
+        self.cursor.execute(SQL_INIT_STATE)
 
     def exec_sql(self, sql, commit=False):
         logging.debug(sql)
