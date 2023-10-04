@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add app logo
 - check deployment_journal
 - deleted_images messagebox alert
+- 連拍補齊預設打開, 設定5分鐘
 
 ### refactor
 
