@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 匯入文字資料(import_data)
 - ORCID login (login_form)
 - add app logo
+- check deployment_journal
 
 ### refactor
 

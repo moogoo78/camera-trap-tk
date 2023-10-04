@@ -27,6 +27,7 @@ from toplevel import (
     #ConfigureKeyboardShortcut,
     #VideoPlayer,
     MainMessagebox,
+    DeletedImages,
 )
 from image import (
     check_thumb,
@@ -579,30 +580,35 @@ class Main(tk.Frame):
             parsed_project_id = None
             parsed_project_name = None
             # set order matter ! for dependency on_change
+
             if x := d.get('project_name'):
                 project_name = x
-                index = [i for i, p in enumerate(self.app.user_info['projects']) if p['name'] == project_name]
-                if len(index):
-                    self.tmp_info.update({
-                        'project_index': index[0]
-                    })
             if x := d.get('studyarea_name'):
                 studyarea_name = x
-                if self.tmp_info['project_index'] >= 0:
-                    index = [i for i, sa in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas']) if sa['name'] == studyarea_name]
-                    if len(index):
-                        self.tmp_info.update({
-                            'studyarea_index': index[0]
-                        })
             if x := d.get('deployment_name'):
                 deployment_name = x
-                if self.tmp_info['project_index'] >= 0 and \
-                   self.tmp_info['studyarea_index'] >= 0:
-                    index = [i for i, dep in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas'][self.tmp_info['studyarea_index']]['deployments']) if dep['name'] == deployment_name]
+
+            if self.app.user_info['projects']:
+                if project_name:
+                    index = [i for i, p in enumerate(self.app.user_info['projects']) if p['name'] == project_name]
                     if len(index):
                         self.tmp_info.update({
-                            'deployment_index': index[0]
+                            'project_index': index[0]
                         })
+                if studyarea_name:
+                    if self.tmp_info['project_index'] >= 0:
+                        index = [i for i, sa in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas']) if sa['name'] == studyarea_name]
+                        if len(index):
+                            self.tmp_info.update({
+                                'studyarea_index': index[0]
+                            })
+                if deployment_name:
+                    if self.tmp_info['project_index'] >= 0 and self.tmp_info['studyarea_index'] >= 0:
+                        index = [i for i, dep in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas'][self.tmp_info['studyarea_index']]['deployments']) if dep['name'] == deployment_name]
+                        if len(index):
+                            self.tmp_info.update({
+                                'deployment_index': index[0]
+                            })
 
         self.project_var.set(project_name)
         self.studyarea_var.set(studyarea_name)
@@ -715,7 +721,11 @@ class Main(tk.Frame):
 
         selected_proj = self.project_var.get()
 
+        if not self.app.user_info['projects']:
+            return
+
         index = -1
+
         for i, p in enumerate(self.app.user_info['projects']):
             if p['name'] == selected_proj:
                 self.upload_info.update({
@@ -744,6 +754,9 @@ class Main(tk.Frame):
         menu = self.deployment_menu['menu']
         menu.delete(0, 'end')
 
+        if not self.app.user_info['projects']:
+            return
+
         index = -1
         for i, sa in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas']):
             if sa['name'] == selected_sa:
@@ -766,6 +779,9 @@ class Main(tk.Frame):
 
         selected_dep = self.deployment_var.get()
         if selected_dep == '' or selected_dep == '-- 選擇相機位置 --':
+            return
+
+        if not self.app.user_info['projects']:
             return
 
         index = -1
@@ -859,6 +875,18 @@ class Main(tk.Frame):
         folder_name = self.source_data['source'][3]
         deployment_journal_id = self.source_data['source'][12]
 
+        if deployment_journal_id:
+            if res := self.app.server.check_deployment_journal_upload_status(deployment_journal_id):
+                saved_image_ids = res['json'].get('saved_image_ids')
+                print(saved_image_ids)
+                remote_deleted_images = []
+                for x in image_list:
+                    image_id = str(x[0])
+                    if image_id not in saved_image_ids:
+                        remote_deleted_images.append([x[0], x[2]])
+                if len(remote_deleted_images) > 0:
+                    DeletedImages(self, images=remote_deleted_images)
+        return
         now = int(time.time())
         self.app.source.update_status(source_id, source_status, now=now)
 

@@ -5,3 +5,4 @@ from .main_messagebox import MainMessagebox
 from .help_page import HelpPage
 from .import_data import ImportData
 from .login_form import LoginForm
+from .deleted_images import DeletedImages

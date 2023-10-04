@@ -145,6 +145,7 @@ class Application(tk.Tk):
             if data := resp.get('json'):
                 self.user_info = data['results']
 
+                logging.info('get user_info')
                 self.on_login({
                     'user_id': user_id,
                     'name': data['results']['user'].get('name', ''),
@@ -362,6 +363,7 @@ class Application(tk.Tk):
 
 
     def on_login(self, payload):
+        logging.info(f'login: {payload}')
         user_id = payload.get('user_id')
         email = payload.get('email')
         name = payload.get('name')
