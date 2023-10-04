@@ -878,7 +878,6 @@ class Main(tk.Frame):
         if deployment_journal_id:
             if res := self.app.server.check_deployment_journal_upload_status(deployment_journal_id):
                 saved_image_ids = res['json'].get('saved_image_ids')
-                print(saved_image_ids)
                 remote_deleted_images = []
                 for x in image_list:
                     image_id = str(x[0])

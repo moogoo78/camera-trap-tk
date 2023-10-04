@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-
 ## [v1.1.5]
 
 ### 新增
@@ -16,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ORCID login (login_form)
 - add app logo
 - check deployment_journal
+- deleted_images messagebox alert
 
 ### refactor
 
