@@ -8,15 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
-- 連拍分組輸入如果不是數字會跳出錯誤
-- 大分頁
+## [v1.1.5]
 
+### 新增
+
+- 匯入文字資料(import_data)
+- ORCID login (login_form)
+- add app logo
+
+### refactor
+
+- `check_import_folder` combine all import folder check rules
+- rewrite main edit window`s project/studyarea/deployment option choose, consider to login process has new user_info data structure
 
 ## [v1.1.4]
 
 ### 修改
 
 - remove imageio, imageio-ffmpeg (will cause run error on certain labtop)
+- 連拍分組輸入如果不是數字會跳出錯誤
+- 大分頁速度慢
 
 ## [v1.1.3]
 
