@@ -65,7 +65,7 @@ class Application(tk.Tk):
         self.app_secondary_color = '#8AC731'
         self.app_comp_color = '#FF8C23'  # Complementary color
         self.app_font = 'Microsoft JhengHei UI' #'Yu Gothic'  #'Arial'
-        self.secrets = None
+        self.secrets = {}
 
         self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
@@ -78,6 +78,10 @@ class Application(tk.Tk):
         self.toplevels = {
             'import_data': False,
             'login_form': False,
+        }
+
+        self.user_info = {
+            'projects': [],
         }
 
         style = ttk.Style()
@@ -109,6 +113,10 @@ class Application(tk.Tk):
         # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s
         self.logger = logging.getLogger('ct-tk')
 
+        # hide image debug logger
+        logging.getLogger('PIL.PngImagePlugin').propagate = False
+        logging.getLogger('PIL.TiffImagePlugin').propagate = False
+
         #logging.info(f'starting camera-trap app, version: {self.version}')
 
         # == helpers ==
@@ -120,25 +128,29 @@ class Application(tk.Tk):
         #self.server = Server(dict(config['Server']))
         self.server = Server(self)
 
-        #self.server.get_projects_server()
-
-        self.cached_project_map = self.server.get_project_map()
-
-        # print(self.cached_project_map)
-        # don't show alert, 2022-11-09
-        #if err := self.cached_project_map.get('error'):
-        #    tk.messagebox.showerror('server error', f'{err}\n (無法上傳檔案，但是其他功能可以運作)')
-
-
         self.menubar = tk.Menu(self)
         userbar = tk.Menu(self.menubar, tearoff=False)
         toolbar = tk.Menu(self.menubar, tearoff=False)
         toolbar.add_command(label='匯入', command=self.on_import_data)
         toolbar.add_command(label='設定快捷鍵', command=lambda: ConfigureKeyboardShortcut(self))
         userbar.add_command(label='ORCID登入', command=self.on_login_form)
+        userbar.add_command(label='登出', command=self.on_logout)
         self.menubar.add_cascade(label='login', menu=userbar)
         self.menubar.add_cascade(label='tools', menu=toolbar)
         self.configure(menu=self.menubar)
+
+        # process user_info
+        if user_id := self.db.get_state('user_id'):
+            resp = self.server.get_user_info(user_id)
+            if data := resp.get('json'):
+                self.user_info = data['results']
+
+                self.on_login({
+                    'user_id': user_id,
+                    'name': data['results']['user'].get('name', ''),
+                    'email': data['results']['user'].get('email', ''),
+                })
+
 
         # check latest version
         resp = self.server.check_update()
@@ -189,10 +201,10 @@ class Application(tk.Tk):
             import credentials
 
             aws_key = credentials.get_aws_key()
-            self.secrets = {
+            self.secrets.update({
                 'aws_access_key_id': aws_key['access_key_id'],
                 'aws_secret_access_key': aws_key['secret_access_key']
-            }
+            })
             logging.debug('credentials loaded: aws s3')
         except ModuleNotFoundError:
                 logging.debug('credentials not found')
@@ -343,8 +355,33 @@ class Application(tk.Tk):
 
     def on_login_form(self):
         if not self.toplevels['login_form']:
-            self.toplevels['login_form'] = LoginForm(self)
+            if self.db.get_state('user_id'):
+                tk.messagebox.showinfo('info', '已登入')
+            else:
+                self.toplevels['login_form'] = LoginForm(self)
 
+
+    def on_login(self, payload):
+        user_id = payload.get('user_id')
+        email = payload.get('email')
+        name = payload.get('name')
+        if user_id:
+            self.db.set_state('user_id', user_id)
+            if name:
+                self.db.set_state('user_name', name)
+            if email:
+                self.db.set_state('user_email', email)
+
+            self.menubar.entryconfigure(1, label=f"user: {name} ({email})")
+
+    def on_logout(self):
+        if uid := self.db.get_state('user_id'):
+            tk.messagebox.showinfo('info', '已登出')
+
+        self.db.set_state('user_id', '')
+        self.db.set_state('user_name', '')
+        self.db.set_state('user_email', '')
+        self.menubar.entryconfigure(1, label='login')
 
     def get_font(self, size_code='default'):
         SIZE_MAP = {

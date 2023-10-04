@@ -1,5 +1,6 @@
 import sqlite3
 import logging
+import time
 
 SQL_INIT_SOURCE = '''
 CREATE TABLE IF NOT EXISTS source (
@@ -89,3 +90,14 @@ class Database(object):
 
     def close(self):
         self.conn.close()
+
+    def set_state(self, name, value):
+        now = int(time.time())
+        if row := self.fetch_sql(f"SELECT * FROM state WHERE name='{name}'"):
+            self.exec_sql(f"UPDATE state SET value='{value}', changed={now} WHERE name='{name}';", True)
+        else:
+            self.exec_sql(f"INSERT INTO state (name, value, changed) VALUES ('{name}', '{value}', {now})", True)
+
+    def get_state(self, name):
+        if row := self.fetch_sql(f"SELECT value FROM state WHERE name='{name}'"):
+            return row[0]

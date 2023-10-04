@@ -5,6 +5,7 @@ from tkinter import (
 from tkinter import filedialog
 import webbrowser
 from random import randint
+import time
 
 class LoginForm(tk.Toplevel):
 
@@ -23,7 +24,7 @@ class LoginForm(tk.Toplevel):
 
         self.layout()
 
-        self.verify_code = ''
+        self.code = ''
 
     def layout(self):
         s = ttk.Style()
@@ -102,13 +103,14 @@ class LoginForm(tk.Toplevel):
 
     def on_verify(self):
         val = self.verify_entry.get()
-        if val == self.verify_code:
+        if val == self.code[-4:]:
             #tk.messagebox.showinfo('info', '')
-            res = self.app.server.find_user(val)
-            if err_msg := res.get('error'):
+            resp = self.app.server.user_login_verify(self.code)
+            if err_msg := resp.get('error'):
                 tk.messagebox.showerror('登入失敗', err_msg)
-
-            self.app.menubar.entryconfigure(1, label='user: xxxxx@gmail.cow')
+            else:
+                if uid := resp['json'].get('user_id'):
+                    self.app.on_login(resp['json'])
 
             self.verify_entry['state'] = tk.DISABLED
             self.verify_code = ''
@@ -121,9 +123,9 @@ class LoginForm(tk.Toplevel):
         host = self.app.config.get('Server', 'host')
         client_id = self.app.config.get('Server', 'orcid_client_id')
 
-        self.verify_code = ''.join(["{}".format(randint(0, 9)) for num in range(0, 4)])
-
-        webbrowser.open(f'https://orcid.org/oauth/authorize?client_id={client_id}&response_type=code&scope=/authenticate&redirect_uri={host}/callback/orcid/auth?next=/desktop_login?verify_code={self.verify_code}')
+        verify_code = ''.join(["{}".format(randint(0, 9)) for num in range(0, 4)])
+        self.code = str(int(time.time())) + verify_code
+        webbrowser.open(f'https://orcid.org/oauth/authorize?client_id={client_id}&response_type=code&scope=/authenticate&redirect_uri={host}/callback/orcid/auth?next=/desktop_login?t={self.code}')
 
         self.verify_entry['state'] = tk.NORMAL
 

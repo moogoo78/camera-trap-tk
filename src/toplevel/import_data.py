@@ -338,7 +338,7 @@ class ImportData(tk.Toplevel):
         self.app.source.update_status(source_id, 'DONE_IMPORT')
 
         for i in sql_list:
-            print(i)
+            #print(i)
             self.app.db.exec_sql(i)
         self.app.db.commit()
 
