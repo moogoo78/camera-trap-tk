@@ -338,6 +338,7 @@ class Source(object):
         key = self.app.secrets.get('aws_access_key_id')
         secret = self.app.secrets.get('aws_secret_access_key')
         bucket_name = self.app.config.get('AWSConfig', 'bucket_name')
+        region = self.app.config.get('AWSConfig', 's3_region')
         ret = {
             'data': {},
             'error': ''
@@ -347,6 +348,7 @@ class Source(object):
             's3',
             aws_access_key_id=key,
             aws_secret_access_key=secret,
+            region_name=region,
         )
 
         try:
@@ -359,11 +361,14 @@ class Source(object):
             ret['data'] = response
         except ClientError as e:
             #logging.error(e)
-            print ('s3 upload error', e)
+            #print ('=========s3 upload error', e)
             ret['error'] = 's3 upload client error'
         except S3UploadFailedError as e:
-            print (e)
+            #print ('---------', e)
             ret['error'] = 's3 upload failed'
+        except Exception as e:
+            #print('xxxxxxxxxxxxxx', e)
+            ret['error'] = e
 
         return ret
 

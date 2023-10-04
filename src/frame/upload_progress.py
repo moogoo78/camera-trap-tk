@@ -444,7 +444,6 @@ class UploadProgress(tk.Frame):
             # if item['state'] == self.STATE_RUNNING:
             if not is_skip_media and self.source_list[current_source_index]['state'] == self.STATE_RUNNING:
                 logging.debug(f'🧵 uploading: {source_id}-{counter}/{num}')
-                counter = i + 1
                 path = v[1]
                 name = v[2]
                 object_id = v[4]
@@ -452,30 +451,36 @@ class UploadProgress(tk.Frame):
                 media_type = v[6]
 
                 # time.sleep(1) # fake upload
+                upload_results = []
                 if media_type == 'image':
                     thumb_paths = get_thumb(source_id, name, path, 'all-max-x')
                     for x, path in thumb_paths.items():
                         object_name = f'{object_id}-{x}.jpg'
-                        self.app.source.upload_to_s3(str(path), object_name)
+                        ret = self.app.source.upload_to_s3(str(path), object_name)
+                        upload_results.append(ret)
+                        #print(ret, '>>>>>>>>>>>>>>>>>>>>')
                 elif media_type == 'video':
                     src_path = pathlib.Path(path)
                     object_name = f'video-original/{object_id}{src_path.suffix}'
                     self.app.source.upload_to_s3(str(path), object_name)
                     self.app.source.add_media_convert(object_name)
 
-                self.action_queue.put({
-                    'type':'update_image',
-                    'source_id': source_id,
-                    'image_id': v[0],
-                    'counter': counter,
-                })
-                self.event_generate('<<event_action>>', when='tail')
+                if len(upload_results) > 0 and upload_results[0]['error'] == '':
+                    # success s3 upload
+                    counter = i + 1
+                    self.action_queue.put({
+                        'type':'update_image',
+                        'source_id': source_id,
+                        'image_id': v[0],
+                        'counter': counter,
+                    })
+                    self.event_generate('<<event_action>>', when='tail')
 
-                self.app.server.post_image_status({
-                    # 'file_url': f'{uploaded_object_id}.jpg',
-                    'has_storage': 'Y',
-                    'pk': server_image_id,
-                })
+                    self.app.server.post_image_status({
+                        # 'file_url': f'{uploaded_object_id}.jpg',
+                        'has_storage': 'Y',
+                        'pk': server_image_id,
+                    })
 
             else:
                 logging.debug(f'🧵 skip {source_id}-{counter}/{num}')

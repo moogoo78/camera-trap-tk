@@ -604,6 +604,10 @@ class Main(tk.Frame):
                             'deployment_index': index[0]
                         })
 
+        self.project_var.set(project_name)
+        self.studyarea_var.set(studyarea_name)
+        self.deployment_var.set(deployment_name)
+
 
         if test_foto_time := self.source_data['source'][11]:
             self.test_foto_val.set(test_foto_time)
@@ -702,7 +706,7 @@ class Main(tk.Frame):
 
 
     def project_option_changed(self, *args):
-        print('proj', args)
+        #print('proj', args)
 
         # reset studyarea & deployment
         self.studyarea_var.set('-- 選擇樣區 --')
@@ -730,7 +734,7 @@ class Main(tk.Frame):
 
 
     def studyarea_option_changed(self, *args):
-        print('sa', args)
+        #print('sa', args)
         selected_sa = self.studyarea_var.get()
         if selected_sa == '' or selected_sa == '-- 選擇樣區 --':
             return
@@ -758,7 +762,7 @@ class Main(tk.Frame):
 
 
     def deployment_option_changed(self, *args):
-        print('dep', args, self.deployment_var.get())
+        #print('dep', args, self.deployment_var.get())
 
         selected_dep = self.deployment_var.get()
         if selected_dep == '' or selected_dep == '-- 選擇相機位置 --':
