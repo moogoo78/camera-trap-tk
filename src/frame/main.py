@@ -545,8 +545,11 @@ class Main(tk.Frame):
         self.data_grid.main_table.init_data()
 
         # clear image sequence checked
-        self.seq_interval_val.set('')
-        self.seq_checkbox_val.set('N')
+        # self.seq_interval_val.set('')
+        # self.seq_checkbox_val.set('N')
+        # default checked to group sequence, 5mins
+        self.seq_interval_val.set(5)
+        self.seq_checkbox_val.set('Y')
 
         self.current_row_key = ''
         self.image_viewer_button.grid(row=7, column=0, sticky='sw')
