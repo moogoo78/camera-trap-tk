@@ -107,14 +107,6 @@ class Server(object):
         #else:
         #    tk.messagebox.showwarning('注意', '無網路連線')
 
-    def get_projects_DEPRECATED(self, source_id=0):
-        '''get from ini configuration'''
-        if source_id:
-            return self.get_projects_server(source_id)
-
-        else:
-            return self.get_projects_conf()
-
     def get_projects_conf(self):
         config = self.config
         opts = config.get('project_option_list', '').split(',')

@@ -206,9 +206,9 @@ class ImportData(tk.Toplevel):
 
         CONTROLLED_TERMS = {
             '物種': species_choices.split(','),
-            '年齡': antler_choices.split(','),
+            '角況': antler_choices.split(','),
             '性別': sex_choices.split(','),
-            '角況': lifestage_choices.split(','),
+            '年齡': lifestage_choices.split(','),
         }
 
         with open(file_path, encoding='utf-8') as csvfile:
@@ -223,7 +223,11 @@ class ImportData(tk.Toplevel):
                 self.treeview.insert('', tk.END, values=err_msg)
                 #tk.messagebox.showerror('錯誤', ERROR_MAP['INVALID_FORMAT'])
             else:
-                annotation_header = [v['label'] for k, v in HEADER_MAP.items()]
+                annotation_header = []
+                for k, v in HEADER_MAP.items():
+                    if k[:11] == 'annotation_':
+                        annotation_header.append((k[11:], v['label']))
+
                 for index, row in enumerate(reader):
                     index1 = index + 1
                     file_path = Path(image_dir_path, row['檔名'])
@@ -237,18 +241,18 @@ class ImportData(tk.Toplevel):
                             self.treeview.insert('', tk.END, values=err_msg)
 
                         annotation = {}
-                        for col in annotation_header:
-                            if value := row.get(col):
-                                if terms := CONTROLLED_TERMS.get(col):
+                        for col_key, col_label in annotation_header:
+                            if value := row.get(col_label):
+                                if terms := CONTROLLED_TERMS.get(col_label):
                                     if value in terms:
-                                        annotation[col] = value
+                                        annotation[col_key] = value
                                     else:
-                                        err = f'#{index1}: [{col}] {value}, 允許詞彙: {terms}'
+                                        err = f'#{index1}: [{col_label}] {value}, 允許詞彙: {terms}'
                                         err_msg = (ERROR_MAP['UNCONTROLLED_TERM'], err)
                                         self.treeview.insert('', tk.END, values=err_msg)
 
                                 else:
-                                    annotation[col] = value
+                                    annotation[col_key] = value
 
                         try:
                             ts = datetime.strptime(row['日期時間'], '%Y-%m-%d %H:%M:%S').timestamp()
@@ -266,6 +270,7 @@ class ImportData(tk.Toplevel):
                                 'annotation': []
                             }
                         self.image_map[name]['annotation'].append(annotation)
+
 
         if len(self.treeview.get_children()) > 0:
             return
@@ -342,10 +347,10 @@ class ImportData(tk.Toplevel):
             self.app.db.exec_sql(i)
         self.app.db.commit()
 
-        tk.messagebox.showinfo('成功', '匯入成功')
-
         self.quit()
         self.app.on_folder_list()
+
+        tk.messagebox.showinfo('成功', '匯入成功')
 
 
     def open_annotation_file(self):
