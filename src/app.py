@@ -66,6 +66,7 @@ class Application(tk.Tk):
         self.app_comp_color = '#FF8C23'  # Complementary color
         self.app_font = 'Microsoft JhengHei UI' #'Yu Gothic'  #'Arial'
         self.secrets = {}
+        self.contents = {}
 
         self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
@@ -141,17 +142,7 @@ class Application(tk.Tk):
 
         # process user_info
         if user_id := self.db.get_state('user_id'):
-            resp = self.server.get_user_info(user_id)
-            if data := resp.get('json'):
-                self.user_info = data['results']
-
-                logging.info('get user_info')
-                self.on_login({
-                    'user_id': user_id,
-                    'name': data['results']['user'].get('name', ''),
-                    'email': data['results']['user'].get('email', ''),
-                })
-
+            self.on_login({'user_id': user_id})
 
         # check latest version
         resp = self.server.check_update()
@@ -226,7 +217,6 @@ class Application(tk.Tk):
             height='50')
         self.appbar.grid(row=0, column=0, sticky='ew')
 
-        self.contents = {}
         self.contents['landing'] = Landing(self)
         self.contents['landing'].grid(row=1, column=0, sticky='nw')
 
@@ -362,12 +352,23 @@ class Application(tk.Tk):
                 self.toplevels['login_form'] = LoginForm(self)
 
 
-    def on_login(self, payload):
+    def on_login(self, payload,):
         logging.info(f'login: {payload}')
         user_id = payload.get('user_id')
         email = payload.get('email')
         name = payload.get('name')
+
         if user_id:
+            resp = self.server.get_user_info(user_id)
+            if data := resp.get('json'):
+                self.user_info = data['results']
+                if 'main' in self.contents:
+                    self.contents['main'].update_project_options(self.user_info['projects'])
+                logging.info('get user_info')
+                name = data['results']['user'].get('name', '')
+                email = data['results']['user'].get('email', '')
+
+            # update db
             self.db.set_state('user_id', user_id)
             if name:
                 self.db.set_state('user_name', name)
@@ -380,6 +381,8 @@ class Application(tk.Tk):
         if uid := self.db.get_state('user_id'):
             tk.messagebox.showinfo('info', '已登出')
 
+        self.user_info = {'projects': []}
+        self.contents['main'].update_project_options([])
         self.db.set_state('user_id', '')
         self.db.set_state('user_name', '')
         self.db.set_state('user_email', '')
@@ -401,23 +404,6 @@ class Application(tk.Tk):
             return (self.app_font, int(size_code))
         else:
             return (self.app_font, 10)
-
-    def toggle_image_viewer_DEPRICATED(self, is_image_viewer=True):
-        # 先不 remove main , 蓋掉就好了
-        #if not self.frames['main'].winfo_viewable():
-        #self.frames['main'].grid(row=0, column=0, sticky='nsew')
-        if is_image_viewer:
-            #self.frames['main'].data_grid.main_table.toggle_arrow_key_binding(False)
-            self.frames['image_viewer'].toggle_arrow_key_binding(True)
-            if not self.frames['image_viewer'].winfo_viewable():
-                self.frames['image_viewer'].grid(row=0, column=0, sticky='nsew')
-                self.frames['image_viewer'].init_data()
-                self.frames['image_viewer'].refresh()
-        else:
-            self.frames['main'].data_grid.main_table.toggle_arrow_key_binding(True)
-            #self.frames['image_viewer'].toggle_arrow_key_binding(False)
-            if self.frames['image_viewer'].winfo_viewable():
-                self.frames['image_viewer'].grid_remove()
 
     def quit(self):
         is_force_quit = self.config.get('Mode', 'force_quit', fallback='0')

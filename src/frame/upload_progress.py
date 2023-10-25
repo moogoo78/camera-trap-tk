@@ -490,7 +490,7 @@ class UploadProgress(tk.Frame):
             'type': 'done_source',
             'source_id': source_id,
             'is_complete': True if counter == num else False,
-            'name': source_id, #data['source_data'][3],
+            'name': item['source_data'][3]
         })
         self.event_generate('<<event_action>>', when='tail')
 
@@ -565,9 +565,9 @@ class UploadProgress(tk.Frame):
                 deployment_journal_id = item['source_data'][12]
                 if is_complete:
                     self.app.source.update_status(source_id, 'DONE_UPLOAD')
-                    tk.messagebox.showinfo('info', f'資料夾 {name}: 上傳成功')
                     # send finish upload status to server
                     self.app.server.post_upload_history(deployment_journal_id, 'finished')
+                    tk.messagebox.showinfo('info', f'資料夾 {name}: 上傳成功')
                 else:
                     if item['state'] == self.STATE_PAUSE:
                         item = self._find_source(source_id)

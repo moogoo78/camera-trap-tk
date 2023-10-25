@@ -532,6 +532,11 @@ class Main(tk.Frame):
     #         }
     #         self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
     #         logging.info('server: get project options')
+    def update_project_options(self, projects):
+        menu = self.project_menu['menu']
+        menu.delete(0, 'end')
+        for p in projects:
+            menu.add_command(label=p['name'], command=lambda x=p['name']: self.project_var.set(x))
 
     def change_source(self, source_id=None):
         logging.debug('source_id: {}'.format(source_id))
@@ -888,7 +893,7 @@ class Main(tk.Frame):
                         remote_deleted_images.append([x[0], x[2]])
                 if len(remote_deleted_images) > 0:
                     DeletedImages(self, images=remote_deleted_images)
-        return
+
         now = int(time.time())
         self.app.source.update_status(source_id, source_status, now=now)
 
@@ -1326,6 +1331,7 @@ class Main(tk.Frame):
         if dj_id := self.source_data['source'][12]:
             self.app.source.update_status(self.source_id, 'DONE_OVERRIDE_UPLOAD')
             tk.messagebox.showinfo('info', '文字資料更新成功 !')
+            self.app.server.post_upload_history(dj_id, 'finished')
             return
 
         sql = f"UPDATE source SET deployment_journal_id={self.tmp_uploading['deployment_journal_id']} WHERE source_id={self.source_id}"
