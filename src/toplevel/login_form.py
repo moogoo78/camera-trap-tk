@@ -86,6 +86,7 @@ class LoginForm(tk.Toplevel):
             text='送出',
             command=self.on_verify
         )
+        #verify_button.focus_set()
 
         # place widgets, padx=4, pady=43
         #login_label.grid(row=0, column=0, columnspan=2)

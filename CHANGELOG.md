@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [v1.1.6]
+
+### 修改
+
+- update project options after login/logout
+- post `update_upload_history` API to "finished", let server upload_history page successed if annotation override only
+- import foto, exif originalDateTime broken, use last_timestamp instead, or use file's modified time
+
 ## [v1.1.5]
 
 ### 新增

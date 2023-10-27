@@ -132,8 +132,14 @@ class ImageManager(object):
         timestamp = None
 
         if dtime:
-            dt = datetime.strptime(self.exif.get('DateTimeOriginal', ''), '%Y:%m:%d %H:%M:%S')
-            timestamp = dt.timestamp()
+            print(self.entity, self.exif.get('DateTimeOriginal', '---'))
+            try:
+                dt = datetime.strptime(self.exif.get('DateTimeOriginal', ''), '%Y:%m:%d %H:%M:%S')
+                timestamp = dt.timestamp()
+            except ValueError as err_msg:
+                logging.warning('cannot parse exif datetime format', err_msg)
+
+                timestamp = ''
         else:
             stat = self.get_stat()
             timestamp = int(stat.st_mtime)

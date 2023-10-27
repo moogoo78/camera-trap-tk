@@ -267,9 +267,9 @@ class Main(tk.Frame):
             self.project_var,
             '-- 選擇計畫 --',
             *self.project_options,
-            command=self.project_option_changed,
+            #command=self.project_option_changed,
         )
-
+        self.project_var.trace('w', self.project_option_changed)
         self.label_project.grid(row=0, column=0, **label_grid)
         self.project_menu.grid(row=0, column=1, sticky='w', padx=(left_spacing+2, 0))
 
@@ -582,6 +582,7 @@ class Main(tk.Frame):
         project_name = ''
         studyarea_name = ''
         deployment_name = ''
+        print(self.app.user_info, 'xxxxxxxxxxxxxxx')
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
             # set init value
@@ -720,7 +721,7 @@ class Main(tk.Frame):
 
 
     def project_option_changed(self, *args):
-        #print('proj', args)
+        print('proj', args)
 
         # reset studyarea & deployment
         self.studyarea_var.set('-- 選擇樣區 --')
@@ -733,7 +734,7 @@ class Main(tk.Frame):
             return
 
         index = -1
-
+        print('--------', selected_proj)
         for i, p in enumerate(self.app.user_info['projects']):
             if p['name'] == selected_proj:
                 self.upload_info.update({

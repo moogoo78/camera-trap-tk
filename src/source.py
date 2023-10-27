@@ -129,6 +129,7 @@ class Source(object):
         if not thumb_source_path.exists():
             thumb_source_path.mkdir()
 
+        last_timestamp = 0
         for entry, type_ in image_list:
             img = None
             sql = ''
@@ -140,9 +141,20 @@ class Source(object):
             if type_ == 'image':
                 img = ImageManager(entry)
                 if img.pil_handle:
+                    timestamp = ''
                     data['img'] = img
-                    ts, via = data['img'].get_timestamp()
-                    data['timestamp'] = ts
+                    timestamp, via = data['img'].get_timestamp()
+                    if timestamp == '':
+                        # 用上一張照片
+                        if last_timestamp:
+                            timestamp = last_timestamp
+                            via = 'last_timestamp'
+                        else:
+                            # 只好抓檔案
+                            if stat := data['img'].get_stat():
+                                timestamp = int(stat.st_mtime)
+                                via = 'mtime'
+                    data['timestamp'] = timestamp
                     data['via'] = via
                     sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
 
@@ -157,6 +169,8 @@ class Source(object):
                 # maybe, change folder_list.folder_importing to folder_list.progress_map and add folder_list.import_deque, don't need to sleep(05) here, 230811
                 time.sleep(0.5)
 
+            if x := data['timestamp']:
+                last_timestamp = x
             yield (data, sql)
 
 
