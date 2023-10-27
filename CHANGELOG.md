@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
-## [v1.1.6]
+## [v1.1.6] 2023-10-27
 
 ### 修改
 
@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - post `update_upload_history` API to "finished", let server upload_history page successed if annotation override only
 - import foto, exif originalDateTime broken, use last_timestamp instead, or use file's modified time
 
-## [v1.1.5]
+## [v1.1.5] 2023-10-05
 
 ### 新增
 
@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `check_import_folder` combine all import folder check rules
 - rewrite main edit window`s project/studyarea/deployment option choose, consider to login process has new user_info data structure
 
-## [v1.1.4]
+## [v1.1.4] 2023-09-05
 
 ### 修改
 
@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 連拍分組輸入如果不是數字會跳出錯誤
 - 大分頁速度慢
 
-## [v1.1.3]
+## [v1.1.3] 2023-08-17
 
 ### 修改
 
@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ct-log.txt 改成 ct-app.log (超過10MB 會自動輪替, rotate)
 
 
-## [v1.1.2]
+## [v1.1.2] 2023-06-20
 
 ### 修改
 
