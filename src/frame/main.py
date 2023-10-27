@@ -582,7 +582,7 @@ class Main(tk.Frame):
         project_name = ''
         studyarea_name = ''
         deployment_name = ''
-        print(self.app.user_info, 'xxxxxxxxxxxxxxx')
+
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
             # set init value
@@ -721,8 +721,6 @@ class Main(tk.Frame):
 
 
     def project_option_changed(self, *args):
-        print('proj', args)
-
         # reset studyarea & deployment
         self.studyarea_var.set('-- 選擇樣區 --')
         menu = self.studyarea_menu['menu']
@@ -734,7 +732,7 @@ class Main(tk.Frame):
             return
 
         index = -1
-        print('--------', selected_proj)
+
         for i, p in enumerate(self.app.user_info['projects']):
             if p['name'] == selected_proj:
                 self.upload_info.update({
@@ -1012,7 +1010,7 @@ class Main(tk.Frame):
             self.data_grid.update_text(tag, updated_display)
 
     def custom_arrow_key(self, row_key, col_key):
-        print(row_key, col_key)
+        #print(row_key, col_key)
         self.select_item(row_key, col_key)
         if self.image_detail:
             item = self.data_helper.data[row_key]
