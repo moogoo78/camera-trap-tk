@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 現有目錄頁篩選某些狀態會造成爆框問題 (一欄超過 3 個項目)
 - 上傳中，現有資料夾還是可以點進去編輯 (要擋掉)
 
-## [v1.1.1]
+## [v1.1.1] 2023-05-09
 
 ### Added
 
@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 匯入資料夾還沒處理晚離開 App 會跳出通知 (不能離開) [rc3]
 - 照片標註完狀態要馬上顯示 "已標"
 
-## [v1.0.2/v1.1.0]
+## [v1.0.2/v1.1.0] 2023-05-01
 
 ### Changed
 
@@ -97,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - skip_media_upload (忽略照片檔案上傳)
   - skip_media_display (忽略照片顯示) => 拿到別人的 ct.db 檔案，測試環境狀態用
 
-## [v1.0.0]
+## [v1.0.0] 2022-12-13
 
 ### Added:
 
