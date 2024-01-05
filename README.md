@@ -1,6 +1,7 @@
 # Camera Trap Desktop
+[CameraTrap](https://camera-trap.tw) Destop App for data upload
 
-tkinter GUI
+GUI: tkinter (Pythen)
 
 ## Documentation
 
@@ -15,7 +16,7 @@ tkinter GUI
 
 ### Requirements
 
-- Python 3.6+
+- Python 3.6+ (Recommanded: Python3.8)
 
 Note: Python 3.9.6 cannot be used on Windows 7 or earlier - [Python Releases for Windows](https://www.python.org/downloads/windows/)
 
@@ -26,43 +27,35 @@ Note: Python 3.9.6 cannot be used on Windows 7 or earlier - [Python Releases for
 - pyinstaller (for build win exe)
 - nuitka (after version 1.1.3)
 
-### Usage
+### Usage (Microsoft Windows shell)
 
 1. Install packages
 
-use poetry to manage python environment
+First create python virtual envirmont and activate it
 
-```sh
-$ poetry install
-$ poetry shell
+```powerscript
+$ python3.8 -m venv venv
+$ python3.8 .\venv\Scripts\Activate.ps1
 ```
 
 2. run
 
-```sh
-$ python ./src/app.py
-```
-
-or
-
-```
-$ poetry run python src/app.py
+```powerscript
+$(venv) python3.8 .\src\app.py
 ```
 
 use custom ini file
 
-```sh
-$ python ./src/app.py -i my-dev.ini
+```powerscript
+$(venv) python3.8 .\src\app.py -i my-dev.ini
 ```
 
 ## Build
+Can build with [PyInstaller](https://pyinstaller.org/en/stable/) or [Nuitka](https://nuitka.net/), currently `build.ps1` script use Nuitka.
 
 ```sh
-$ pyinstaller.exe --onefile -F .\src\app.py --clean
+$ build.ps1
 ```
-**⚠WARNING**: 要進去 virtualenv (poetry shell)，才不會找不到 tkdatagrid 的 module
-
-提供 config.ini file, 注意: `account_id`,
 
 ## Changes
 
