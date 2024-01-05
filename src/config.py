@@ -1,5 +1,7 @@
 import configparser
 import os
+import json
+#import logging
 
 class Config(configparser.ConfigParser):
     ini_file = None
@@ -8,6 +10,10 @@ class Config(configparser.ConfigParser):
         super().__init__()
 
         self.ini_file = ini_file
+        self.secrets = {
+            'aws_access_key_id': '',
+            'aws_secret_access_key': '',
+        }
         # copy sample if init_file not exists
         if not os.path.exists(self.ini_file):
             self.cp_sample()

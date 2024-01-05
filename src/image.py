@@ -1,10 +1,14 @@
 import hashlib
 from pathlib import Path
 from datetime import datetime
+import logging
 
 from PIL import Image as PILImage
-from PIL import ExifTags
-from PIL import TiffImagePlugin
+from PIL import (
+    ExifTags,
+    TiffImagePlugin,
+    UnidentifiedImageError,
+)
 
 THUMB_MAP = (
     ('q', (75, 75)),
@@ -79,9 +83,12 @@ class ImageManager(object):
 
     def __init__(self, path):
         self.entity = path
-        im = PILImage.open(path)
-        self.pil_handle = im
-        self.exif = self.get_exif()
+        try:
+            im = PILImage.open(path)
+            self.pil_handle = im
+            self.exif = self.get_exif()
+        except UnidentifiedImageError:
+            logging.debug(f'Image file open error: {path}')
 
     def get_exif(self):
         exif = {}
@@ -123,9 +130,16 @@ class ImageManager(object):
         via = 'exif'
         dtime = self.exif.get('DateTimeOriginal', '')
         timestamp = None
+
         if dtime:
-            dt = datetime.strptime(self.exif.get('DateTime', ''), '%Y:%m:%d %H:%M:%S')
-            timestamp = dt.timestamp()
+            print(self.entity, self.exif.get('DateTimeOriginal', '---'))
+            try:
+                dt = datetime.strptime(self.exif.get('DateTimeOriginal', ''), '%Y:%m:%d %H:%M:%S')
+                timestamp = dt.timestamp()
+            except ValueError as err_msg:
+                logging.warning('cannot parse exif datetime format', err_msg)
+
+                timestamp = ''
         else:
             stat = self.get_stat()
             timestamp = int(stat.st_mtime)

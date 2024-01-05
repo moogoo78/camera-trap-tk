@@ -7,7 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v1.0.2]
+
+## [v1.1.6] 2023-10-27
+
+### 修改
+
+- update project options after login/logout
+- post `update_upload_history` API to "finished", let server upload_history page successed if annotation override only
+- import foto, exif originalDateTime broken, use last_timestamp instead, or use file's modified time
+
+## [v1.1.5] 2023-10-05
+
+### 新增
+
+- 匯入文字資料(import_data)
+- ORCID login (login_form)
+- add app logo
+- check deployment_journal
+- deleted_images messagebox alert
+- 連拍補齊預設打開, 設定5分鐘
+
+### refactor
+
+- `check_import_folder` combine all import folder check rules
+- rewrite main edit window`s project/studyarea/deployment option choose, consider to login process has new user_info data structure
+
+## [v1.1.4] 2023-09-05
+
+### 修改
+
+- remove imageio, imageio-ffmpeg (will cause run error on certain labtop)
+- 連拍分組輸入如果不是數字會跳出錯誤
+- 大分頁速度慢
+
+## [v1.1.3] 2023-08-17
+
+### 修改
+
+- 資料夾狀態卡住，無法繼續上傳的問題
+- python 套件更新，棄 PyInstaller 改用 nuitka 產生 exe 檔
+- AWS 的 secret key 改用 module import (不會留在 config 或外部讀取的 credentials 檔案)
+- ct-log.txt 改成 ct-app.log (超過10MB 會自動輪替, rotate)
+
+
+## [v1.1.2] 2023-06-20
+
+### 修改
+
+- 影像匯入中，點擊資料夾會當掉
+- 複製內容 drag handle (小藍方塊) 上下拉時，scrollbar 要跟著動
+- 編輯表單的 drag handle (小藍方塊) 拉超出表表格會出現錯誤訊息
+- 上傳進度頁加上 scrollbar
+- 現有目錄頁篩選某些狀態會造成爆框問題 (一欄超過 3 個項目)
+- 上傳中，現有資料夾還是可以點進去編輯 (要擋掉)
+
+## [v1.1.1] 2023-05-09
+
+### Added
+
+- 檢查 App是否最新版
+- 資料夾上傳時不能編輯 (鎖住無法進入編輯畫面)
+- 上傳檔案如果有壞掉，會回傳錯誤對話框，並重新計算正確的照片數量
+- 匯入資料夾前先檢查伺服器上有無存在
+- 匯入資料集前先檢查網路 [rc2]
+- 匯入資料夾還沒處理晚離開 App 會跳出通知 (不能離開) [rc3]
+- 照片標註完狀態要馬上顯示 "已標"
+
+## [v1.0.2/v1.1.0] 2023-05-01
 
 ### Changed
 
@@ -15,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 文字上傳改流程 (上傳大資料不會 timeout)
 - 說明畫面更用 toplevel (節省記憶體)
 - 匯入資料夾處理中時，不能同時匯入其他資料夾 (對話框阻擋)
+- 影片無法播放 (測試站跟正式站在 AWS 的設定不同造成)
 
 ## [v1.0.1]
 
@@ -30,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - skip_media_upload (忽略照片檔案上傳)
   - skip_media_display (忽略照片顯示) => 拿到別人的 ct.db 檔案，測試環境狀態用
 
-## [v1.0.0]
+## [v1.0.0] 2022-12-13
 
 ### Added:
 

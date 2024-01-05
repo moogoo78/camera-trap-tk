@@ -24,9 +24,10 @@ from frame import (
 )
 from toplevel import (
     ImageDetail,
-    ConfigureKeyboardShortcut,
-    VideoPlayer,
+    #ConfigureKeyboardShortcut,
+    #VideoPlayer,
     MainMessagebox,
+    DeletedImages,
 )
 from image import (
     check_thumb,
@@ -70,6 +71,19 @@ class Main(tk.Frame):
         if self.skip_media_display not in ['0', False, '']:
             self.data_helper.columns['thumb_hide'] = self.data_helper.columns.pop('thumb')
 
+        self.upload_info = {
+            'project_id': None,
+            'project_name': None,
+            'studyarea_id': None,
+            'studyarea_name': None,
+            'deployment_id': None,
+            'deployment_name': None,
+        }
+        self.tmp_info = {
+            'project_index': None,
+            'studyarea_index': None,
+            'deployment_index': None,
+        }
         self.annotation_entry_list = []
         self.species_copy = []
         self.keyboard_shortcuts = {}
@@ -194,14 +208,15 @@ class Main(tk.Frame):
 
         self.label_folder.grid(row=0, column=0, padx=4, pady=10, sticky='nw')
 
-        conf_kb_shortcut_button = tk.Button(
-            self,
-            text='設定快捷鍵',
-            relief='flat',
-            command=lambda: ConfigureKeyboardShortcut(self.app),
-            takefocus=0,
-        )
-        conf_kb_shortcut_button.grid(row=0, column=0, padx=4, pady=34, sticky='ne')
+        # conf_kb_shortcut_button = tk.Button(
+        #     self,
+        #     text='設定快捷鍵',
+        #     relief='flat',
+        #     command=lambda: ConfigureKeyboardShortcut(self.app),
+        #     takefocus=0,
+        # )
+
+        # conf_kb_shortcut_button.grid(row=0, column=0, padx=4, pady=34, sticky='ne')
 
         export_button = tk.Button(
             self,
@@ -245,16 +260,16 @@ class Main(tk.Frame):
             text='檢視計畫',
             **label_args)
 
-        self.project_options = [x for x in self.app.cached_project_map['project']]
+        self.project_options = [x['name'] for x in self.app.user_info['projects']]
         self.project_var = tk.StringVar(self)
         self.project_menu = tk.OptionMenu(
             self.ctrl_frame2,
             self.project_var,
             '-- 選擇計畫 --',
             *self.project_options,
-            command=self.project_option_changed,
+            #command=self.project_option_changed,
         )
-
+        self.project_var.trace('w', self.project_option_changed)
         self.label_project.grid(row=0, column=0, **label_grid)
         self.project_menu.grid(row=0, column=1, sticky='w', padx=(left_spacing+2, 0))
 
@@ -473,7 +488,7 @@ class Main(tk.Frame):
             self.table_frame,
             data={},
             columns=self.data_helper.columns,
-            height= 1600-480, #self.app.app_height - 480, #760-480
+            height= 1600-480, # for user to drag window height #self.app.app_height - 480, #760-480
             width=1200,
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
@@ -499,8 +514,8 @@ class Main(tk.Frame):
                 'arrow_key': ('after', self.custom_arrow_key),
                 'set_data': ('after', self.custom_set_data),
                 'to_page': self.custom_to_page,  # after
+                'paste_from_buffer': ('after', self.custom_paste_from_buffer),
                 #'apply_pattern': self.custom_apply_pattern,
-                # 'paste_from_buffer': self.custom_paste_from_buffer,
             },
         })
         self.data_grid.grid(row=0, column=0, sticky='nsew')
@@ -517,6 +532,11 @@ class Main(tk.Frame):
     #         }
     #         self.id_map['project'] = {x['name']: x['project_id'] for x in self.projects}
     #         logging.info('server: get project options')
+    def update_project_options(self, projects):
+        menu = self.project_menu['menu']
+        menu.delete(0, 'end')
+        for p in projects:
+            menu.add_command(label=p['name'], command=lambda x=p['name']: self.project_var.set(x))
 
     def change_source(self, source_id=None):
         logging.debug('source_id: {}'.format(source_id))
@@ -530,8 +550,11 @@ class Main(tk.Frame):
         self.data_grid.main_table.init_data()
 
         # clear image sequence checked
-        self.seq_interval_val.set('')
-        self.seq_checkbox_val.set('N')
+        # self.seq_interval_val.set('')
+        # self.seq_checkbox_val.set('N')
+        # default checked to group sequence, 5mins
+        self.seq_interval_val.set(5)
+        self.seq_checkbox_val.set('Y')
 
         self.current_row_key = ''
         self.image_viewer_button.grid(row=7, column=0, sticky='sw')
@@ -541,7 +564,7 @@ class Main(tk.Frame):
     #@profile
     def refresh(self, is_init_highlight=False):
         self.is_editing = False
-        logging.debug(f'refresh: {self.source_id}, current_row_key: {self.current_row_key}')
+        logging.info(f'refresh: {self.source_id}, current_row_key: {self.current_row_key}')
 
         #self.data_helper.set_status_display(image_id=35, status_code='300')-
         # let project image group intervel entry off focus
@@ -555,52 +578,51 @@ class Main(tk.Frame):
         if status := self.source_data['source'][6]:
             self.data_helper.source_id_status = [self.source_id, status]
 
-        has_default = False
+        #has_default = False
+        project_name = ''
+        studyarea_name = ''
+        deployment_name = ''
+
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
             # set init value
             parsed_project_id = None
             parsed_project_name = None
             # set order matter ! for dependency on_change
-            # TODO
-            # 1) set studyarea
-            if x := d.get('studyarea_name', ''):
-                self.studyarea_var.set(x)
-                has_default = True
-            elif y:= d['parsed'].get('studyarea', ''):
-                if sa := self.server_project_map['studyarea'].get(y, ''):
-                    self.studyarea_var.set(y)
-                    d['studyarea_name'] = y
-                    d['studyarea_id'] = sa.get('id', '')
-                    parsed_project_id = self.server_project_map['studyarea'][y].get('project_id', '')
-                    for name, value in self.server_project_map['project'].items():
-                        if value['id'] == parsed_project_id:
-                            parsed_project_name = name
 
-            # 2) set project
-            if x := d.get('project_name', ''):
-                self.project_var.set(x)
-                has_default = True
-            elif parsed_project_name:
-                self.project_var.set(parsed_project_name)
+            if x := d.get('project_name'):
+                project_name = x
+            if x := d.get('studyarea_name'):
+                studyarea_name = x
+            if x := d.get('deployment_name'):
+                deployment_name = x
 
-            # 3) set deployment
-            if x := d.get('deployment_name', ''):
-                self.deployment_var.set(x)
-                has_default = True
-            elif y:= d['parsed'].get('deployment', ''):
-                if self.app.cached_project_map['deployment'].get(y, ''):
-                    self.deployment_var.set(y)
-                    d['deployment_name'] = y
-                    d['deployment_id'] = self.server_project_map['deployment'][y]['id']
-                    # save to db
-                    sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(d), self.source_id)
-                    self.app.db.exec_sql(sql, True)
+            if self.app.user_info['projects']:
+                if project_name:
+                    index = [i for i, p in enumerate(self.app.user_info['projects']) if p['name'] == project_name]
+                    if len(index):
+                        self.tmp_info.update({
+                            'project_index': index[0]
+                        })
+                if studyarea_name:
+                    if self.tmp_info['project_index'] >= 0:
+                        index = [i for i, sa in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas']) if sa['name'] == studyarea_name]
+                        if len(index):
+                            self.tmp_info.update({
+                                'studyarea_index': index[0]
+                            })
+                if deployment_name:
+                    if self.tmp_info['project_index'] >= 0 and self.tmp_info['studyarea_index'] >= 0:
+                        index = [i for i, dep in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas'][self.tmp_info['studyarea_index']]['deployments']) if dep['name'] == deployment_name]
+                        if len(index):
+                            self.tmp_info.update({
+                                'deployment_index': index[0]
+                            })
 
-        if has_default is False:
-            self.project_var.set('')
-            self.studyarea_var.set('')
-            self.deployment_var.set('')
+        self.project_var.set(project_name)
+        self.studyarea_var.set(studyarea_name)
+        self.deployment_var.set(deployment_name)
+
 
         if test_foto_time := self.source_data['source'][11]:
             self.test_foto_val.set(test_foto_time)
@@ -636,7 +658,12 @@ class Main(tk.Frame):
         end = cur_page * num
 
         self.seq_info = None
-        seq_int = self.seq_interval_val.get()
+        try:
+            seq_int = self.seq_interval_val.get()
+            seq_int = int(seq_int)
+        except ValueError:
+            seq_int = 0
+
         if self.seq_checkbox_val.get() == 'Y' and seq_int:
             self.seq_info = self.data_helper.group_image_sequence(seq_int)
             # change DataGrid.main_table.render_box color
@@ -692,18 +719,36 @@ class Main(tk.Frame):
 
         self.is_editing = True
 
+
     def project_option_changed(self, *args):
-        #print('proj', args)
         # reset studyarea & deployment
         self.studyarea_var.set('-- 選擇樣區 --')
         menu = self.studyarea_menu['menu']
         menu.delete(0, 'end')
 
         selected_proj = self.project_var.get()
-        if project := self.app.cached_project_map['project'].get(selected_proj):
-            for name, value in self.app.cached_project_map['studyarea'].items():
-                if value['project_id'] == project['id']:
-                    menu.add_command(label=name, command=lambda x=name: self.studyarea_var.set(x))
+
+        if not self.app.user_info['projects']:
+            return
+
+        index = -1
+
+        for i, p in enumerate(self.app.user_info['projects']):
+            if p['name'] == selected_proj:
+                self.upload_info.update({
+                    'project_id': p['project_id'],
+                    'project_name': p['name'],
+                })
+                self.tmp_info.update({
+                    'project_index': i
+                })
+                index = i
+                break
+
+        if index >= 0:
+            for sa in self.app.user_info['projects'][index]['studyareas']:
+                menu.add_command(label=sa['name'], command=lambda x=sa['name']: self.studyarea_var.set(x))
+
 
     def studyarea_option_changed(self, *args):
         #print('sa', args)
@@ -716,63 +761,68 @@ class Main(tk.Frame):
         menu = self.deployment_menu['menu']
         menu.delete(0, 'end')
 
-        if studyarea := self.app.cached_project_map['studyarea'].get(selected_sa, ''):
-            studyarea = self.app.cached_project_map['studyarea'][selected_sa]
-            items = []
-            for key, value in self.app.cached_project_map['deployment'].items():
-                if key == '{}::{}'.format(selected_sa, value['name']):
-                    #menu.add_command(label=value['name'], command=lambda x=value['name']: self.deployment_var.set(x))
-                    items.append(value['name'])
-            for name in human_sorting(items):
-                menu.add_command(label=name, command=lambda x=name: self.deployment_var.set(x))
+        if not self.app.user_info['projects']:
+            return
+
+        index = -1
+        for i, sa in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas']):
+            if sa['name'] == selected_sa:
+                self.upload_info.update({
+                    'studyarea_id': sa['studyarea_id'],
+                    'studyarea_name': sa['name'],
+                })
+                self.tmp_info.update({
+                    'studyarea_index': i
+                })
+                index = i
+                break
+
+        for dep in self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas'][self.tmp_info['studyarea_index']]['deployments']:
+            menu.add_command(label=dep['name'], command=lambda x=dep['name']: self.deployment_var.set(x))
+
 
     def deployment_option_changed(self, *args):
-        #print('dep', args)
+        #print('dep', args, self.deployment_var.get())
+
         selected_dep = self.deployment_var.get()
         if selected_dep == '' or selected_dep == '-- 選擇相機位置 --':
             return
 
-        deployment_id = None
-        studyarea_id = None
-        project_id = None
-        project_name = self.project_var.get()
-        if x := self.app.cached_project_map['project'].get(project_name):
-            project_id = x['id']
+        if not self.app.user_info['projects']:
+            return
 
-        studyarea_name = self.studyarea_var.get()
-        if x := self.app.cached_project_map['studyarea'].get(studyarea_name):
-            studyarea_id = x['id']
-            dep_key = '{}::{}'.format(studyarea_name, selected_dep)
+        index = -1
+        for i, dep in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas'][self.tmp_info['studyarea_index']]['deployments']):
+            if dep['name'] == selected_dep:
+                self.upload_info.update({
+                    'deployment_id': dep['deployment_id'],
+                    'deployment_name': dep['name'],
+                })
+                self.tmp_info.update({
+                    'deployment_index': i
+                })
+                index = i
+                break
 
-            if x := self.app.cached_project_map['deployment'][dep_key]:
-                deployment_id = x['id']
 
-        update_db = False
+        to_update = False
         descr = {}
         if db_descr := self.source_data['source'][7]:
             descr = json.loads(db_descr)
-            if deployment_id != descr.get('deployment_id'):
-                update_db = True
+            if self.upload_info['deployment_id'] != descr.get('deployment_id'):
+                to_update = True
         else:
             # new
-            update_db = True
-        if update_db:
-            descr.update({
-                'deployment_id': deployment_id,
-                'deployment_name': selected_dep,
-                'studyarea_id': studyarea_id,
-                'studyarea_name': studyarea_name,
-                'project_id': project_id,
-                'project_name': project_name,
-            })
+            to_update = True
 
+        if to_update:
             # save to db
+            descr.update(self.upload_info)
             sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(descr), self.source_id)
             self.app.db.exec_sql(sql, True)
 
             # update source_data (for upload: first time import folder, get no deployment_id even if selected)
             self.source_data = self.app.source.get_source(self.source_id)
-
             #tk.messagebox.showinfo('info', '已設定相機位置')
 
 
@@ -829,6 +879,20 @@ class Main(tk.Frame):
            not self.source_data['source'][14]:
             source_status = 'START_UPLOAD' # first upload
 
+        folder_name = self.source_data['source'][3]
+        deployment_journal_id = self.source_data['source'][12]
+
+        if deployment_journal_id:
+            if res := self.app.server.check_deployment_journal_upload_status(deployment_journal_id):
+                saved_image_ids = res['json'].get('saved_image_ids')
+                remote_deleted_images = []
+                for x in image_list:
+                    image_id = str(x[0])
+                    if image_id not in saved_image_ids:
+                        remote_deleted_images.append([x[0], x[2]])
+                if len(remote_deleted_images) > 0:
+                    DeletedImages(self, images=remote_deleted_images)
+
         now = int(time.time())
         self.app.source.update_status(source_id, source_status, now=now)
 
@@ -838,12 +902,11 @@ class Main(tk.Frame):
             'deployment_id': deployment_id,
             'trip_start':self.trip_start_var.get(),
             'trip_end': self.trip_end_var.get(),
-            'folder_name': self.source_data['source'][3],
+            'folder_name': folder_name,
             'source_id': self.source_data['source'][0],
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
-            'deployment_journal_id': self.source_data['source'][12],
+            'deployment_journal_id': deployment_journal_id,
         }
-
 
         if not is_override:
             sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
@@ -908,6 +971,7 @@ class Main(tk.Frame):
         current_row is already set by DataGrid
         set current_image_data
         '''
+        logging.debug(f'select_item: {row_key}, {col_key}')
         if row_key is None or col_key is None:
             return
 
@@ -937,10 +1001,16 @@ class Main(tk.Frame):
             #row_key, col_key = self.data_grid.main_table.get_rc_key(rc[0], rc[1])
             #self.data_grid.main_table.set_data_value(row_key, col_key, 'vv')
             # update status_display
-            self.data_helper.set_status_display(row_key, status_code='20')
-            self.data_grid.main_table.render()
+            updated_display = self.data_helper.set_status_display(row_key, status_code='20')
+
+
+            #self.data_grid.main_table.render() # donnot re-render, super slow!
+            tag = f'cell-text:{row_key}_status_display'
+            #self.data_grid.main_table.itemconfig(tag, text=updated_display)
+            self.data_grid.update_text(tag, updated_display)
 
     def custom_arrow_key(self, row_key, col_key):
+        #print(row_key, col_key)
         self.select_item(row_key, col_key)
         if self.image_detail:
             item = self.data_helper.data[row_key]
@@ -1066,8 +1136,8 @@ class Main(tk.Frame):
             # self.app.frames['folder_list'].refresh_source_list()
             self.refresh()
 
-    def custom_paste_from_buffer(self, buf, rows):
-        #print('paste !!', buf, rows)
+    def custom_paste_from_buffer(self, buf):
+        # print('paste !!', buf)
         self.refresh()
 
     # def custom_apply_pattern(self, pattern_copy, selected):
@@ -1260,6 +1330,7 @@ class Main(tk.Frame):
         if dj_id := self.source_data['source'][12]:
             self.app.source.update_status(self.source_id, 'DONE_OVERRIDE_UPLOAD')
             tk.messagebox.showinfo('info', '文字資料更新成功 !')
+            self.app.server.post_upload_history(dj_id, 'finished')
             return
 
         sql = f"UPDATE source SET deployment_journal_id={self.tmp_uploading['deployment_journal_id']} WHERE source_id={self.source_id}"

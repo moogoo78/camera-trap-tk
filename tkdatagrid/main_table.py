@@ -287,7 +287,9 @@ class MainTable(tk.Canvas):
 
             # scroll if mouse drag down
             # donnot use canvasy(), y will accumulate while scroll down
-            if event.y >= self.height-20:
+            #print('----', self.height, event.y, self.ps['height_adjusted'])
+            h_limit = self.ps.get('height_adjusted', 0)
+            if event.y >= h_limit - 20:
                 self.to_scroll('down')
             elif event.y <= 20:
                 self.to_scroll('up')
@@ -983,7 +985,6 @@ class MainTable(tk.Canvas):
     def handle_arrow_key(self, event):
         row, col = self.current_rc
         last_rc = self.current_rc
-
         if row == None:
             return
 
@@ -1172,6 +1173,11 @@ class MainTable(tk.Canvas):
         #        selected['drag_start'][0] + num_clip_row - 1,
         #        selected['drag_start'][1] + num_clip_col - 1
         #    ]
+
+        # prevent no source error, source: [None, None, None]
+        if None in source:
+            return
+
         for i, row in enumerate(range(source[0],source[2] + 1)):
             row_key = clip_keys[i % num_clip_row]
             for j, col in enumerate(range(source[1], source[3] + 1)):
@@ -1181,8 +1187,9 @@ class MainTable(tk.Canvas):
                 target_row_key, target_col_key = self.get_rc_key(row, col)
                 self.set_data_value(target_row_key, target_col_key, value)
         self.delete('copy-box')
-        # return (buf, res)
-        # return (clip, self.selected)
+
+        # should return tuple to activate custom_action wrapper
+        return (clip, )
 
     def clear_pattern(self):
         self.pattern_copy = []

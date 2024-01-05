@@ -1,5 +1,6 @@
 import sqlite3
 import logging
+import time
 
 SQL_INIT_SOURCE = '''
 CREATE TABLE IF NOT EXISTS source (
@@ -41,6 +42,13 @@ CREATE TABLE IF NOT EXISTS image (
   FOREIGN KEY (source_id) REFERENCES source(source_id)
 );'''
 
+SQL_INIT_STATE = '''
+CREATE TABLE IF NOT EXISTS state (
+  name TEXT PRIMARY KEY,
+  value TEXT,
+  changed INTEGER
+);'''
+
 class Database(object):
     conn = None
     cursor = None
@@ -57,6 +65,7 @@ class Database(object):
     def init(self):
         self.cursor.execute(SQL_INIT_SOURCE)
         self.cursor.execute(SQL_INIT_IMAGE)
+        self.cursor.execute(SQL_INIT_STATE)
 
     def exec_sql(self, sql, commit=False):
         logging.debug(sql)
@@ -81,3 +90,14 @@ class Database(object):
 
     def close(self):
         self.conn.close()
+
+    def set_state(self, name, value):
+        now = int(time.time())
+        if row := self.fetch_sql(f"SELECT * FROM state WHERE name='{name}'"):
+            self.exec_sql(f"UPDATE state SET value='{value}', changed={now} WHERE name='{name}';", True)
+        else:
+            self.exec_sql(f"INSERT INTO state (name, value, changed) VALUES ('{name}', '{value}', {now})", True)
+
+    def get_state(self, name):
+        if row := self.fetch_sql(f"SELECT value FROM state WHERE name='{name}'"):
+            return row[0]

@@ -43,7 +43,7 @@ def make_request_urllib(url, headers=None, data=None, is_json=False):
         method = 'GET' if data == None else 'POST'
         logging.info(f'{method} {url} | {response.status}')
         ret['body'] = response.read() # 如果先 return response, read() 內容會不見
-        ret['response'] = response        
+        ret['response'] = response
         '''urlopen
         # ssl._create_default_https_context = ssl._create_unverified_context
         context = ssl._create_unverified_context() # bad idea for disabled check
@@ -88,10 +88,11 @@ def make_request_urllib(url, headers=None, data=None, is_json=False):
         return ret
 
 class Server(object):
-    def __init__(self, config):
-        'config already transform to dict'
-        self.config = config
-        if config.get('no_network', '') == 'yes':
+    def __init__(self, parent):
+        #'config already transform to dict'
+        self.app = parent
+        self.config = dict(parent.config['Server'])
+        if self.config.get('no_network', '') == 'yes':
             return None
 
         #has_network = self.ping()
@@ -105,14 +106,6 @@ class Server(object):
         #    self.projects = self.get_projects()
         #else:
         #    tk.messagebox.showwarning('注意', '無網路連線')
-
-    def get_projects_DEPRECATED(self, source_id=0):
-        '''get from ini configuration'''
-        if source_id:
-            return self.get_projects_server(source_id)
-
-        else:
-            return self.get_projects_conf()
 
     def get_projects_conf(self):
         config = self.config
@@ -129,6 +122,7 @@ class Server(object):
     def get_projects_server(self, source_id=0):
         config = self.config
         project_api_prefix = f"{config['host']}{config['project_api']}"
+
         if source_id:
             # r = requests.get(f'{project_api_prefix}{source_id}/')
             # return r.json()
@@ -142,8 +136,6 @@ class Server(object):
 
             #if x:= resp.get('response'):
             #    x.close()
-
-        # else: # TODO
             # r = requests.get(project_api_prefix)
             # return r.json()['results']
             #body, response = make_request(project_api_prefix)
@@ -383,3 +375,21 @@ class Server(object):
         '''
         url = f"{self.config['host']}{self.config['check_deployment_journal_upload_status_api']}{deployment_journal_id}/"
         return self.make_request(url)
+
+    def check_update(self):
+        ver = self.app.version.split(' ')[0]
+        url = f"{self.config['host']}{self.config['check_update_api']}{ver}/"
+        return self.make_request(url)
+
+    def check_folder(self, name=''):
+        url = f"{self.config['host']}{self.config['check_folder_api']}{name}/"
+        return self.make_request(url)
+
+    def user_login_verify(self, code):
+        url = f"{self.config['host']}{self.config['user_login_verify_api']}?code={code}"
+        return self.make_request(url)
+
+    def get_user_info(self, user_id):
+        if user_id:
+            url = f"{self.config['host']}{self.config['user_info_api']}{user_id}/"
+            return self.make_request(url)

@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 import json
 import re
+import logging
 
 import boto3
 from botocore.exceptions import ClientError
@@ -85,14 +86,6 @@ class Source(object):
             return True
         return False
 
-    def get_folder_path(self, folder):
-        db = self.db
-        folder_path = Path(folder)
-        exist = self.db.fetch_sql("SELECT * FROM source WHERE path='{}'".format(folder_path))
-        if exist:
-            return ''
-        return folder_path
-
     def get_image_list(self, folder_path):
         db = self.db
 
@@ -136,29 +129,87 @@ class Source(object):
         if not thumb_source_path.exists():
             thumb_source_path.mkdir()
 
+        last_timestamp = 0
         for entry, type_ in image_list:
             img = None
+            sql = ''
             data = {
                 'path': entry.as_posix(),
                 'name': entry.name,
             }
 
             if type_ == 'image':
-                data['img'] = ImageManager(entry)
-                ts, via = data['img'].get_timestamp()
-                data['timestamp'] = ts
-                data['via'] = via
-                sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
+                img = ImageManager(entry)
+                if img.pil_handle:
+                    timestamp = ''
+                    data['img'] = img
+                    timestamp, via = data['img'].get_timestamp()
+                    if timestamp == '':
+                        # 用上一張照片
+                        if last_timestamp:
+                            timestamp = last_timestamp
+                            via = 'last_timestamp'
+                        else:
+                            # 只好抓檔案
+                            if stat := data['img'].get_stat():
+                                timestamp = int(stat.st_mtime)
+                                via = 'mtime'
+                    data['timestamp'] = timestamp
+                    data['via'] = via
+                    sql = self.prepare_image_sql_and_thumb(data, ts_now, source_id, thumb_source_path)
+
             elif type_ == 'video':
-                print(entry, 'video')
+                #print(entry, 'video')
                 data['mov'] = entry
                 stat = data['mov'].stat()
                 data['timestamp'] = int(stat.st_mtime)
                 data['via'] = 'mtime'
                 sql = self.prepare_video_sql(data, ts_now, source_id, thumb_source_path)
                 # HACK: if video process too fast, folder_list.folder_importing will has empty value, cause error while update
+                # maybe, change folder_list.folder_importing to folder_list.progress_map and add folder_list.import_deque, don't need to sleep(05) here, 230811
                 time.sleep(0.5)
+
+            if x := data['timestamp']:
+                last_timestamp = x
             yield (data, sql)
+
+
+    def gen_import_file2(self, source_id, image_map, folder_path):
+        '''for import from annotation file'''
+
+        # mkdir thumbnails dir
+        thumb_conf = 'thumbnails' # TODO config
+        thumb_path = Path(thumb_conf)
+        if not thumb_path.exists():
+            thumb_path.mkdir()
+
+        thumb_source_path = thumb_path.joinpath(f'{source_id}')
+        if not thumb_source_path.exists():
+            thumb_source_path.mkdir()
+
+        for name, data in image_map.items():
+            data['_img'] = None
+            data['_file_path_posix'] = data['_file_path'].as_posix()
+            if data['_file_type'] == 'image':
+                img = ImageManager(data['_file_path'])
+                if img.pil_handle:
+                    data['_img'] = img
+                    data['_exif'] = img.exif
+                    data['_img_hash'] = img.make_hash()
+                    make_thumb(data['_file_path'], thumb_source_path)
+
+            # elif type_ == 'video': # TODO
+            #     #print(entry, 'video')
+            #     data['mov'] = entry
+            #     stat = data['mov'].stat()
+            #     data['timestamp'] = int(stat.st_mtime)
+            #     data['via'] = 'mtime'
+                #sql = self.prepare_video_sql(data, ts_now, source_id, thumb_source_path)
+                # HACK: if video process too fast, folder_list.folder_importing will has empty value, cause error while update
+                # maybe, change folder_list.folder_importing to folder_list.progress_map and add folder_list.import_deque, don't need to sleep(05) here, 230811
+                time.sleep(0.5)
+
+            yield data
 
 
     def prepare_video_sql(self, i, ts_now, source_id, thumb_source_path):
@@ -226,8 +277,8 @@ class Source(object):
         }
 
     def add_media_convert(self, object_name):
-        key = self.app.config.get('AWSConfig', 'access_key_id')
-        secret = self.app.config.get('AWSConfig', 'secret_access_key')
+        key = self.app.secrets.get('aws_access_key_id')
+        secret = self.app.secrets.get('aws_secret_access_key')
         bucket_name = self.app.config.get('AWSConfig', 'bucket_name')
         region = self.app.config.get('AWSConfig', 'mediaconvert_region')
         endpoint = self.app.config.get('AWSConfig', 'mediaconvert_endpoint')
@@ -298,9 +349,10 @@ class Source(object):
         )
 
     def upload_to_s3(self, file_path, object_name):
-        key = self.app.config.get('AWSConfig', 'access_key_id')
-        secret = self.app.config.get('AWSConfig', 'secret_access_key')
+        key = self.app.secrets.get('aws_access_key_id')
+        secret = self.app.secrets.get('aws_secret_access_key')
         bucket_name = self.app.config.get('AWSConfig', 'bucket_name')
+        region = self.app.config.get('AWSConfig', 's3_region')
         ret = {
             'data': {},
             'error': ''
@@ -310,6 +362,7 @@ class Source(object):
             's3',
             aws_access_key_id=key,
             aws_secret_access_key=secret,
+            region_name=region,
         )
 
         try:
@@ -322,11 +375,14 @@ class Source(object):
             ret['data'] = response
         except ClientError as e:
             #logging.error(e)
-            print ('s3 upload error', e)
+            #print ('=========s3 upload error', e)
             ret['error'] = 's3 upload client error'
         except S3UploadFailedError as e:
-            print (e)
+            #print ('---------', e)
             ret['error'] = 's3 upload failed'
+        except Exception as e:
+            #print('xxxxxxxxxxxxxx', e)
+            ret['error'] = e
 
         return ret
 
@@ -342,7 +398,49 @@ class Source(object):
         if thumb_dir_path.exists():
             shutil.rmtree(thumb_dir_path, ignore_errors=True)
 
-    def check_folder_name_format(self, folder_name):
+    def check_import_folder(self, folder_path):
+        '''combine check folder rules
+        ret: error_message, results
+        '''
+
+        results = {
+            'error': ''
+        }
+
+        # check network
+        resp = self.app.server.check_folder('FAKE-FOLDER-NAME-FOR-CHECK-NETWORK')
+
+        if err_msg := resp.get('error', ''):
+            results['error'] = err_msg
+            return results
+
+        resp = self.app.server.check_folder(folder_path)
+        if resp['error'] == '' and resp['json'].get('is_exist') == True:
+            results['error'] = '伺服器上已經有同名的資料夾'
+            return results
+
+        if exist := self.app.db.fetch_sql(f"SELECT * FROM source WHERE path='{folder_path}'"):
+            results['error'] = '已經加過此資料夾'
+            return results
+
+        # check folder name syntax
+        parsed_format = None
+        if check := self.app.config.get('Mode', 'check_folder_format', fallback=False):
+            # check falsy
+            if check not in ['False', '0', 0]:
+                parsed_format = self._check_folder_name_format(folder_path.name)
+                logging.info(parsed_format)
+
+                if err := parsed_format.get('error'):
+                    results['error'] = f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd-YYYYmmdd]\n 範例: HC04-20190304-20190506'
+                    return results
+                else:
+                    #parsed_format = result
+                    results['parsed_format'] = parsed_format
+
+        return results
+
+    def _check_folder_name_format(self, folder_name):
         # rules from config, too complicate
         # regex = self.app.config.get('Format', 'folder_name_regex')
         # date_format = self.app.config.get('Format', 'date_format')

@@ -1,7 +1,9 @@
 import threading
+from collections import deque
 from datetime import datetime
 import logging
 import re
+from pathlib import Path
 
 import tkinter as tk
 from tkinter import (
@@ -18,15 +20,14 @@ from PIL import (
 
 from utils import create_round_polygon
 
-
 class FolderList(tk.Frame):
 
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.app = parent
 
-        self.folder_importing = {}
-
+        self.progress_map = {}
+        self.import_deque = deque() # now only accept one importing
         #self.delete_button_list = []
 
         self.layout()
@@ -123,10 +124,22 @@ class FolderList(tk.Frame):
         self.refresh_source_list()
         showinfo(message='完成匯入資料夾')
 
+        done_source_id = self.import_deque.popleft()
+        logging.info(f'done folder import and create source_id: {done_source_id}')
+
     def add_folder_worker(self, src, source_id, image_list, folder_path):
+        self.import_deque.append(source_id)
+
         image_sql_list = []
         folder_date_range = [0, 0]
+        count_image = 0
         for i, (data, sql) in enumerate(src.gen_import_file(source_id, image_list, folder_path)):
+
+            if not sql:
+                tk.messagebox.showerror('error', f"{data['path']} 檔案損毀無法讀取")
+                continue
+
+            count_image += 1
             image_sql_list.append(sql)
             # print (data)
             if folder_date_range[0] == 0 or folder_date_range[1] == 0:
@@ -138,42 +151,35 @@ class FolderList(tk.Frame):
                 elif data['timestamp'] > folder_date_range[1]:
                     folder_date_range[1] = data['timestamp']
 
-            #print(sql, self.folder_importing)
-            if source_id in self.folder_importing:
-                self.folder_importing[source_id]['prog_bar']['value'] = i+1
-                self.folder_importing[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
+            if source_id in self.progress_map:
+                # update progress bar
+                self.progress_map[source_id]['prog_bar']['value'] = i+1
+                self.progress_map[source_id]['label']['text'] = '{} ({}/{})'.format(image_list[i][0].name, i+1, len(image_list))
 
         sql_date_range = f'UPDATE source SET trip_start={folder_date_range[0]}, trip_end={folder_date_range[1]} WHERE source_id={source_id}'
         image_sql_list.append(sql_date_range)
+
+        sql_count_image = f'UPDATE source SET count={count_image} WHERE source_id={source_id}'
+        image_sql_list.append(sql_count_image)
         self.app.after(100, lambda: self.exec_sql_list(image_sql_list, source_id))
 
     def add_folder(self):
+
         directory = fd.askdirectory()
         if not directory:
             return False
 
+        folder_path = Path(directory)
         src = self.app.source
-        folder_path = src.get_folder_path(directory)
 
-        if not folder_path:
-            tk.messagebox.showinfo('info', '已經加過此資料夾')
-            return False
+        result = src.check_import_folder(folder_path)
+        if err_msg := result.get('error'):
+            tk.messagebox.showinfo('注意', err_msg)
+            return
 
-        # check folder name syntax
-        parsed_format = None
-        if check := self.app.config.get('Mode', 'check_folder_format', fallback=False):
-            # check falsy
-            if check not in ['False', '0', 0]:
-                result = src.check_folder_name_format(folder_path.name)
-                logging.info(result)
+        parsed_format = result.get('parsed_format', '')
 
-                if err := result.get('error'):
-                    tk.messagebox.showerror('注意', f'"{folder_path.name}" 目錄格式不符: {err}\n\n[相機位置標號-YYYYmmdd-YYYYmmdd]\n 範例: HC04-20190304-20190506')
-                    return
-                else:
-                    parsed_format = result
-
-
+        # start import
         image_list = src.get_image_list(folder_path)
         if num_images := len(image_list):
             source_id = src.create_import_directory(num_images, folder_path, parsed_format)
@@ -190,10 +196,10 @@ class FolderList(tk.Frame):
 
         # clear items
         self.canvas.delete('item')
-        for _, item in self.folder_importing.items():
+        for _, item in self.progress_map.items():
             item['prog_bar'].destroy()
             item['label'].destroy()
-        self.folder_importing = {}
+        self.progress_map = {}
         #print(self.delete_button_list)
         # for i in self.delete_button_list:
         #     print(i)
@@ -208,7 +214,9 @@ class FolderList(tk.Frame):
         start_y = 124
         shift_x = 0 # shift
         shift_y = 0
+        display_item_counter = 0
         for i, r in enumerate(rows):
+            is_lock_editing = False
             # print(r[0],r[6],  'xxxxxxxxxxxxxxxxxxxx')
             upload_created = datetime.fromtimestamp(r[13]).strftime('%Y-%m-%d %H:%M') if r[13] else ''
             upload_changed = datetime.fromtimestamp(r[14]).strftime('%Y-%m-%d %H:%M') if r[14] else ''
@@ -227,6 +235,7 @@ class FolderList(tk.Frame):
             ylist = [y, y, y + 150, y + 150]
 
             source_tag = f'source_{r[0]}'
+            #print(xlist, ylist, r[3], r[6])
             create_round_polygon(
                 self.canvas,
                 xlist,
@@ -310,13 +319,13 @@ class FolderList(tk.Frame):
             )
 
             if r[6] == self.app.source.STATUS_START_IMPORT:
-                # importing progress bar
+                # for display importing progress bar
                 box = tk.Frame(self, width=180, background='#FFFFFF')
                 prog_bar = ttk.Progressbar(box, orient=tk.HORIZONTAL, length=180, value=0, mode='determinate', maximum=r[4])
                 prog_bar.grid(row=0, column=0)
                 label = ttk.Label(box, text='', background='#FFFFFF')
                 label.grid(row=1, column=0)
-                self.folder_importing[r[0]] = {'prog_bar': prog_bar, 'label': label}
+                self.progress_map[r[0]] = {'prog_bar': prog_bar, 'label': label}
                 self.canvas.create_window(
                     x+94,
                     gap-1,
@@ -350,6 +359,12 @@ class FolderList(tk.Frame):
             elif r[6][0] == 'b': #TODO
                 icon = self.uploading_icon
 
+            #is_lock_editing = True
+            #elif  r[6] == self.app.source.STATUS_START_IMPORT:
+            #    if len(self.import_deque) > 0 and r[0] == self.import_deque[0]:
+            #        print(self.import_deque, r[0], self.import_deque[0])
+            #        self.is_lock_editing = True
+
             self.canvas.create_image(
                 x+228,
                 gap-28,
@@ -357,10 +372,13 @@ class FolderList(tk.Frame):
                 anchor='nw',
                 tags=('item', status_cat, source_tag))
 
-            self.canvas.tag_bind(
-                source_tag,
-                '<ButtonPress>',
-                lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
+            if is_lock_editing is not True:
+                self.canvas.tag_bind(
+                    source_tag,
+                    '<ButtonPress>',
+                    lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
+            else:
+                self.canvas.tag_unbind(source_tag, '<ButtonPress>')
 
             # 改成進入 frame.main 後再刪
             # if r[6] == self.app.source.STATUS_START_IMPORT: # 匯入失敗
@@ -384,17 +402,16 @@ class FolderList(tk.Frame):
 
 
             shift_x += 316  # 300 + 16
-            if i > 0 and (i+1) % 3 == 0:
+            if display_item_counter > 0 and (display_item_counter+1) % 3 == 0:
                 row_count += 1
                 shift_y += 162  # 150 + 12
                 shift_x = 0
+            display_item_counter += 1
 
         # reset scrollregion
         if row_count > 2:
             self.canvas.configure(scrollregion=(0,0,self.app.app_width, (row_count*300)))
 
-        # 不知道可不可以讓 卡片 點擊敏感一點?
-        self.update_idletasks()
 
     # def remove_folder(self, source_id, title):
     #     if not source_id:

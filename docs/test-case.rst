@@ -2,6 +2,12 @@ Test Case
 ================
 
 
+Landing
+-----------------------
+- 測試 server 連線失敗反應: config.ini 改 `[Server] host={error host address}` ，應該跳出 "連線失敗，請檢查網路連線..." 的提醒
+- 桌機軟體不是最新版本: 伺服器的 Announcement 改版本，ex: `v:0.0.0` ， 應該跳出 "請至官網下載最新版本軟體" 的提醒，config.ini 的 is_outdated 應該會變成 `1`, ex: `[State] is_outdated = 1`
+- 桌機軟體確定最新版本: 伺服器的 Announcement 改回原本版本，ex: `v:1.1.2` ， 沒有任何訊息跳出，config.ini 的 is_outdated 應該會變回成 `0`, ex: `[State] is_outdated = 0`
+
 Editing/Annotation
 -----------------------
 
@@ -52,6 +58,38 @@ DataGrid
   - 只能刪複製出來的 row
 
 
+
+Import Folder
+-----------------
+
+- 資料夾內有壞掉的照片，測試檔 https://drive.proton.me/urls/1SBH4FW02W#CJ5mIwlH3EFc
+
+測試匯入
+==============
+
+**正常情況**
+
+1. 按 "加入資料夾"
+2. 選擇資料夾
+3. 進入 "現有資料夾" 頁
+4. 進度條每秒更新
+5. 正在匯入時按"資料夾卡片"應該要不能進入編輯畫面
+6. 正在匯入時關閉應用程式 (按視窗的 "X")，會跳出"尚有資料夾正在匯入中..." 的錯誤訊息(對話框)
+7. 完成後跳出 "匯入資料夾完成" 的訊息 (對話框)
+8. 可以進入資料夾編輯畫面
+
+**測試錯誤處理 (error handling)**
+
+模擬匯入失敗 (匯一半當機...)
+
+1. edit config.ini, set [Mode] force_quit = 1
+2. 按 "加入資料夾"
+3. 選擇資料夾
+4. 進入 "現有資料夾" 頁
+5. 進度條每秒更新
+6. 離開程式
+7. 重新開啟程式
+8. 可以進入匯入錯誤的資料夾, 執行"刪除資料夾"
 
 
 Upload

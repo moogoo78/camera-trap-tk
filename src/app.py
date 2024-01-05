@@ -2,16 +2,19 @@ import os
 import argparse
 import tkinter as tk
 from tkinter import (
-    Label,
     ttk,
     font,
- )
+)
 #from memory_profiler import profile
 
 # log
 import logging
+from logging.handlers import RotatingFileHandler
 import sys
 import socket
+
+from PIL import ImageTk
+import webbrowser
 
 from version import __version__
 from frame import (
@@ -29,6 +32,9 @@ from frame import (
 )
 from toplevel import (
     HelpPage,
+    ImportData,
+    LoginForm,
+    ConfigureKeyboardShortcut,
 )
 
 from database import Database
@@ -46,8 +52,11 @@ class Application(tk.Tk):
             self.user_hostname = hostname
         else:
             self.user_hostname = '--'
-        #print (config)
+
+        app_logo = ImageTk.PhotoImage(file='./assets/logo-leaf.png')
+        self.iconphoto(False, app_logo)
         #self.iconbitmap('trees.ico')
+
         self.app_width = 1200
         self.app_height = int(config.get('Layout', 'app_height'))
         self.app_width_resize_to = 0
@@ -56,6 +65,8 @@ class Application(tk.Tk):
         self.app_secondary_color = '#8AC731'
         self.app_comp_color = '#FF8C23'  # Complementary color
         self.app_font = 'Microsoft JhengHei UI' #'Yu Gothic'  #'Arial'
+        self.secrets = {}
+        self.contents = {}
 
         self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
@@ -65,6 +76,14 @@ class Application(tk.Tk):
         self.bind('<Configure>', self.resize)
 
         self.is_help_open = False
+        self.toplevels = {
+            'import_data': False,
+            'login_form': False,
+        }
+
+        self.user_info = {
+            'projects': [],
+        }
 
         style = ttk.Style()
         style.theme_use('clam') # clam, classic
@@ -75,9 +94,12 @@ class Application(tk.Tk):
             ll = ll.upper()
             log_level = getattr(logging, ll)
 
-        file_handler = logging.FileHandler(
-            filename='ct-log.txt',
-            encoding='utf-8', mode='a+')
+        file_handler = logging.handlers.RotatingFileHandler(
+            filename='ct-app.log',
+            encoding='utf-8',
+            mode='a',
+            backupCount=10,
+            maxBytes=10000000)
         stdout_handler = logging.StreamHandler(sys.stdout)
         #text_handler = TextHandler(text)
         logging.basicConfig(
@@ -92,21 +114,68 @@ class Application(tk.Tk):
         # %(name)s:%(levelname)s:%(message)s | p%(process)s {%(pathname)s:%(lineno)d} %(filename)s %(module)s %(funcName)s
         self.logger = logging.getLogger('ct-tk')
 
+        # hide image debug logger
+        logging.getLogger('PIL.PngImagePlugin').propagate = False
+        logging.getLogger('PIL.TiffImagePlugin').propagate = False
+
+        #logging.info(f'starting camera-trap app, version: {self.version}')
 
         # == helpers ==
         self.db = Database(config.get('SQLite', 'dbfile'))
         self.db.init()
-
         self.config = config
+
         self.source = Source(self)
-        self.server = Server(dict(config['Server']))
+        #self.server = Server(dict(config['Server']))
+        self.server = Server(self)
 
-        self.cached_project_map = self.server.get_project_map()
-        # print(self.cached_project_map)
-        # don't show alert, 2022-11-09
-        #if err := self.cached_project_map.get('error'):
-        #    tk.messagebox.showerror('server error', f'{err}\n (無法上傳檔案，但是其他功能可以運作)')
+        self.menubar = tk.Menu(self)
+        userbar = tk.Menu(self.menubar, tearoff=False)
+        toolbar = tk.Menu(self.menubar, tearoff=False)
+        toolbar.add_command(label='匯入', command=self.on_import_data)
+        toolbar.add_command(label='設定快捷鍵', command=lambda: ConfigureKeyboardShortcut(self))
+        userbar.add_command(label='ORCID登入', command=self.on_login_form)
+        userbar.add_command(label='登出', command=self.on_logout)
+        self.menubar.add_cascade(label='login', menu=userbar)
+        self.menubar.add_cascade(label='tools', menu=toolbar)
+        self.configure(menu=self.menubar)
 
+        # process user_info
+        if user_id := self.db.get_state('user_id'):
+            self.on_login({'user_id': user_id})
+
+        # check latest version
+        resp = self.server.check_update()
+        if err_msg := resp.get('error', ''):
+            self.wait_visibility()
+            tk.messagebox.showerror('network error', f'{err_msg}\n (無法匯入及上傳檔案，但是其他功能可以運作)')
+
+            # no network still show info
+            logging.info('App version: {} ({})'.format(self.version, 'outdated'))
+            tk.messagebox.showinfo('注意', "請至官網下載最新版本軟體")
+        else:
+            is_outdated_value = self.config.get('State', 'is_outdated', fallback='t')
+            if resp['json']['is_latest'] is True:
+                logging.info('App version: {} ({})'.format(self.version, 'latest'))
+                if str(is_outdated_value).lower() not in ['false', '0', '']:
+                    self.config.set('State', 'is_outdated', '0')
+                    self.config.overwrite()
+                else:
+                    # still latest, do nothing
+                    pass
+            else:
+                logging.info('App version: {} ({})'.format(self.version, 'outdated !!'))
+
+                # via: https://stackoverflow.com/a/65734843/644070
+                self.wait_visibility()
+                tk.messagebox.showinfo('注意', f"請至官網下載最新版本軟體 ({resp['json']['version']['latest']})")
+
+                if str(is_outdated_value).lower() in ['false', '0', '']:
+                    self.config.set('State', 'is_outdated', '1')
+                    self.config.overwrite()
+                else:
+                    # still outdated, do nothing
+                    pass
 
         #print(list(tk.font.families()))
         #Yu Gothic
@@ -118,6 +187,20 @@ class Application(tk.Tk):
             'h3': tk.font.Font(family='Yu Gotic', size=12),
             'h4': tk.font.Font(family='Yu Gotic', size=10),
         }
+
+        # append secrets
+        try:
+            import credentials
+
+            aws_key = credentials.get_aws_key()
+            self.secrets.update({
+                'aws_access_key_id': aws_key['access_key_id'],
+                'aws_secret_access_key': aws_key['secret_access_key']
+            })
+            logging.debug('credentials loaded: aws s3')
+        except ModuleNotFoundError:
+                logging.debug('credentials not found')
+
 
         self.layout()
 
@@ -134,7 +217,6 @@ class Application(tk.Tk):
             height='50')
         self.appbar.grid(row=0, column=0, sticky='ew')
 
-        self.contents = {}
         self.contents['landing'] = Landing(self)
         self.contents['landing'].grid(row=1, column=0, sticky='nw')
 
@@ -208,9 +290,20 @@ class Application(tk.Tk):
 
     def on_folder_detail(self, event, tag):
         logging.debug(f'click on tag: {tag}')
+
+        # check while import, do not enter editing page
+        _, source_id = tag.split('_')
+        d = self.contents['folder_list'].import_deque
+        if len(d) > 0 and d[0] == int(source_id):
+            return False
+
         if event:
             logging.debug(f'evoked by {event}')
         source_id = tag.replace('source_', '')
+
+        # TODO detect can enter main page or not
+        #result = self.db.fetch_sql(f'SELECT status FROM source WHERE source_id={source_id}')
+        #print(result, '--------------')
 
         self.contents['main'].change_source(int(source_id))
         self.show_content('main')
@@ -218,7 +311,7 @@ class Application(tk.Tk):
     def on_add_folder(self, event=None):
         logging.debug(f'{event}')
 
-        if len(self.contents['folder_list'].folder_importing) > 0:
+        if len(self.contents['folder_list'].import_deque) > 0:
             tk.messagebox.showinfo('info', '其他資料夾正在匯入中')
         else:
             self.contents['folder_list'].add_folder()
@@ -246,6 +339,55 @@ class Application(tk.Tk):
            self.is_help_open = True
            HelpPage(self)
 
+    def on_import_data(self):
+        if not self.toplevels['import_data']:
+            self.toplevels['import_data'] = ImportData(self)
+
+
+    def on_login_form(self):
+        if not self.toplevels['login_form']:
+            if self.db.get_state('user_id'):
+                tk.messagebox.showinfo('info', '已登入')
+            else:
+                self.toplevels['login_form'] = LoginForm(self)
+
+
+    def on_login(self, payload,):
+        logging.info(f'login: {payload}')
+        user_id = payload.get('user_id')
+        email = payload.get('email')
+        name = payload.get('name')
+
+        if user_id:
+            resp = self.server.get_user_info(user_id)
+            if data := resp.get('json'):
+                self.user_info = data['results']
+                if 'main' in self.contents:
+                    self.contents['main'].update_project_options(self.user_info['projects'])
+                logging.info('get user_info')
+                name = data['results']['user'].get('name', '')
+                email = data['results']['user'].get('email', '')
+
+            # update db
+            self.db.set_state('user_id', user_id)
+            if name:
+                self.db.set_state('user_name', name)
+            if email:
+                self.db.set_state('user_email', email)
+
+            self.menubar.entryconfigure(1, label=f"user: {name} ({email})")
+
+    def on_logout(self):
+        if uid := self.db.get_state('user_id'):
+            tk.messagebox.showinfo('info', '已登出')
+
+        self.user_info = {'projects': []}
+        self.contents['main'].update_project_options([])
+        self.db.set_state('user_id', '')
+        self.db.set_state('user_name', '')
+        self.db.set_state('user_email', '')
+        self.menubar.entryconfigure(1, label='login')
+
     def get_font(self, size_code='default'):
         SIZE_MAP = {
             'display-1': 32,
@@ -263,26 +405,19 @@ class Application(tk.Tk):
         else:
             return (self.app_font, 10)
 
-    def toggle_image_viewer_DEPRICATED(self, is_image_viewer=True):
-        # 先不 remove main , 蓋掉就好了
-        #if not self.frames['main'].winfo_viewable():
-        #self.frames['main'].grid(row=0, column=0, sticky='nsew')
-        if is_image_viewer:
-            #self.frames['main'].data_grid.main_table.toggle_arrow_key_binding(False)
-            self.frames['image_viewer'].toggle_arrow_key_binding(True)
-            if not self.frames['image_viewer'].winfo_viewable():
-                self.frames['image_viewer'].grid(row=0, column=0, sticky='nsew')
-                self.frames['image_viewer'].init_data()
-                self.frames['image_viewer'].refresh()
-        else:
-            self.frames['main'].data_grid.main_table.toggle_arrow_key_binding(True)
-            #self.frames['image_viewer'].toggle_arrow_key_binding(False)
-            if self.frames['image_viewer'].winfo_viewable():
-                self.frames['image_viewer'].grid_remove()
-
     def quit(self):
-        self.contents['upload_progress'].terminate_upload_task()
+        is_force_quit = self.config.get('Mode', 'force_quit', fallback='0')
+        if str(is_force_quit).lower() not in ['false', '0', '']:
+            self.destroy()
+            # TODO if other thread is running, may wait for the thread (importing, uploading ?)
+            logging.info('force quit app')
+            return
 
+        if len(self.contents['folder_list'].import_deque) > 0:
+            tk.messagebox.showwarning('注意', f'尚有資料夾正在匯入中，請等候匯入完成再離開')
+            return
+
+        self.contents['upload_progress'].terminate_upload_task()
         # don't save
         # if h:= self.app_height_resize_to:
         #     try:

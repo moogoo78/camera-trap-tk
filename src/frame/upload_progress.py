@@ -10,7 +10,7 @@ from datetime import datetime
 import random
 import sys
 import pathlib
-
+import math
 import threading
 from queue import Queue
 
@@ -37,6 +37,9 @@ class UploadProgress(tk.Frame):
         self.LABEL_PAUSE = '暫停上傳'
 
         self.app = parent
+
+        self.NUMBER_PER_ROW = 3
+
         self._layout()
 
         # self.async_loop = asyncio.get_event_loop()
@@ -68,6 +71,10 @@ class UploadProgress(tk.Frame):
             relief='ridge',
         )
         self.canvas.grid(row=0, column=0, sticky='ewns')
+        self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.canvas.yview)
+        self.scrollbar.grid(row=0, column=1, sticky='ewns')
+        self.canvas.config(yscrollcommand=self.scrollbar.set)
+
 
         # self.foo = ttk.Button(
         #     self.canvas,
@@ -148,6 +155,11 @@ class UploadProgress(tk.Frame):
 
         self.progress_bars = {}
 
+        num_rows = math.ceil(len(self.source_list) / self.NUMBER_PER_ROW)
+        if num_rows > 2:
+            self.canvas.configure(scrollregion=(0,0,self.app.app_width, (num_rows * 300)))
+        #self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+
         for i, row in enumerate(self.source_list):
             # print(row)
             self._render_box(row, start_x, start_y, shift_x, shift_y)
@@ -169,6 +181,8 @@ class UploadProgress(tk.Frame):
         y = start_y + shift_y
         xlist = [x, x + 300, x + 300, x]
         ylist = [y, y, y + 150, y + 150]
+
+        is_lock_editing = False
 
         create_round_polygon(
             self.canvas,
@@ -265,6 +279,7 @@ class UploadProgress(tk.Frame):
                 anchor='nw',
                 tags=('item', source_tag))
         else:
+            is_lock_editing = True
             self.canvas.create_text(
                 x+286,
                 gap,
@@ -314,10 +329,12 @@ class UploadProgress(tk.Frame):
                 tags=('item', source_tag)
             )
 
-        self.canvas.tag_bind(
-            source_tag,
-            '<ButtonPress>',
-            lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
+
+        if is_lock_editing is not True:
+            self.canvas.tag_bind(
+                source_tag,
+                '<ButtonPress>',
+                lambda event, tag=source_tag: self.app.on_folder_detail(event, tag))
 
     def _find_source(self, source_id):
         for i, v in enumerate(self.source_list):
@@ -427,7 +444,6 @@ class UploadProgress(tk.Frame):
             # if item['state'] == self.STATE_RUNNING:
             if not is_skip_media and self.source_list[current_source_index]['state'] == self.STATE_RUNNING:
                 logging.debug(f'🧵 uploading: {source_id}-{counter}/{num}')
-                counter = i + 1
                 path = v[1]
                 name = v[2]
                 object_id = v[4]
@@ -435,30 +451,36 @@ class UploadProgress(tk.Frame):
                 media_type = v[6]
 
                 # time.sleep(1) # fake upload
+                upload_results = []
                 if media_type == 'image':
                     thumb_paths = get_thumb(source_id, name, path, 'all-max-x')
                     for x, path in thumb_paths.items():
                         object_name = f'{object_id}-{x}.jpg'
-                        self.app.source.upload_to_s3(str(path), object_name)
+                        ret = self.app.source.upload_to_s3(str(path), object_name)
+                        upload_results.append(ret)
+                        #print(ret, '>>>>>>>>>>>>>>>>>>>>')
                 elif media_type == 'video':
                     src_path = pathlib.Path(path)
                     object_name = f'video-original/{object_id}{src_path.suffix}'
                     self.app.source.upload_to_s3(str(path), object_name)
                     self.app.source.add_media_convert(object_name)
 
-                self.action_queue.put({
-                    'type':'update_image',
-                    'source_id': source_id,
-                    'image_id': v[0],
-                    'counter': counter,
-                })
-                self.event_generate('<<event_action>>', when='tail')
+                if len(upload_results) > 0 and upload_results[0]['error'] == '':
+                    # success s3 upload
+                    counter = i + 1
+                    self.action_queue.put({
+                        'type':'update_image',
+                        'source_id': source_id,
+                        'image_id': v[0],
+                        'counter': counter,
+                    })
+                    self.event_generate('<<event_action>>', when='tail')
 
-                self.app.server.post_image_status({
-                    # 'file_url': f'{uploaded_object_id}.jpg',
-                    'has_storage': 'Y',
-                    'pk': server_image_id,
-                })
+                    self.app.server.post_image_status({
+                        # 'file_url': f'{uploaded_object_id}.jpg',
+                        'has_storage': 'Y',
+                        'pk': server_image_id,
+                    })
 
             else:
                 logging.debug(f'🧵 skip {source_id}-{counter}/{num}')
@@ -468,7 +490,7 @@ class UploadProgress(tk.Frame):
             'type': 'done_source',
             'source_id': source_id,
             'is_complete': True if counter == num else False,
-            'name': source_id, #data['source_data'][3],
+            'name': item['source_data'][3]
         })
         self.event_generate('<<event_action>>', when='tail')
 
@@ -543,9 +565,9 @@ class UploadProgress(tk.Frame):
                 deployment_journal_id = item['source_data'][12]
                 if is_complete:
                     self.app.source.update_status(source_id, 'DONE_UPLOAD')
-                    tk.messagebox.showinfo('info', f'資料夾 {name}: 上傳成功')
                     # send finish upload status to server
                     self.app.server.post_upload_history(deployment_journal_id, 'finished')
+                    tk.messagebox.showinfo('info', f'資料夾 {name}: 上傳成功')
                 else:
                     if item['state'] == self.STATE_PAUSE:
                         item = self._find_source(source_id)

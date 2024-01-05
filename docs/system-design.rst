@@ -1,6 +1,8 @@
 System Design
 =====================
 
+
+
 資料夾匯入
 ----------------
 
@@ -26,6 +28,12 @@ System Design
 看大圖
 ^^^^^^^^^^^^
 
+
+網路
+----------------
+先呼叫 API 檢查有無更新版:
+- YES: write config and show alert
+- NO: write config or pass
 
 Local Schema
 =============

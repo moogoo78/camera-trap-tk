@@ -66,6 +66,10 @@ class MainMessagebox(tk.Toplevel):
                         self.app.contents['main'].event_generate('<<event_action>>', when='tail')
                         self.quit()
                         return
-
+                elif res['json'].get('upload_status', '') == 'finished':
+                    # re-upload, only update annotation
+                    self.app.contents['main'].event_generate('<<event_action>>', when='tail')
+                    self.quit()
+                    return
         self.btn['state'] = tk.NORMAL
         self.label['text'] = '文字上傳未完成'
