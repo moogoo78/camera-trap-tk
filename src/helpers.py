@@ -333,7 +333,7 @@ class DataHelper(object):
             'map': {},
             'idx': 0,
             'salt': self.img_seq_rand_salt,
-            'int': int(time_interval) * 60,
+            'int': int(time_interval), #seconds
         }
         # via: https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
         golden_ratio_conjugate = 0.618033988749895
