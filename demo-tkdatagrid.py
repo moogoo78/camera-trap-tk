@@ -73,7 +73,7 @@ class DemoApp(tk.Tk):
         self.frame = tk.Frame(self)
         self.frame.grid_columnconfigure(0, weight=1)
         self.frame.grid_rowconfigure(0, weight=1)
-        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=1000, height=1000, row_index_display='iid', num_per_page=NUM_PER_PAGE, cols_on_ctrl_button_1=['b'], cols_on_fill_handle=['c',], row_index_width=100, rows_delete_type='CLONED')
+        self.data_grid = DataGrid(self.frame, data=DATA, columns=HEADER, width=1000, height=1000, row_index_display='iid', num_per_page=NUM_PER_PAGE, num_per_page_choices=[20, 100], cols_on_ctrl_button_1=['b'], cols_on_fill_handle=['c',], row_index_width=100, rows_delete_type='CLONED')
 
         # redraw another
         #data2=sampledata()

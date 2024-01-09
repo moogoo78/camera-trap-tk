@@ -134,7 +134,7 @@ class Application(tk.Tk):
         toolbar = tk.Menu(self.menubar, tearoff=False)
         toolbar.add_command(label='匯入', command=self.on_import_data)
         toolbar.add_command(label='設定快捷鍵', command=lambda: ConfigureKeyboardShortcut(self))
-        userbar.add_command(label='ORCID登入', command=self.on_login_form)
+        userbar.add_command(label='登入ORCID', command=self.on_login_form)
         userbar.add_command(label='登出', command=self.on_logout)
         self.menubar.add_cascade(label='login', menu=userbar)
         self.menubar.add_cascade(label='tools', menu=toolbar)

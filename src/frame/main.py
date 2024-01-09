@@ -605,14 +605,17 @@ class Main(tk.Frame):
                             'project_index': index[0]
                         })
                 if studyarea_name:
-                    if self.tmp_info['project_index'] >= 0:
+                    if project_index in tmp_info and self.tmp_info['project_index'] >= 0:
                         index = [i for i, sa in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas']) if sa['name'] == studyarea_name]
                         if len(index):
                             self.tmp_info.update({
                                 'studyarea_index': index[0]
                             })
                 if deployment_name:
-                    if self.tmp_info['project_index'] >= 0 and self.tmp_info['studyarea_index'] >= 0:
+                    if project_index in self.tmp_info and \
+                       self.tmp_info['project_index'] >= 0 and \
+                       studyarea_index in self.tmp_info and \
+                       self.tmp_info['studyarea_index'] >= 0:
                         index = [i for i, dep in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas'][self.tmp_info['studyarea_index']]['deployments']) if dep['name'] == deployment_name]
                         if len(index):
                             self.tmp_info.update({
