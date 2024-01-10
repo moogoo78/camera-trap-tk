@@ -80,9 +80,9 @@ class Main(tk.Frame):
             'deployment_name': None,
         }
         self.tmp_info = {
-            'project_index': None,
-            'studyarea_index': None,
-            'deployment_index': None,
+            'project_index': -1,
+            'studyarea_index': -1,
+            'deployment_index': -1,
         }
         self.annotation_entry_list = []
         self.species_copy = []
@@ -645,16 +645,14 @@ class Main(tk.Frame):
                             'project_index': index[0]
                         })
                 if studyarea_name:
-                    if project_index in tmp_info and self.tmp_info['project_index'] >= 0:
+                    if self.tmp_info['project_index'] >= 0:
                         index = [i for i, sa in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas']) if sa['name'] == studyarea_name]
                         if len(index):
                             self.tmp_info.update({
                                 'studyarea_index': index[0]
                             })
                 if deployment_name:
-                    if project_index in self.tmp_info and \
-                       self.tmp_info['project_index'] >= 0 and \
-                       studyarea_index in self.tmp_info and \
+                    if self.tmp_info['project_index'] >= 0 and \
                        self.tmp_info['studyarea_index'] >= 0:
                         index = [i for i, dep in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas'][self.tmp_info['studyarea_index']]['deployments']) if dep['name'] == deployment_name]
                         if len(index):
