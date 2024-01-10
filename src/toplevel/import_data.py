@@ -211,9 +211,25 @@ class ImportData(tk.Toplevel):
             '年齡': lifestage_choices.split(','),
         }
 
-        with open(file_path, encoding='utf-8') as csvfile:
-            reader = csv.DictReader(csvfile, delimiter=',')
+        is_utf8 = True
+        csvfile = None
+        try:
+            with open(file_path, encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile, delimiter=',')
+                headers = set(reader.fieldnames)
+        except UnicodeDecodeError as err:
+            logging.info('open csv as utf-8 encoding error: {err}')
+            is_utf8 = False
+        finally:
+            if is_utf8 is True:
+                csvfile = open(file_path, encoding='utf-8')
+            else:
+                csvfile = open(file_path) # platform dependent
+
+
+        if csvfile:
             #next(reader)
+            reader = csv.DictReader(csvfile, delimiter=',')
             headers = set(reader.fieldnames)
             req_headers = [v['label'] for k,v in HEADER_MAP.items() if v.get('required', False)]
             req_headers = set(req_headers)
@@ -285,6 +301,8 @@ class ImportData(tk.Toplevel):
                 args=(src, source_id, self.image_map, image_dir_path))
             foo_th.start()
             #foo_th.join() # this cause app hang... why?
+
+        csvfile.close()
 
 
     def add_annotation_file_worker(self, src, source_id, image_map, folder_path):
