@@ -84,13 +84,13 @@ class HelpPage(tk.Toplevel):
         )
 
         self.canvas.create_image(
-            184,
+            184+70, # align: left, +70 for center
             120,
             image=self.photo_qrcode_app,
             anchor='nw',
         )
         self.canvas.create_image(
-            760,
+            760+70, # align: left, +70 for center
             120,
             image=self.photo_qrcode_web,
             anchor='nw',
