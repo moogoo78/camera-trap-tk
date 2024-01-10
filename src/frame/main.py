@@ -357,31 +357,54 @@ class Main(tk.Frame):
 	    onvalue='Y',
             offvalue='N')
 
-        self.seq_interval_val = tk.StringVar(self)
-        #self.seq_interval_val.trace('w', self.on_seq_interval_changed)
-        self.seq_interval_entry = ttk.Entry(
+        self.seq_min_val = tk.StringVar(self)
+        self.seq_min_entry = ttk.Entry(
             self.ctrl_frame2,
-            textvariable=self.seq_interval_val,
-            width=4,
+            textvariable=self.seq_min_val,
+            width=3,
             #validate='focusout',
             #validatecommand=self.on_seq_interval_changed
         )
-        #self.seq_interval_entry.bind(
-        #    "<KeyRelease>", lambda _: self.refresh())
-        self.seq_interval_entry.bind(
-            "<FocusIn>", self.seq_interval_entry_in)
-        self.seq_interval_entry.bind(
-            "<FocusOut>", self.seq_interval_entry_out)
+        self.seq_min_entry.bind(
+            "<FocusIn>", lambda event: self.on_seq_entry(event, 'seq_min'))
+        self.seq_min_entry.bind(
+            "<FocusOut>", lambda event: self.on_seq_entry(event, 'seq_min'))
 
-        self.seq_unit = ttk.Label(
+        self.seq_sec_val = tk.StringVar(self)
+        self.seq_sec_entry = ttk.Entry(
             self.ctrl_frame2,
-            text='分鐘分組 (相鄰照片間隔分鐘數，顯示分組)',
+            textvariable=self.seq_sec_val,
+            width=3,
+            #validate='focusout',
+            #validatecommand=self.on_seq_interval_changed
+        )
+        self.seq_sec_entry.bind(
+            "<FocusIn>", lambda event: self.on_seq_entry(event, 'seq_sec'))
+        self.seq_sec_entry.bind(
+            "<FocusOut>", lambda event: self.on_seq_entry(event, 'seq_sec'))
+
+        self.seq_description = ttk.Label(
+            self.ctrl_frame2,
+            text='(相鄰照片間隔，分鐘、秒)',
+            **label_args)
+
+        self.seq_min_label = ttk.Label(
+            self.ctrl_frame2,
+            text='分',
+            **label_args)
+
+        self.seq_sec_label = ttk.Label(
+            self.ctrl_frame2,
+            text='秒',
             **label_args)
 
         self.seq_label.grid(row=4, column=0, **label_grid)
         self.seq_checkbox.grid(row=4, column=1, sticky='w', padx=(left_spacing+2, 0))
-        self.seq_interval_entry.grid(row=4, column=1, sticky='w', padx=(left_spacing+82, 0))
-        self.seq_unit.grid(row=4, column=1, sticky='w', padx=(left_spacing+122, 0))
+        self.seq_min_entry.grid(row=4, column=1, sticky='w', padx=(left_spacing+76, 0))
+        self.seq_min_label.grid(row=4, column=1, sticky='w', padx=(left_spacing+100, 0))
+        self.seq_sec_entry.grid(row=4, column=1, sticky='w', padx=(left_spacing+120, 0))
+        self.seq_sec_label.grid(row=4, column=1, sticky='w', padx=(left_spacing+144, 0))
+        self.seq_description.grid(row=4, column=1, sticky='w', padx=(left_spacing+166, 0))
 
         # test foto
         self.test_foto_label = ttk.Label(
@@ -554,10 +577,9 @@ class Main(tk.Frame):
         self.data_grid.main_table.init_data()
 
         # clear image sequence checked
-        # self.seq_interval_val.set('')
-        # self.seq_checkbox_val.set('N')
         # default checked to group sequence, 5mins
-        self.seq_interval_val.set(5)
+        self.seq_min_val.set(5)
+        self.seq_sec_val.set('')
         self.seq_checkbox_val.set('Y')
 
         self.current_row_key = ''
@@ -565,26 +587,29 @@ class Main(tk.Frame):
         self.refresh(is_init_highlight=True)
 
 
-    def seq_interval_entry_in(self, event):
-        logging.info('seq_interval_entry:FocusIn')
-        self.data_grid.main_table.set_keyboard_control(False)
+    def on_seq_entry(self, event, category):
+        logging.info(f'seq_entry: {event}, {category}')
 
-
-    def seq_interval_entry_out(self, event):
-        logging.info('seq_interval_entry:FocusOut')
-        self.data_grid.main_table.set_keyboard_control(True)
-        self.refresh()
-
+        if str(event) == '<FocusIn event>':
+            self.data_grid.main_table.set_keyboard_control(False)
+        if str(event) == '<FocusOut event>':
+            # force make input sanity
+            seq_entry = self.get_seq_entry()
+            self.seq_min_val.set(seq_entry['minutes'])
+            self.seq_sec_val.set(seq_entry['seconds'])
+            self.data_grid.main_table.set_keyboard_control(True)
+            self.refresh()
 
     #@profile
     def refresh(self, is_init_highlight=False):
         self.is_editing = False
         logging.info(f'refresh: {self.source_id}, current_row_key: {self.current_row_key}')
 
-        #self.data_helper.set_status_display(image_id=35, status_code='300')-
+        #self.data_helper.set_status_display(image_id=35, status_code='300')
         # let project image group intervel entry off focus
         # or after key in minute then press arrow key, focus will still on entry
-        self.app.focus_set()
+
+        #self.app.focus_set()
 
         if not self.source_id:
             return
@@ -677,10 +702,9 @@ class Main(tk.Frame):
 
         self.seq_info = None
 
-        seq_val = self.seq_interval_val.get()
-
-        if self.seq_checkbox_val.get() == 'Y' and seq_val:
-            self.seq_info = self.data_helper.group_image_sequence(seq_val)
+        seq_entry = self.get_seq_entry()
+        if self.seq_checkbox_val.get() == 'Y' and seq_entry['total_seconds']:
+            self.seq_info = self.data_helper.group_image_sequence(seq_entry['total_seconds'])
             # change DataGrid.main_table.render_box color
             self.data_grid.state['box_display_type'] = 'raise'
             logging.debug(f"seq_info.int: {self.seq_info['int']} seconds")
@@ -966,7 +990,8 @@ class Main(tk.Frame):
         # print('-----', row_key, col_key, value)
         res = self.data_helper.update_annotation(row_key, col_key, value, self.seq_info)
 
-        if self.seq_checkbox_val.get() == 'Y' and self.seq_interval_val.get():
+        seq_entry = self.get_seq_entry()
+        if self.seq_checkbox_val.get() == 'Y' and seq_entry['total_seconds']:
             self.refresh()
 
         #if not res:
@@ -1361,3 +1386,15 @@ class Main(tk.Frame):
 
         self.app.on_upload_progress()
         self.app.contents['upload_progress'].handle_start(self.source_id)
+
+
+    def get_seq_entry(self):
+        m = self.seq_min_val.get()
+        s = self.seq_sec_val.get()
+        m = min(60, int(m)) if m.isdigit() else 0
+        s = min(60, int(s)) if s.isdigit() else 0
+        return {
+            'minutes': m,
+            'seconds': s,
+            'total_seconds': (60 * m) + s
+        }
