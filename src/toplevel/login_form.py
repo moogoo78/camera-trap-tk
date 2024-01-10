@@ -69,7 +69,7 @@ class LoginForm(tk.Toplevel):
         # )
         submit_button = ttk.Button(
             container,
-            text='ORCID登入',
+            text='請按此處登入ORCID',
             command=self.on_submit
         )
         verify_label = ttk.Label(

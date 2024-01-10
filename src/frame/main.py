@@ -366,8 +366,12 @@ class Main(tk.Frame):
             #validate='focusout',
             #validatecommand=self.on_seq_interval_changed
         )
+        #self.seq_interval_entry.bind(
+        #    "<KeyRelease>", lambda _: self.refresh())
         self.seq_interval_entry.bind(
-            "<KeyRelease>", lambda _: self.refresh())
+            "<FocusIn>", self.seq_interval_entry_in)
+        self.seq_interval_entry.bind(
+            "<FocusOut>", self.seq_interval_entry_out)
 
         self.seq_unit = ttk.Label(
             self.ctrl_frame2,
@@ -520,7 +524,7 @@ class Main(tk.Frame):
         })
         self.data_grid.grid(row=0, column=0, sticky='nsew')
 
-
+        self.data_grid.main_table.set_keyboard_control(False)
     # def update_project_options(self):
     #     if len(self.projects) <= 0:
     #         self.projects = self.app.server.get_projects()
@@ -559,6 +563,17 @@ class Main(tk.Frame):
         self.current_row_key = ''
         self.image_viewer_button.grid(row=7, column=0, sticky='sw')
         self.refresh(is_init_highlight=True)
+
+
+    def seq_interval_entry_in(self, event):
+        logging.info('seq_interval_entry:FocusIn')
+        self.data_grid.main_table.set_keyboard_control(False)
+
+
+    def seq_interval_entry_out(self, event):
+        logging.info('seq_interval_entry:FocusOut')
+        self.data_grid.main_table.set_keyboard_control(True)
+        self.refresh()
 
 
     #@profile
@@ -605,14 +620,17 @@ class Main(tk.Frame):
                             'project_index': index[0]
                         })
                 if studyarea_name:
-                    if self.tmp_info['project_index'] >= 0:
+                    if project_index in tmp_info and self.tmp_info['project_index'] >= 0:
                         index = [i for i, sa in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas']) if sa['name'] == studyarea_name]
                         if len(index):
                             self.tmp_info.update({
                                 'studyarea_index': index[0]
                             })
                 if deployment_name:
-                    if self.tmp_info['project_index'] >= 0 and self.tmp_info['studyarea_index'] >= 0:
+                    if project_index in self.tmp_info and \
+                       self.tmp_info['project_index'] >= 0 and \
+                       studyarea_index in self.tmp_info and \
+                       self.tmp_info['studyarea_index'] >= 0:
                         index = [i for i, dep in enumerate(self.app.user_info['projects'][self.tmp_info['project_index']]['studyareas'][self.tmp_info['studyarea_index']]['deployments']) if dep['name'] == deployment_name]
                         if len(index):
                             self.tmp_info.update({
@@ -658,16 +676,14 @@ class Main(tk.Frame):
         end = cur_page * num
 
         self.seq_info = None
-        try:
-            seq_int = self.seq_interval_val.get()
-            seq_int = int(seq_int)
-        except ValueError:
-            seq_int = 0
 
-        if self.seq_checkbox_val.get() == 'Y' and seq_int:
-            self.seq_info = self.data_helper.group_image_sequence(seq_int)
+        seq_val = self.seq_interval_val.get()
+
+        if self.seq_checkbox_val.get() == 'Y' and seq_val:
+            self.seq_info = self.data_helper.group_image_sequence(seq_val)
             # change DataGrid.main_table.render_box color
             self.data_grid.state['box_display_type'] = 'raise'
+            logging.debug(f"seq_info.int: {self.seq_info['int']} seconds")
 
         # show first image if no select
         if len(data) > 0 and self.current_row_key == '' :
@@ -971,6 +987,8 @@ class Main(tk.Frame):
         current_row is already set by DataGrid
         set current_image_data
         '''
+        self.data_grid.main_table.set_keyboard_control(True)
+
         logging.debug(f'select_item: {row_key}, {col_key}')
         if row_key is None or col_key is None:
             return

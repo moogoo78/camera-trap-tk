@@ -327,13 +327,30 @@ class DataHelper(object):
         return 0
 
     def group_image_sequence(self, time_interval, seq_tag=''):
+        interval_sec = 0
+        try:
+            if ':' in time_interval:
+                interval_list = time_interval.split(':')
+                minutes = 0
+                seconds = 0
+                if interval_list[0]:
+                    minutes = int(interval_list[0])
+                if interval_list[1]:
+                    seconds = int(interval_list[1])
+
+                interval_sec = minutes * 60 + seconds
+            else:
+                interval_sec = int(time_interval) * 60
+        except ValueError:
+            interval_sec = 0
+
         seq_info = {
             'group_prev': False,
             'group_next': False,
             'map': {},
             'idx': 0,
             'salt': self.img_seq_rand_salt,
-            'int': int(time_interval), #seconds
+            'int': interval_sec,
         }
         # via: https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
         golden_ratio_conjugate = 0.618033988749895
