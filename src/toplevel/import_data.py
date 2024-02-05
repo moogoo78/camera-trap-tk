@@ -218,7 +218,7 @@ class ImportData(tk.Toplevel):
                 reader = csv.DictReader(csvfile, delimiter=',')
                 headers = set(reader.fieldnames)
         except UnicodeDecodeError as err:
-            logging.info('open csv as utf-8 encoding error: {err}')
+            logging.info(f'catch open csv as utf-8 encoding error: {err}')
             is_utf8 = False
         finally:
             if is_utf8 is True:
