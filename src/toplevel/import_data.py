@@ -12,7 +12,6 @@ from datetime import datetime
 import time
 import json
 
-#from utils import find_image_files
 from utils import check_file_type
 
 ERROR_MAP = {
@@ -203,9 +202,10 @@ class ImportData(tk.Toplevel):
         antler_choices = self.app.config.get('AnnotationFieldAntler', 'choices')
         sex_choices = self.app.config.get('AnnotationFieldSex', 'choices')
         lifestage_choices = self.app.config.get('AnnotationFieldLifeStage', 'choices')
+        bird_choices = self.app.config.get('AnnotationSpeciesExtra', 'birds')
 
         CONTROLLED_TERMS = {
-            '物種': species_choices.split(','),
+            '物種': species_choices.split(',') + bird_choices.split(','),
             '角況': antler_choices.split(','),
             '性別': sex_choices.split(','),
             '年齡': lifestage_choices.split(','),
@@ -223,9 +223,10 @@ class ImportData(tk.Toplevel):
         finally:
             if is_utf8 is True:
                 csvfile = open(file_path, encoding='utf-8')
+                logging.info(f'import {file_path}, use utf-8 encoding')
             else:
                 csvfile = open(file_path) # platform dependent
-
+                logging.info(f'import {file_path}, use platform dependent encoding (big5)')
 
         if csvfile:
             #next(reader)
@@ -314,9 +315,6 @@ class ImportData(tk.Toplevel):
         self.progressbar['maximum'] = num_images
         for i, data in enumerate(src.gen_import_file2(source_id, image_map, folder_path)):
             image_count += 1
-            if not data['_img']:
-                tk.messagebox.showerror('error', f"{data['path']} 檔案損毀無法讀取")
-                continue
 
             ts = data['timestamp']
             if folder_date_range[0] == 0 or folder_date_range[1] == 0:
@@ -330,18 +328,37 @@ class ImportData(tk.Toplevel):
 
 
             ts_now = int(time.time())
-            sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, exif, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, '{}', {}, '{}', 'image')".format(
-                data['_file_path_posix'],
-                data['filename'],
-                ts,
-                'csv',
-                '10',
-                data['_img_hash'],
-                json.dumps(data['annotation']),
-                ts_now,
-                json.dumps(data['_exif']),
-                source_id,
-                '{}')
+
+            if data['_file_type'] == 'image':
+                if not data['_img']:
+                    tk.messagebox.showerror('error', f"{data['path']} 檔案損毀無法讀取")
+                    continue
+
+                sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, exif, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, '{}', {}, '{}', 'image')".format(
+                    data['_file_path_posix'],
+                    data['filename'],
+                    ts,
+                    'csv',
+                    '10',
+                    data['_img_hash'],
+                    json.dumps(data['annotation']),
+                    ts_now,
+                    json.dumps(data['_exif']),
+                    source_id,
+                    '{}')
+            elif data['_file_type'] == 'video':
+                sql = "INSERT INTO image (path, name, timestamp, timestamp_via, status, hash, annotation, changed, source_id, sys_note, media_type) VALUES ('{}','{}', {}, '{}', '{}', '{}', '{}', {}, {}, '{}', 'video')".format(
+                    data['_file_path_posix'],
+                    data['filename'],
+                    ts,
+                    'csv',
+                    '10',
+                    '',
+                    '[]',
+                    ts_now,
+                    source_id,
+                    '{}',
+                )
             sql_list.append(sql)
 
             # update progressbar

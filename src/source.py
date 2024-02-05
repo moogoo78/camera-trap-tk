@@ -198,16 +198,9 @@ class Source(object):
                     data['_img_hash'] = img.make_hash()
                     make_thumb(data['_file_path'], thumb_source_path)
 
-            # elif type_ == 'video': # TODO
-            #     #print(entry, 'video')
-            #     data['mov'] = entry
-            #     stat = data['mov'].stat()
-            #     data['timestamp'] = int(stat.st_mtime)
-            #     data['via'] = 'mtime'
-                #sql = self.prepare_video_sql(data, ts_now, source_id, thumb_source_path)
-                # HACK: if video process too fast, folder_list.folder_importing will has empty value, cause error while update
-                # maybe, change folder_list.folder_importing to folder_list.progress_map and add folder_list.import_deque, don't need to sleep(05) here, 230811
-                time.sleep(0.5)
+            elif data['_file_type'] == 'video':
+                pass
+
 
             yield data
 
@@ -226,7 +219,7 @@ class Source(object):
             ts_now,
             source_id,
             '{}',
-        )
+       )
         return sql
 
     def prepare_image_sql_and_thumb(self, i, ts_now, source_id, thumb_source_path):

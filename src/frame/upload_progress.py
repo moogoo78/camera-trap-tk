@@ -462,8 +462,9 @@ class UploadProgress(tk.Frame):
                 elif media_type == 'video':
                     src_path = pathlib.Path(path)
                     object_name = f'video-original/{object_id}{src_path.suffix}'
-                    self.app.source.upload_to_s3(str(path), object_name)
+                    ret = self.app.source.upload_to_s3(str(path), object_name)
                     self.app.source.add_media_convert(object_name)
+                    upload_results.append(ret)
 
                 if len(upload_results) > 0 and upload_results[0]['error'] == '':
                     # success s3 upload
