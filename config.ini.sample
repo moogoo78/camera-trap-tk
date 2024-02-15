@@ -1,5 +1,6 @@
 [Installation]
 account_id = EXAMPLE
+is_testing = 1
 
 [State]
 is_outdated = 0
@@ -24,6 +25,7 @@ check_folder = 1
 skip_media_upload = 0
 skip_media_display = 0
 force_quit = 0
+testing_deployment_id = 14540
 
 [SQLite]
 dbfile = ct.db

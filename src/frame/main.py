@@ -881,8 +881,15 @@ class Main(tk.Frame):
             d = json.loads(descr)
             deployment_id = d.get('deployment_id', '')
         if deployment_id == '':
-            tk.messagebox.showwarning('注意', '末設定相機位置，無法上傳')
-            return False
+            if self.app.config.get('Installation', 'is_testing'):
+                if x:= self.app.config.get('Mode', 'testing_deployment_id'):
+                    deployment_id = x
+                else:
+                    tk.messagebox.showwarning('注意', '末設定(測試)相機位置，無法上傳')
+                    return False
+            else:
+                tk.messagebox.showwarning('注意', '末設定相機位置，無法上傳')
+                return False
 
         # ask to check deployment/staudy area/project
         if not tk.messagebox.askokcancel('確認計畫', '請確認計畫、樣區、相機位置是否無誤？'):

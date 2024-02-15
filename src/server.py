@@ -223,7 +223,8 @@ class Server(object):
             data=post_dict, # 有送 data 才會用 POST
             filename=f'{fname}.zip',
         )
-        if not resp['error']:
+
+        if not resp.get('error') and not resp['json'].get('error'):
             # data = to_json(resp['body'])
             data = resp['json']
             ret.update({
@@ -232,11 +233,12 @@ class Server(object):
             })
         else:
             # tk.messagebox.showerror('server error', resp['error'])
-            if 'request error: 400' in resp['error']:
+
+            if 'request error: 400' in resp['json']['error']:
                 ret['error'] = '文字檔案太大'
             else:
-                ret['error'] = resp['error']
-            logging.error(f"error: {resp['error']}")
+                ret['error'] = resp['json']['error']
+            logging.error(f"error: {ret['error']}")
 
         if x:= resp.get('response'):
             x.close()
