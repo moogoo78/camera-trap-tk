@@ -14,7 +14,9 @@ check_deployment_journal_upload_status_api = /api/client/v1/check_deployment_jou
 project_api = /api/client/v1/projects/
 check_update_api = /api/client/v1/check_update/
 check_folder_api = /api/client/v1/check_folder/
-project_option_list = 141::桌機上傳-2021
+#project_option_list = 141::桌機上傳-2021
+user_info_api = /api/client/v1/user_info/
+user_login_verify_api = /desktop_login_verify/
 ssl_verify = 0
 orcid_client_id= APP-xxxx
 

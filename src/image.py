@@ -30,6 +30,7 @@ def make_thumb(src_path, thumb_source_path):
         if thumb.mode != 'RGB': # RGBA, P?
             thumb = thumb.convert('RGB')
         thumb.save(target_path, "JPEG")
+        thumb.close()
 
 def check_thumb(thumb_path, image_path):
     thumb_path = Path(thumb_path)
