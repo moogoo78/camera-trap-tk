@@ -395,3 +395,7 @@ class Server(object):
         if user_id:
             url = f"{self.config['host']}{self.config['user_info_api']}{user_id}/"
             return self.make_request(url)
+
+    def sync_upload(self, deployment_journal_id):
+            url = f"{self.config['host']}{self.config['sync_upload_api']}{deployment_journal_id}/"
+            return self.make_request(url)

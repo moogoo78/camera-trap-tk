@@ -79,6 +79,14 @@ class Source(object):
                     return v
         return ''
 
+    def is_uploading(self, status):
+        if status in [
+                self.STATUS_MEDIA_UPLOAD_PENDING,
+                self.STATUS_MEDIA_UPLOADING,
+                self.STATUS_MEDIA_UPLOAD_FAILED]:
+            return True
+        return False
+
     def is_done_upload(self, status):
         if status in [
                 self.STATUS_DONE_UPLOAD,

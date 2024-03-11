@@ -17,6 +17,7 @@ check_folder_api = /api/client/v1/check_folder/
 #project_option_list = 141::桌機上傳-2021
 user_info_api = /api/client/v1/user_info/
 user_login_verify_api = /desktop_login_verify/
+sync_upload_api = /api/client/v1/sync_upload/
 ssl_verify = 0
 orcid_client_id= APP-xxxx
 

@@ -442,7 +442,7 @@ class Main(tk.Frame):
         self.test_foto_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+406, 0))
         self.test_foto_clear_button.grid(row=5, column=1, sticky='w', padx=(left_spacing+462, 0))
 
-        # upload button
+        # buttons
         self.upload_button = tk.Button(
             self.ctrl_frame2,
             text='上傳資料夾',
@@ -452,7 +452,15 @@ class Main(tk.Frame):
             width=10,
             height=2,
             takefocus=0)
-
+        self.sync_button = tk.Button(
+            self.ctrl_frame2,
+            text='sync',
+            command=self.handle_sync,
+            foreground='#FFFFFF',
+            background=self.app.app_comp_color,
+            width=10,
+            height=2,
+            takefocus=0)
         self.delete_button = tk.Button(
             self.ctrl_frame2,
             text='刪除資料夾',
@@ -463,9 +471,9 @@ class Main(tk.Frame):
             height=2,
             takefocus=0,
         )
-
-        self.upload_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+110), pady=(18,0))
-        self.delete_button.grid(row=6, column=1, sticky='e', padx=(20, 0), pady=(18, 0))
+        self.upload_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+222), pady=(18,0))
+        self.delete_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+112), pady=(18,0))
+        self.sync_button.grid(row=6, column=1, sticky='e', padx=(20, 0), pady=(18, 0))
 
         self.enlarge_icon = ImageTk.PhotoImage(file='./assets/enlarge.png')
         self.image_viewer_button = tk.Button(
@@ -675,6 +683,9 @@ class Main(tk.Frame):
         source_status = self.source_data['source'][6]
         if self.app.source.is_done_upload(source_status):
             self.upload_button['text'] = '更新文字資料'
+        elif self.app.source.is_uploading(source_status):
+            self.upload_button['text'] = '上傳中'
+            self.upload_button['state'] = tk.DISABLED
         else:
             self.upload_button['text'] = '上傳資料夾'
         # if source_status == '20':
@@ -987,6 +998,34 @@ class Main(tk.Frame):
         self.app.source.delete_folder(self.source_id)
         #self.app.frames['folder_list'].refresh_source_list()
         self.app.on_folder_list()
+
+    def handle_sync(self):
+        if deployment_journal_id := self.source_data['source'][12]:
+            resp = self.app.server.sync_upload(deployment_journal_id)
+            if resp_json := resp.get('json', ''):
+                has_storage_map = {
+                    'Y': [],
+                    'N': [],
+                }
+                for i in resp_json['images']:
+                    has_storage_map[i[1]].append(i[0])
+                print(has_storage_map)
+                if len(has_storage_map['N']) > 0:
+                    # 還沒上傳完，但是狀態跑到文字覆寫去了
+                    if 'b3' in self.source_data['source'][6]:
+                        self.app.source.update_status(self.source_id, 'MEDIA_UPLOADING')
+
+                for i in has_storage_map['N']:
+                    sql = f"UPDATE image SET upload_status='110' WHERE server_image_id = {i}"
+                    self.app.db.exec_sql(sql)
+
+                for i in has_storage_map['Y']:
+                    sql = f"UPDATE image SET upload_status='200' WHERE server_image_id = {i}"
+                    self.app.db.exec_sql(sql)
+                self.app.db.commit()
+
+                tk.messagebox.showinfo('info', f'已修復照片上傳狀態')
+
 
     def custom_to_page(self):
         self.refresh()
