@@ -5,4 +5,4 @@
 # 1) we don't load dependencies by storing it in __init__.py
 # 2) we can import it in setup.py for the same reason
 # 3) we can import it into your module module
-__version__ = '1.1.7rc1 (2024.02.15)'
+__version__ = '1.1.8alpha (2024.03.11)'
