@@ -225,8 +225,14 @@ class Main(tk.Frame):
             command=self.export_csv,
             takefocus=0,
         )
+        sync_button = tk.Button(
+            self,
+            text='同步上傳狀態',
+            relief='flat',
+            command=self.handle_sync,
+            takefocus=0)
         export_button.grid(row=0, column=0, padx=4, pady=4, sticky='ne')
-
+        sync_button.grid(row=0, column=0, pady=4, sticky='ne', padx=(0, 82))
         # foo_button = tk.Button(
         #     self,
         #     text='resize',
@@ -452,15 +458,6 @@ class Main(tk.Frame):
             width=10,
             height=2,
             takefocus=0)
-        self.sync_button = tk.Button(
-            self.ctrl_frame2,
-            text='sync',
-            command=self.handle_sync,
-            foreground='#FFFFFF',
-            background=self.app.app_comp_color,
-            width=10,
-            height=2,
-            takefocus=0)
         self.delete_button = tk.Button(
             self.ctrl_frame2,
             text='刪除資料夾',
@@ -473,7 +470,6 @@ class Main(tk.Frame):
         )
         self.upload_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+222), pady=(18,0))
         self.delete_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+112), pady=(18,0))
-        self.sync_button.grid(row=6, column=1, sticky='e', padx=(20, 0), pady=(18, 0))
 
         self.enlarge_icon = ImageTk.PhotoImage(file='./assets/enlarge.png')
         self.image_viewer_button = tk.Button(
@@ -680,6 +676,7 @@ class Main(tk.Frame):
             self.test_foto_val.set('')
 
         # update upload_button
+        self.upload_button['state'] = tk.NORMAL
         source_status = self.source_data['source'][6]
         if self.app.source.is_done_upload(source_status):
             self.upload_button['text'] = '更新文字資料'
@@ -1000,32 +997,43 @@ class Main(tk.Frame):
         self.app.on_folder_list()
 
     def handle_sync(self):
-        if deployment_journal_id := self.source_data['source'][12]:
-            resp = self.app.server.sync_upload(deployment_journal_id)
-            if resp_json := resp.get('json', ''):
-                has_storage_map = {
-                    'Y': [],
-                    'N': [],
-                }
-                for i in resp_json['images']:
-                    has_storage_map[i[1]].append(i[0])
-                print(has_storage_map)
-                if len(has_storage_map['N']) > 0:
-                    # 還沒上傳完，但是狀態跑到文字覆寫去了
-                    if 'b3' in self.source_data['source'][6]:
-                        self.app.source.update_status(self.source_id, 'MEDIA_UPLOADING')
+        if not tk.messagebox.askokcancel('info', '確認要同步線上系統的資料夾上傳狀態？ 如果本地端跟線上資料庫狀態不一致，會同步(修正)本地端資料夾上傳狀態'):
+            return False
 
-                for i in has_storage_map['N']:
-                    sql = f"UPDATE image SET upload_status='110' WHERE server_image_id = {i}"
-                    self.app.db.exec_sql(sql)
+        deployment_journal_id = self.source_data['source'][12]
+        if not deployment_journal_id:
+            return False
 
-                for i in has_storage_map['Y']:
-                    sql = f"UPDATE image SET upload_status='200' WHERE server_image_id = {i}"
-                    self.app.db.exec_sql(sql)
+        resp = self.app.server.sync_upload(deployment_journal_id)
+        if resp_json := resp.get('json', ''):
+            has_storage_map = {
+                'Y': [],
+                'N': [],
+            }
+            for i in resp_json['images']:
+                has_storage_map[i[1]].append(i[0])
+
+            if len(has_storage_map['N']) > 0:
+                # 還沒上傳完，但是狀態跑到文字覆寫去了
+                if 'b3' in self.source_data['source'][6]:
+                    self.app.source.update_status(self.source_id, 'MEDIA_UPLOADING')
+
+                ids = ','.join([str(x) for x in has_storage_map['N']])
+                sql = f"UPDATE image SET upload_status='110' WHERE server_image_id IN ({ids})"
+                self.app.db.exec_sql(sql)
                 self.app.db.commit()
 
-                tk.messagebox.showinfo('info', f'已修復照片上傳狀態')
+            if len(has_storage_map['Y']) > 0:
+                ids = ','.join([str(x) for x in has_storage_map['Y']])
+                sql = f"UPDATE image SET upload_status='200' WHERE server_image_id IN ({ids})"
+                self.app.db.exec_sql(sql)
+                self.app.db.commit()
 
+            tk.messagebox.showinfo('info', f'已修復照片上傳狀態')
+            self.app.on_folder_list()
+            return True
+
+        tk.messagebox.showerror('error', f'修復API發生問題')
 
     def custom_to_page(self):
         self.refresh()
