@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 匯入資料夾製作縮圖後，要把file handler關閉 (解決作業系統遇到 open too many file 問題)
 - 上傳未完成的資料夾，"上傳"按鈕的文字變成“上傳中”，然後讓他disable (不能按)
+- 照片壞掉匯入會發生錯誤並且中斷 (v1.1.1版改過的問題，v1.1.6版後又會出現)
+
 ### 增加
 
 - 在編輯資料頁面新增"同步上傳狀態"按鈕，從server得到has_storage狀態(有無真的在AWS S3上有檔案)，解決造成混亂的上傳狀態

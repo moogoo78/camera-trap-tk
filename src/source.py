@@ -177,7 +177,7 @@ class Source(object):
                 # maybe, change folder_list.folder_importing to folder_list.progress_map and add folder_list.import_deque, don't need to sleep(05) here, 230811
                 time.sleep(0.5)
 
-            if x := data['timestamp']:
+            if x := data.get('timestamp'):
                 last_timestamp = x
             yield (data, sql)
 
