@@ -27,6 +27,7 @@ class DataGrid(tk.Frame):
                  num_per_page=1000,
                  num_per_page_choices=[],
                  custom_menus=[],
+                 custom_fonts={},
                  custom_binding=None,
                  cols_on_ctrl_button_1=None,
                  cols_on_fill_handle=None,
@@ -70,6 +71,11 @@ class DataGrid(tk.Frame):
                     'box-highlight': '#e8edf7',
                     'outline-dark': '#4772c4',
                     'row-index-highlight': '#b90504',
+                },
+                'font': {
+                     'column_header': custom_fonts.get('column_header', None),
+                     'body_text': custom_fonts.get('body_text', None),
+                     'row_index': custom_fonts.get('row_index', None),
                 }
             },
             'image_tmp': {}, # for canvas image, will deleted by garbage collect

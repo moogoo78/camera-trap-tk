@@ -107,7 +107,7 @@ class ColumnHeader(tk.Canvas):
                 text=col['label'],
                 anchor='w',
                 fill='white',
-                #font=self.thefont,
+                font=self.ps['style']['font']['column_header'],
                 tag='header-text'
             )
 
@@ -347,7 +347,7 @@ class RowIndex(tk.Canvas):
             self.create_text(x, i*self.ps['cell_height'] + self.ps['cell_height']/2,
                              text=text,
                              fill='white',
-                             #font=self.table.thefont,
+                             font=self.ps['style']['font']['row_index'],
                              tag='header-text', anchor='e')
 
 class AutoScrollbar(ttk.Scrollbar):

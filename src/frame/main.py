@@ -532,6 +532,11 @@ class Main(tk.Frame):
             remove_rows_key_ignore_pattern='-0',
             column_header_bg= '#5B7464',
             column_header_height=30,
+            custom_fonts={
+                'column_header': ('Calibri', 12),
+                'body_text': ('Calibri', 12),
+                'row_index': ('Calibri', 12, 'normal'),
+            }
         )
 
         self.data_grid.update_state({
