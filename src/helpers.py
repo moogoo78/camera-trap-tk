@@ -41,12 +41,12 @@ HEADER = {
     },
     'datetime_display': {
         'label': '日期時間',
-        'width': 130,
+        'width': 150,
         'type': 'text',
     },
     'annotation_species': {
         'label': '物種',
-        'width': 80,
+        'width': 120,
         'type': 'autocomplete',
         'choices': [],
         'extra_choices': []
@@ -389,4 +389,3 @@ class DataHelper(object):
             if v.get('annotation_species', '') == '':
                 return True
         return False
-

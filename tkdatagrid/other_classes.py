@@ -72,9 +72,9 @@ class Footer(tk.Frame):
 
 class ColumnHeader(tk.Canvas):
 
-    def __init__(self, parent, bg, height):
-        self.height = height
-        super().__init__(parent, bg=bg, width=900, height=self.height, bd=0)
+    def __init__(self, parent, bg, height, column_data):
+        self.column_data = column_data
+        super().__init__(parent, bg=bg, width=900, height=height, bd=0)
         self.ps = parent.state
         self.config(width=self.ps['width'])
 
@@ -83,27 +83,27 @@ class ColumnHeader(tk.Canvas):
         self.delete('header-border')
         self.delete('header-text')
 
+        height = int(self.cget('height'))
         pad = 0
-        #print (self.ps['column_width_list'], len(self.ps['columns']))
-        for i, (col_key, col) in enumerate(self.ps['columns'].items()):
+        for i, (col_key, col) in enumerate(self.column_data.items()):
             x1 = self.ps['column_width_list'][i] + pad
             x2 = self.ps['column_width_list'][i+1] + pad
 
             x_center = x1 + 4 #col['width'] / 2
             if i == current_col:
-                self.create_rectangle(x1, 0, x2, self.height,
+                self.create_rectangle(x1, 0, x2, height,
                                       outline='white',
                                       fill='#aaaaaa',
                                       width=1,
                                       tag='header-border')
             else:
-                self.create_rectangle(x1, 0, x2, self.height,
+                self.create_rectangle(x1, 0, x2, height,
                                       outline='white',
                                       width=1,
                                       tag='header-border')
 
             self.create_text(
-                x_center + pad, self.height/2,
+                x_center + pad, height/2,
                 text=col['label'],
                 anchor='w',
                 fill='white',
@@ -115,6 +115,7 @@ class ColumnHeader(tk.Canvas):
         #self.create_line(x,0, x,h, tag='gridline',
         #                fill='white', width=2)
         return
+
 
 class RowIndex(tk.Canvas):
 

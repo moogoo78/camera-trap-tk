@@ -35,6 +35,7 @@ from toplevel import (
     ImportData,
     LoginForm,
     ConfigureKeyboardShortcut,
+    ConfigureFont,
 )
 
 from database import Database
@@ -132,12 +133,15 @@ class Application(tk.Tk):
         self.menubar = tk.Menu(self)
         userbar = tk.Menu(self.menubar, tearoff=False)
         toolbar = tk.Menu(self.menubar, tearoff=False)
+        settingbar = tk.Menu(self.menubar, tearoff=False)
         toolbar.add_command(label='匯入', command=self.on_import_data)
-        toolbar.add_command(label='設定快捷鍵', command=lambda: ConfigureKeyboardShortcut(self))
+        settingbar.add_command(label='設定快捷鍵', command=lambda: ConfigureKeyboardShortcut(self))
+        settingbar.add_command(label='設定字體大小', command=lambda: ConfigureFont(self))
         userbar.add_command(label='登入ORCID', command=self.on_login_form)
         userbar.add_command(label='登出', command=self.on_logout)
-        self.menubar.add_cascade(label='login', menu=userbar)
-        self.menubar.add_cascade(label='tools', menu=toolbar)
+        self.menubar.add_cascade(label='帳號', menu=userbar)
+        self.menubar.add_cascade(label='工具', menu=toolbar)
+        self.menubar.add_cascade(label='設定', menu=settingbar)
         self.configure(menu=self.menubar)
 
         # process user_info
@@ -202,6 +206,7 @@ class Application(tk.Tk):
                 logging.debug('credentials not found')
 
 
+        self.app_context_size = self.db.get_state('context_size') or 'S' # SML
         self.layout()
 
     def layout(self):

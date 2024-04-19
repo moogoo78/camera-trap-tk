@@ -74,8 +74,6 @@ class MainTable(tk.Canvas):
         self.x_start = 0
         self.y_start = 0
 
-        self.width = self.ps['width']
-        self.height = self.ps['height']
         self.entry_queue = {}
 
         self.ps['after_row_index_selected'] = self.handle_row_index_selected
@@ -390,15 +388,15 @@ class MainTable(tk.Canvas):
         self.render_copy_box(self.selected['box'])
 
     def render(self):
-        # print ('render', self.height, self.width, self.ps['height'], self.ps['width'])
-        self.configure(scrollregion=(0,0, self.width, self.ps['height']+30))
+        #print ('render', self.height, self.width, self.ps['height'], self.ps['width'])
+        self.configure(scrollregion=(0,0, self.ps['width'], self.ps['height']+30))
         self.render_grid()
         self.render_data()
         #self.render_pagination() # mouse click cause column & rows highlight
 
     def render_grid(self):
         self.delete('cell-border')
-
+        print(self.ps['column_width_list'])
         col_w_list = self.ps['column_width_list']
         color = self.ps['style']['color']
         num_rows = self.ps['num_rows']
@@ -447,6 +445,8 @@ class MainTable(tk.Canvas):
             y_center,
             text=value,
             fill='#000000',
+            anchor='w',
+            font=self.ps['style']['font']['body_text'],
             tags=('cell', 'cell-text', tag)
         )
 
@@ -458,19 +458,21 @@ class MainTable(tk.Canvas):
         for row_counter, (row_key, row) in enumerate(self.ps['data'].items()):
             for col_counter, (col_key, col) in enumerate(self.ps['columns'].items()):
                 x_left = col_w_list[col_counter] + self.x_start
-                x_center = x_left + col['width'] / 2
+                x_center = x_left + 4 #x_left + col['width'] / 2
                 # cell_tag = f'cell-text:{row_counter}_{col_counter}'
                 cell_tag = f'cell-text:{row_key}_{col_key}'
                 col_type = col.get('type', 'entry')
                 y_top = row_counter * self.ps['cell_height'] + self.y_start
                 y_center = y_top + self.ps['cell_height']/2
                 if col_type in ['entry', 'text', 'listbox', 'autocomplete']:
+                    #print(self.ps['style']['font'])
                     rect = self.create_text(
                         x_center,
                         y_center,
                         text=row.get(col_key, ''),
-                        fill='#000000',
+                        anchor='w',
                         font=self.ps['style']['font']['body_text'],
+                        fill='#000000',
                         tags=('cell', 'cell-text', cell_tag)
                     )
                 elif col_type == 'image':

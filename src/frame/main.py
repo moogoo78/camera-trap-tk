@@ -138,7 +138,7 @@ class Main(tk.Frame):
         #self.notebook.grid(row=0, column=0)
 
         #panedwindow_style = ttk.Style()
-        self.panedwindow = ttk.PanedWindow(self, orient=tk.VERTICAL)
+        self.panedwindow = ttk.PanedWindow(self, orient=tk.VERTICAL, width=self.app.app_width)
         #panedwindow_style = configure('PanedWindow', sashpad=5)
         #self.panedwindow.pack(fill=tk.BOTH, expand=True)
         self.panedwindow.grid(row=0, column=0, sticky='nsew')
@@ -515,6 +515,7 @@ class Main(tk.Frame):
 
         num_per_page = int(self.app.config.get('DataGrid', 'num_per_page'))
         num_per_page_choices = [int(x) for x in self.app.config.get('DataGrid', 'num_per_page_choices', fallback='').split(',')]
+
         self.data_grid = DataGrid(
             self.table_frame,
             data={},
@@ -531,16 +532,10 @@ class Main(tk.Frame):
             rows_delete_type='CLONED',
             remove_rows_key_ignore_pattern='-0',
             column_header_bg= '#5B7464',
-            column_header_height=30,
-            custom_fonts={
-                'column_header': ('Calibri', 12),
-                'body_text': ('Calibri', 12),
-                'row_index': ('Calibri', 12, 'normal'),
-            }
+            cell_height=35,
         )
 
         self.data_grid.update_state({
-            'cell_height': 35,
             'cell_image_x_pad': 3,
             'cell_image_y_pad': 1,
             'custom_actions': {
@@ -735,7 +730,10 @@ class Main(tk.Frame):
 
         self.data_grid.main_table.delete('row-img-seq')
         if len(data) > 0:
-            self.data_grid.refresh(data, is_init_highlight=is_init_highlight)
+            self.apply_font(self.app.app_context_size)
+            self.data_grid.column_header.config(height=self.data_grid.state['column_header_height'])
+            self.data_grid.column_header.render()
+            self.data_grid.refresh(data, is_init_highlight=True)
 
         # draw img_seq
         # print(self.seq_info)
@@ -749,7 +747,7 @@ class Main(tk.Frame):
                 y2 = self.data_grid.state['cell_height'] * (index+1)
                 if tag_name and color:
                     self.data_grid.main_table.create_rectangle(
-                        0, y1, self.data_grid.main_table.width + self.data_grid.main_table.x_start, y2,
+                        0, y1, self.data_grid.state['width'] + self.data_grid.main_table.x_start, y2,
                         fill=color,
                         tags=('row-img-seq', 'row-img-seq_{}'.format(tag_name)))
 
@@ -1455,3 +1453,84 @@ class Main(tk.Frame):
             'seconds': s,
             'total_seconds': (60 * m) + s
         }
+
+    def apply_font(self, context_size):
+        logging.info(f'set font size: {context_size}')
+
+        table_fonts = {
+            'S': {
+                'column_header': None,
+                'body_text': None,
+                'row_index': None,
+            },
+            'L': {
+                'column_header': ('Calibri', 22),
+                'body_text': ('Calibri', 22),
+                'row_index': ('Calibri', 22),
+            },
+            'M': {
+                'column_header': ('Calibri', 14),
+                'body_text': ('Calibri', 14),
+                'row_index': ('Calibri', 14),
+            }
+        }
+        field_height = {
+            'S': 30,
+            'M': 45,
+            'L': 50,
+        }
+
+        column_width_list_map = {
+            'L': {
+                'status_display': 200,
+                'thumb': 65,
+                'filename': 350,
+                'datetime_display': 350,
+                'annotation_species': 140,
+                'annotation_lifestage': 100,
+                'annotation_sex': 100,
+                'annotation_antler': 100,
+                'annotation_remark': 100,
+                'annotation_animal_id': 100,
+            },
+            'M': {
+                'status_display': 140,
+                'thumb': 55,
+                'filename': 200,
+                'datetime_display': 210,
+                'annotation_species': 120,
+                'annotation_lifestage': 90,
+                'annotation_sex': 90,
+                'annotation_antler': 90,
+                'annotation_remark': 90,
+                'annotation_animal_id': 90,
+            },
+            'S': {
+                'status_display': 100,
+                'thumb': 55,
+                'filename': 150,
+                'datetime_display': 150,
+                'annotation_species': 120,
+                'annotation_lifestage': 80,
+                'annotation_sex': 80,
+                'annotation_antler': 80,
+                'annotation_remark': 80,
+                'annotation_animal_id': 80,
+            }
+        }
+
+        style = self.data_grid.state['style'].copy()
+        style.update({
+            'font': table_fonts.get(context_size, {})
+        })
+
+        self.data_grid.update_state({
+            'column_header_height': field_height.get(context_size),
+            'cell_height': field_height.get(context_size),
+            'style': style,
+        })
+
+        new_columns = self.data_helper.columns.copy()
+        for k, v in new_columns.items():
+            v['width'] = column_width_list_map[context_size][k]
+        self.data_grid.update_columns(new_columns)

@@ -35,6 +35,7 @@ class DataGrid(tk.Frame):
                  remove_rows_key_ignore_pattern='',
                  column_header_bg='#336b87',
                  column_header_height=20,
+                 cell_height=20,
 
     ):
         """include MainTable, ColumnHeader, RowIndex"""
@@ -42,7 +43,6 @@ class DataGrid(tk.Frame):
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
         num_per_page = min(int(num_per_page), 2000) # 2000 is max limit
-        cell_height = 20
 
         self.state = {
             'data': data,
@@ -79,7 +79,7 @@ class DataGrid(tk.Frame):
                 }
             },
             'image_tmp': {}, # for canvas image, will deleted by garbage collect
-            'column_header_height': 20,
+            'column_header_height': column_header_height,
             'column_width_list': [], # count by update_columns()
             'num_rows': 0, # count by refresh()
             'num_cols': 0, # count by update_columns()
@@ -106,7 +106,6 @@ class DataGrid(tk.Frame):
         }
         self.update_state(self.state)
         #self.current_rc = [0, 0]
-
         # other not default
         # cell_image_x_pad
         # cell_image_y_pad
@@ -119,7 +118,8 @@ class DataGrid(tk.Frame):
         self.grid_rowconfigure(1, weight=1)
 
         self.main_table = MainTable(self)
-        self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'], height=column_header_height)
+        #self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'], height=column_header_height)
+        self.column_header = ColumnHeader(self, bg=self.state['style']['color']['column_header_bg'], height=self.state['column_header_height'], column_data=self.state['columns'])
         self.footer = Footer(self)
 
         if self.state['row_index_display']:
