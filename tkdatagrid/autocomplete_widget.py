@@ -8,6 +8,9 @@ class Autocomplete(ttk.Frame):
       - frame
         - listbox
     """
+
+    IGNORE_CHOICES = ['-----',]
+
     def __init__(self, master=None, choices=[], value=None, freesolo=False,  **kwargs):
         width = kwargs.pop('width', None)
         self.after_update_entry = kwargs.pop('after_update_entry', None)
@@ -68,14 +71,21 @@ class Autocomplete(ttk.Frame):
 
     def _update_entry(self, event):
         val = ''
+
         if sel := self.listbox.curselection():
             val = self.listbox.get(sel[0])
-            self.entry.delete(0, "end")
-            self.entry.selection_clear()
-            self.entry.icursor("end")
-            self.event_generate('<<ItemSelect>>')
+            is_valid = True
+            for i in self.IGNORE_CHOICES:
+                if i in val:
+                    is_valid = False
+                    break
+            if is_valid is True:
+                self.entry.delete(0, "end")
+                self.entry.selection_clear()
+                self.entry.icursor("end")
+                self.event_generate('<<ItemSelect>>')
 
-        self.after_update_entry(val)
+                self.after_update_entry(val)
 
         # caused keyboard up/down erreor
         # self.listbox_frame.destroy()

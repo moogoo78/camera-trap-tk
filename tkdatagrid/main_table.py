@@ -396,7 +396,7 @@ class MainTable(tk.Canvas):
 
     def render_grid(self):
         self.delete('cell-border')
-        print(self.ps['column_width_list'])
+
         col_w_list = self.ps['column_width_list']
         color = self.ps['style']['color']
         num_rows = self.ps['num_rows']

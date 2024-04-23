@@ -95,7 +95,7 @@ class Main(tk.Frame):
         species_extra_birds = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         self.data_helper.columns['annotation_species']['choices'] = species_choices.split(',')
         species_bird_choices = self.app.config.get('AnnotationSpeciesExtra', 'birds')
-        # self.data_helper.columns['annotation_species']['choices'] += species_bird_choices.split(',')
+        self.data_helper.columns['annotation_species']['choices'] += ['--------------------'] + species_bird_choices.split(',')
         self.data_helper.columns['annotation_species']['extra_choices'] = species_extra_birds.split(',')
         self.data_helper.columns['annotation_antler']['choices'] = antler_choices.split(',')
         self.data_helper.columns['annotation_sex']['choices'] = sex_choices.split(',')
