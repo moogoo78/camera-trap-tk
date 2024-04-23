@@ -436,7 +436,7 @@ class MainTable(tk.Canvas):
         row = self.get_row_index(rc_keys[0])
         x_left = self.get_col_offset(rc_keys[1])
         width = self.ps['columns'][rc_keys[1]]['width']
-        x_center = x_left + width / 2
+        x_center = x_left + 4 #x_left + width / 2
         y_top = row * self.ps['cell_height'] + self.y_start
         y_center = y_top + self.ps['cell_height'] / 2
 
@@ -465,7 +465,7 @@ class MainTable(tk.Canvas):
                 y_top = row_counter * self.ps['cell_height'] + self.y_start
                 y_center = y_top + self.ps['cell_height']/2
                 if col_type in ['entry', 'text', 'listbox', 'autocomplete']:
-                    #print(self.ps['style']['font'])
+
                     rect = self.create_text(
                         x_center,
                         y_center,
