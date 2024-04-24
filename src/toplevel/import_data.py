@@ -354,7 +354,7 @@ class ImportData(tk.Toplevel):
                     'csv',
                     '10',
                     '',
-                    '[]',
+                    json.dumps(data['annotation']),
                     ts_now,
                     source_id,
                     '{}',
