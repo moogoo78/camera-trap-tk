@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.1.9]
+
+### 修改
+
+- 匯入影片csv會沒有物種的標註資料
+- 鳥類清單合併到物種清單 (有加一個 `-----` 分隔號)，所以也可以key字自動篩選
+- 匯入文字資料的物種控制詞彙也要考慮鳥類 (這個應該上個版本就有加上去了)
+- 拿掉右鍵鳥類清單
+
+### 新增
+
+- 調整字體大小
+- 匯入範例檔: import-example.csv
+
+
 ## [v1.1.8]
 
 ### 修改
