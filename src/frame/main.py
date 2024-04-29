@@ -525,7 +525,7 @@ class Main(tk.Frame):
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
             cols_on_fill_handle=['annotation_species', 'annotation_sex', 'annotation_antler', 'annotation_remark', 'annotation_lifestage'],
-            custom_menus=menus,
+            #custom_menus=menus,
             custom_binding=custom_binding,
             num_per_page=num_per_page,
             num_per_page_choices=num_per_page_choices,

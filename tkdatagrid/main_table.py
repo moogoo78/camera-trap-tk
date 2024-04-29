@@ -972,7 +972,8 @@ class MainTable(tk.Canvas):
                     submenu.add_command(label=subm_choice, command=lambda x=subm_choice: m['command'](x))
                 self.popup_menu.add_cascade(label=m['label'], menu=submenu, underline=0)
         # end custom menus
-        self.popup_menu.add_separator()
+        if self.ps['custom_menus']:
+            self.popup_menu.add_separator()
 
         self.popup_menu.add_command(label='複製內容', command=self.copy_to_clipboard)
         self.popup_menu.add_command(label='貼上內容', command=self.paste_from_clipboard)
