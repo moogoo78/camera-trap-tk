@@ -163,7 +163,7 @@ class Main(tk.Frame):
         self.image_thumb_label.grid(row=0, column=0, sticky='ns')
 
 
-        self.ctrl_frame = tk.Frame(self.top_paned_frame, width=500, height=self.thumb_height, bg='#F2F2F2')
+        self.ctrl_frame = tk.Frame(self.top_paned_frame, width=500, height=self.thumb_height, bg='#F2F2F2') # #00FF00
         self.ctrl_frame.grid(row=0, column=1, sticky='nw', padx=10)
         #self.ctrl_frame.grid_propagate(0)
         self.config_ctrl_frame()
@@ -242,7 +242,7 @@ class Main(tk.Frame):
         # )
         # foo_button.grid(row=0, column=0, padx=4, pady=34, sticky='ne')
 
-        self.ctrl_frame2 = tk.Frame(self.ctrl_frame, background='#F2F2F2')
+        self.ctrl_frame2 = tk.Frame(self.ctrl_frame, background='#F2F2F2') # #FF0000
         self.ctrl_frame2.grid_rowconfigure(0, weight=0)
         self.ctrl_frame2.grid_rowconfigure(1, weight=0)
         self.ctrl_frame2.grid_rowconfigure(2, weight=0)
@@ -468,8 +468,11 @@ class Main(tk.Frame):
             height=2,
             takefocus=0,
         )
-        self.upload_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+222), pady=(18,0))
-        self.delete_button.grid(row=6, column=1, sticky='e', padx=(0, left_spacing+112), pady=(18,0))
+        # self.upload_button.grid(row=6, column=1, sticky='ws', padx=(0, left_spacing+322), pady=(18,0))
+        # self.delete_button.grid(row=6, column=1, sticky='ws', padx=(0, left_spacing+112), pady=(18,0))
+        self.upload_button.grid(row=6, column=1, sticky='ws', padx=270, pady=(18,0))
+        self.delete_button.grid(row=6, column=1, sticky='ws', padx=400, pady=(18,0))
+
 
         self.enlarge_icon = ImageTk.PhotoImage(file='./assets/enlarge.png')
         self.image_viewer_button = tk.Button(
@@ -756,6 +759,13 @@ class Main(tk.Frame):
 
         # folder name
         self.label_folder['text'] = self.source_data['source'][3]
+        if len(self.source_data['source'][3]) < 40:
+            self.label_folder['font'] = self.app.get_font('display-2')
+        elif len(self.source_data['source'][3]) >= 40:
+            self.label_folder['font'] = self.app.get_font('display-3')
+        else:
+            self.label_folder['font'] = self.app.get_font('display-4')
+
 
         # trip start/end
         if trip_start := self.source_data['source'][9]:
