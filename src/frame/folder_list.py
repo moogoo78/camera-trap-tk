@@ -308,11 +308,15 @@ class FolderList(tk.Frame):
                 tags=('item', status_cat, source_tag)
             )
             gap += 22
+            upload_status_label = f'上傳狀態：{self.app.source.get_status_label(r[6])}'
+            if r[6] == 'a1':
+                upload_status_label = '匯入中:'
+
             self.canvas.create_text(
                 x+24,
                 gap,
                 anchor='nw',
-                text=f'上傳狀態：{self.app.source.get_status_label(r[6])}',
+                text=upload_status_label,
                 font=self.app.get_font('display-4'),
                 fill='#464646',
                 tags=('item', status_cat, source_tag)

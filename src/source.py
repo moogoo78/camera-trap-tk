@@ -252,8 +252,8 @@ class Source(object):
 
         #db.exec_sql(sql, True)
 
-        make_thumb(i['path'], thumb_source_path)
-        return sql
+        if is_success := make_thumb(i['path'], thumb_source_path):
+            return sql
 
     @staticmethod
     def _check_filename(dirent):

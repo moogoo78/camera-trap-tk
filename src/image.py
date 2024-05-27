@@ -20,17 +20,26 @@ THUMB_MAP = (
 )
 
 def make_thumb(src_path, thumb_source_path):
+    has_error = False
+
     for i in THUMB_MAP:
         stem = Path(src_path).stem
         target_filename = f'{stem}-{i[0]}.jpg'
         target_path = thumb_source_path.joinpath(Path(target_filename))
         #print (source_path, target_path)
-        thumb = PILImage.open(src_path)
-        thumb.thumbnail(i[1] , PILImage.ANTIALIAS)
-        if thumb.mode != 'RGB': # RGBA, P?
-            thumb = thumb.convert('RGB')
-        thumb.save(target_path, "JPEG")
-        thumb.close()
+
+        try:
+            thumb = PILImage.open(src_path)
+            thumb.thumbnail(i[1] , PILImage.ANTIALIAS)
+            if thumb.mode != 'RGB': # RGBA, P?
+                thumb = thumb.convert('RGB')
+                thumb.save(target_path, "JPEG")
+                thumb.close()
+        except Exception as errmsg:
+            print(errmsg)
+            has_error = True
+
+    return not has_error
 
 def check_thumb(thumb_path, image_path):
     thumb_path = Path(thumb_path)
