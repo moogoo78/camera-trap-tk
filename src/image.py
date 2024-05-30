@@ -33,8 +33,10 @@ def make_thumb(src_path, thumb_source_path):
             thumb.thumbnail(i[1] , PILImage.ANTIALIAS)
             if thumb.mode != 'RGB': # RGBA, P?
                 thumb = thumb.convert('RGB')
-                thumb.save(target_path, "JPEG")
-                thumb.close()
+
+            thumb.save(target_path, "JPEG")
+            thumb.close()
+
         except Exception as errmsg:
             print(errmsg)
             has_error = True

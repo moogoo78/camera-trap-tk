@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [v1.1.10]
+
+### 修改
+
+- 新增壞掉的照片的處理 (照片檔可以開啟, 但無法做縮圖)
+- 匯入照片的進度條顯示文字 "上傳狀態" => "匯入中"
+- 編輯頁的"上傳資料夾" 跟 "刪除資料夾" 按鈕不見
+
 ## [v1.1.9]
 
 ### 修改

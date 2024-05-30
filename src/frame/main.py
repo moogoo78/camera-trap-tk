@@ -470,8 +470,8 @@ class Main(tk.Frame):
         )
         # self.upload_button.grid(row=6, column=1, sticky='ws', padx=(0, left_spacing+322), pady=(18,0))
         # self.delete_button.grid(row=6, column=1, sticky='ws', padx=(0, left_spacing+112), pady=(18,0))
-        self.upload_button.grid(row=6, column=1, sticky='ws', padx=270, pady=(18,0))
-        self.delete_button.grid(row=6, column=1, sticky='ws', padx=400, pady=(18,0))
+        self.upload_button.grid(row=6, column=1, sticky='ws', padx=250, pady=(18,0))
+        self.delete_button.grid(row=6, column=1, sticky='ws', padx=350, pady=(18,0))
 
 
         self.enlarge_icon = ImageTk.PhotoImage(file='./assets/enlarge.png')
