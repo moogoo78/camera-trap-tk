@@ -222,7 +222,7 @@ class ImportData(tk.Toplevel):
             is_utf8 = False
         finally:
             if is_utf8 is True:
-                csvfile = open(file_path, encoding='utf-8')
+                csvfile = open(file_path, encoding='utf-8-sig')
                 logging.info(f'import {file_path}, use utf-8 encoding')
             else:
                 csvfile = open(file_path) # platform dependent
@@ -231,9 +231,10 @@ class ImportData(tk.Toplevel):
         if csvfile:
             #next(reader)
             reader = csv.DictReader(csvfile, delimiter=',')
-            headers = set(reader.fieldnames)
-            req_headers = [v['label'] for k,v in HEADER_MAP.items() if v.get('required', False)]
+            headers = set([x.strip() for x in reader.fieldnames])
+            req_headers = [v['label'].strip() for k,v in HEADER_MAP.items() if v.get('required', False)]
             req_headers = set(req_headers)
+
             if req_headers != req_headers.intersection(headers):
                 lack_headers = req_headers - req_headers.intersection(headers)
                 err_msg = (ERROR_MAP['INVALID_FORMAT'], f'缺少欄位: {lack_headers}')
