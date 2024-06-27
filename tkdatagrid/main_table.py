@@ -94,7 +94,7 @@ class MainTable(tk.Canvas):
         self.bind('<ButtonRelease-1>', self.handle_mouse_release_1)
         # key
         self.bind_all('<Escape>', self.remove_widgets)
-        #self.bind_all('<space>', self.start_edit)
+        self.bind_all('<space>', self.start_edit)
         #self.bind_all('<KeyPress>', self.handle_key_press)
         # self.bind_all('<KeyRelease>', self.handle_key_release)
         # composite
