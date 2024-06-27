@@ -736,7 +736,7 @@ class Main(tk.Frame):
             self.apply_font(self.app.app_context_size)
             self.data_grid.column_header.config(height=self.data_grid.state['column_header_height'])
             self.data_grid.column_header.render()
-            self.data_grid.refresh(data, is_init_highlight=True)
+            self.data_grid.refresh(data, is_init_highlight=is_init_highlight)
 
         # draw img_seq
         # print(self.seq_info)

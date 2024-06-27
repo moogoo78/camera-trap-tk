@@ -81,6 +81,6 @@ class ConfigureFont(tk.Toplevel):
         self.app.app_context_size = context_size
         tk.messagebox.showinfo('info', '已儲存')
 
-        self.app.contents['main'].refresh()
+        self.app.contents['main'].refresh(True)
         self.destroy()
 
