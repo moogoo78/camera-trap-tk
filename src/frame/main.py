@@ -536,6 +536,7 @@ class Main(tk.Frame):
             remove_rows_key_ignore_pattern='-0',
             column_header_bg= '#5B7464',
             cell_height=35,
+            bottom_padding=50
         )
 
         self.data_grid.update_state({

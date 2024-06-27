@@ -36,6 +36,7 @@ class DataGrid(tk.Frame):
                  column_header_bg='#336b87',
                  column_header_height=20,
                  cell_height=20,
+                 bottom_padding=0, # give bottom more blank area prevent listbox options overflow, 240627
 
     ):
         """include MainTable, ColumnHeader, RowIndex"""
@@ -103,6 +104,7 @@ class DataGrid(tk.Frame):
             'box_display_type': 'lower',
             'rows_delete_type': rows_delete_type,
             'remove_rows_key_ignore_pattern': remove_rows_key_ignore_pattern,
+            'bottom_padding': bottom_padding,
         }
         self.update_state(self.state)
         #self.current_rc = [0, 0]
@@ -214,7 +216,7 @@ class DataGrid(tk.Frame):
             'data_all': new_data_iid,
             'num_rows': len(data_visible),
             'row_keys': row_keys,
-            'height': len(data_visible) * self.state['cell_height'],
+            'height': len(data_visible) * self.state['cell_height'] + self.state['bottom_padding'],
             'pagination': pagination,
         })
 
