@@ -50,9 +50,11 @@ class HelpPage(tk.Toplevel):
 
         self.img_qrcode_app = Image.open('./assets/qrcode-app.png')
         self.img_qrcode_web = Image.open('./assets/qrcode-web.png')
+        self.img_qrcode_deployment = Image.open('./assets/qrcode-deployment.png')
         self.photo = ImageTk.PhotoImage(img.resize(to_size))
         self.photo_qrcode_app = ImageTk.PhotoImage(self.img_qrcode_app)
         self.photo_qrcode_web = ImageTk.PhotoImage(self.img_qrcode_web)
+        self.photo_qrcode_deployment = ImageTk.PhotoImage(self.img_qrcode_deployment.resize((175, 175)))
         self.canvas = tk.Canvas(
             self,
             width=self.app.app_width,
@@ -95,7 +97,12 @@ class HelpPage(tk.Toplevel):
             image=self.photo_qrcode_web,
             anchor='nw',
         )
-
+        self.canvas.create_image(
+            94, #600-70, # align: left, +70 for center
+            920,
+            image=self.photo_qrcode_deployment,
+            anchor='nw',
+        )
     def quit(self):
         self.destroy()
         self.app.is_help_open = False
