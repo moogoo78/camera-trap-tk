@@ -465,11 +465,18 @@ class MainTable(tk.Canvas):
                 y_top = row_counter * self.ps['cell_height'] + self.y_start
                 y_center = y_top + self.ps['cell_height']/2
                 if col_type in ['entry', 'text', 'listbox', 'autocomplete']:
-
+                    text = row.get(col_key, '')
+                    col_width = col_w_list[col_counter+1] - col_w_list[col_counter]
+                    font_family = self.ps['style']['font']['body_text'][0]
+                    font_size = self.ps['style']['font']['body_text'][1]
+                    text_width = tk.font.Font(size=font_size, family=font_family).measure(text)
+                    #print(text_width, col_width, text)
+                    if text_width > col_width+10:
+                        text = f'{text[0:8]}...{text[-6:]}'
                     rect = self.create_text(
                         x_center,
                         y_center,
-                        text=row.get(col_key, ''),
+                        text=text,
                         anchor='w',
                         font=self.ps['style']['font']['body_text'],
                         fill='#000000',
