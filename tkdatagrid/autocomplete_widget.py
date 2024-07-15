@@ -24,12 +24,14 @@ class Autocomplete(ttk.Frame):
         self.sv = tk.StringVar()
         self.sv.set(value)
 
+
         self.entry = ttk.Entry(self, width=width, textvariable=self.sv, takefocus=1)
         self.sv.trace('w', self.handle_trace)
 
         self.listbox_frame = ttk.Frame(self, style='border.TFrame', padding=1)
-        self.listbox = tk.Listbox(self.listbox_frame, width=width, selectmode=tk.SINGLE,
-                                  highlightthickness=0, relief='flat')
+        style_font = master.state['style']['font']['body_text']
+        font= tk.font.Font(family=style_font[0], size=style_font[1])
+        self.listbox = tk.Listbox(self.listbox_frame, width=width, selectmode=tk.SINGLE, highlightthickness=0, relief='flat', font=font)
         self.listbox.bind('<<ListboxSelect>>', self._update_entry)
         self.listbox.bind_all('<Down>', lambda event: self.handle_listbox_arrow_key(event, 'down'))
         self.listbox.bind_all('<Up>', lambda event: self.handle_listbox_arrow_key(event, 'up'))

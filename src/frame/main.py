@@ -1470,9 +1470,9 @@ class Main(tk.Frame):
 
         table_fonts = {
             'S': {
-                'column_header': None,
-                'body_text': None,
-                'row_index': None,
+                'column_header': ('Calibri', 12),
+                'body_text': ('Calibri', 12),
+                'row_index': ('Calibri', 12),
             },
             'L': {
                 'column_header': ('Calibri', 22),

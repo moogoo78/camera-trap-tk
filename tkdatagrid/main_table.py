@@ -532,7 +532,9 @@ class MainTable(tk.Canvas):
         self.set_keyboard_control(False)
 
         x1, y1, x2, y2 = self.get_cell_coords(row, col)
-        self.listbox = tk.Listbox(self.parent, background='white', selectmode=tk.SINGLE)#, **self.listbox_args)
+        style_font = self.ps['style']['font']['body_text']
+        font= tk.font.Font(family=style_font[0], size=style_font[1])
+        self.listbox = tk.Listbox(self.parent, background='white', selectmode=tk.SINGLE, font=font)#, **self.listbox_args)
         #'activestyle': 'none'
         #exportselection: False
         self.listbox.bind('<ButtonRelease-1>', lambda event: self.handle_listbox_click(event, row, col))
