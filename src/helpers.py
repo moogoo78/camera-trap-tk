@@ -385,7 +385,8 @@ class DataHelper(object):
         return seq_info
 
     def has_empty_species(self):
-        for k,v in self.data.items():
-            if v.get('annotation_species', '') == '':
-                return True
-        return False
+        empty_list = []
+        for idx, d in enumerate(self.data.items()):
+            if d[1].get('annotation_species', '') == '':
+                empty_list.append((idx, d[0]))
+        return empty_list

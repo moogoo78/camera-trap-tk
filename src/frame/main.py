@@ -917,9 +917,12 @@ class Main(tk.Frame):
         if not tk.messagebox.askokcancel('確認計畫', '請確認計畫、樣區、相機位置是否無誤？'):
             return False
 
-        has_empty = self.data_helper.has_empty_species()
-        if has_empty:
-            if not tk.messagebox.askokcancel('注意', '尚有照片未填寫物種'):
+        empty_list = self.data_helper.has_empty_species()
+        if len(empty_list) > 0:
+            empty_order = [str(int(x[0]) + 1) for x in empty_list]
+            # TOOO, if list too long, truncated?
+            empty_order_str = ', '.join(empty_order)
+            if not tk.messagebox.askokcancel('注意', f'尚有照片未填寫物種，順序編號: {empty_order_str}'):
                 return False
 
         # ask to check override or not
