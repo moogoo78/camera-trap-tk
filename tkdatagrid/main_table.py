@@ -455,6 +455,31 @@ class MainTable(tk.Canvas):
         self.delete('cell')
 
         col_w_list = self.ps['column_width_list']
+
+        font_family = self.ps['style']['font']['body_text'][0]
+        font_size = self.ps['style']['font']['body_text'][1]
+
+        # measure text width and decide truncate or not
+        measurements = {}
+        truncate_index = {}
+        if trunc_type := self.ps['truncate'].get('type'):
+            for c in self.ps['truncate']['columns']:
+                measurements = { c: {}}
+            if trunc_type == 'measure-all':
+                for row_counter, (row_key, row) in enumerate(self.ps['data'].items()):
+                    for col in self.ps['truncate']['columns']:
+                        if val := row.get(col):
+                            text_len = len(val)
+                            #if  text_len > measurements[col]['max_len']:
+                            if text_len not in measurements[col]:
+                                measure_width = tk.font.Font(size=font_size, family=font_family).measure(val)
+                                measurements[text_len] = measure_width
+                            if measure_width > self.ps['columns'][col]['width'] + 10:
+                                if col not in truncate_index:
+                                    truncate_index[col] = []
+                                truncate_index[col].append(row_counter)
+
+        # render text
         for row_counter, (row_key, row) in enumerate(self.ps['data'].items()):
             for col_counter, (col_key, col) in enumerate(self.ps['columns'].items()):
                 x_left = col_w_list[col_counter] + self.x_start
@@ -466,13 +491,10 @@ class MainTable(tk.Canvas):
                 y_center = y_top + self.ps['cell_height']/2
                 if col_type in ['entry', 'text', 'listbox', 'autocomplete']:
                     text = row.get(col_key, '')
-                    col_width = col_w_list[col_counter+1] - col_w_list[col_counter]
-                    font_family = self.ps['style']['font']['body_text'][0]
-                    font_size = self.ps['style']['font']['body_text'][1]
-                    text_width = tk.font.Font(size=font_size, family=font_family).measure(text)
-                    #print(text_width, col_width, text)
-                    if text_width > col_width+10:
-                        text = f'{text[0:8]}...{text[-6:]}'
+                    if truncate_col := truncate_index.get(col_key):
+                        if row_counter in truncate_col:
+                            text = f'{text[0:8]}...{text[-6:]}'
+
                     rect = self.create_text(
                         x_center,
                         y_center,

@@ -37,6 +37,7 @@ class DataGrid(tk.Frame):
                  column_header_height=20,
                  cell_height=20,
                  bottom_padding=0, # give bottom more blank area prevent listbox options overflow, 240627
+                 truncate={},
 
     ):
         """include MainTable, ColumnHeader, RowIndex"""
@@ -105,6 +106,7 @@ class DataGrid(tk.Frame):
             'rows_delete_type': rows_delete_type,
             'remove_rows_key_ignore_pattern': remove_rows_key_ignore_pattern,
             'bottom_padding': bottom_padding,
+            'truncate': truncate,
         }
         self.update_state(self.state)
         #self.current_rc = [0, 0]

@@ -536,7 +536,8 @@ class Main(tk.Frame):
             remove_rows_key_ignore_pattern='-0',
             column_header_bg= '#5B7464',
             cell_height=35,
-            bottom_padding=50
+            bottom_padding=50,
+            truncate={'columns': ['filename'], 'type': 'measure-all'}
         )
 
         self.data_grid.update_state({
@@ -1035,10 +1036,27 @@ class Main(tk.Frame):
                 if 'b3' in self.source_data['source'][6]:
                     self.app.source.update_status(self.source_id, 'MEDIA_UPLOADING')
 
-                ids = ','.join([str(x) for x in has_storage_map['N']])
-                sql = f"UPDATE image SET upload_status='110' WHERE server_image_id IN ({ids})"
-                self.app.db.exec_sql(sql)
-                self.app.db.commit()
+                n_id_list = []
+                n_y_id_list = []
+                if stats := resp_json['stats']:
+                    if len(resp_json['images_to_y']):
+                        n_y_id_list = [str(x) for x in resp_json['images_to_y']]
+                for server_id in [str(x) for x in has_storage_map['N']]:
+                    if server_id not in n_y_id_list:
+                        n_id_list.append(server_id)
+
+                if len(n_y_id_list):
+                    ids_y = ','.join(n_y_id_list)
+                    sql = f"UPDATE image SET upload_status='200' WHERE server_image_id IN ({ids_y})"
+                    self.app.db.exec_sql(sql)
+                    self.app.db.commit()
+                    self.app.source.update_status(self.source_id, 'MEDIA_UPLOADING')
+
+                if len(n_id_list):
+                    ids_y = ','.join(n_id_list)
+                    sql = f"UPDATE image SET upload_status='110' WHERE server_image_id IN ({ids_y})"
+                    self.app.db.exec_sql(sql)
+                    self.app.db.commit()
 
             if len(has_storage_map['Y']) > 0:
                 ids = ','.join([str(x) for x in has_storage_map['Y']])
