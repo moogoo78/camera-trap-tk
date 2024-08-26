@@ -1020,9 +1020,20 @@ class Main(tk.Frame):
 
         deployment_journal_id = self.source_data['source'][12]
         if not deployment_journal_id:
+            if tk.messagebox.askokcancel('info', '伺服器上無資料，需重新上傳'):
+                # reset upload status
+                self.app.source.update_status(self.source_id, 'START_ANNOTATE')
+                sql = f"UPDATE image SET upload_status='10' WHERE source_id = {self.source_id}"
+                self.app.db.exec_sql(sql)
+                self.app.db.commit()
+
+                tk.messagebox.showinfo('info', f'已修復照片上傳狀態')
+                self.app.on_folder_list()
+
             return False
 
         resp = self.app.server.sync_upload(deployment_journal_id)
+
         if resp_json := resp.get('json', ''):
             has_storage_map = {
                 'Y': [],
