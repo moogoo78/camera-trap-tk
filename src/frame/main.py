@@ -977,7 +977,13 @@ class Main(tk.Frame):
             'source_id': self.source_data['source'][0],
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
             'deployment_journal_id': deployment_journal_id,
+            'num_of_images': self.source_data['source'][4],
+            'client_hostname': self.app.user_hostname,
+            'client_version': self.app.version,
         }
+
+        if uid := self.app.db.get_state('user_id'):
+            payload['user_id'] = uid
 
         if not is_override:
             sql = "UPDATE image SET upload_status='100' WHERE image_id IN ({})".format(','.join([str(x[0]) for x in image_list]))
@@ -1020,7 +1026,7 @@ class Main(tk.Frame):
 
         deployment_journal_id = self.source_data['source'][12]
         if not deployment_journal_id:
-            if tk.messagebox.askokcancel('info', '伺服器上無資料，需重新上傳'):
+            if tk.messagebox.askokcancel('info', '伺服器上無資料，同步狀態後，需重新上傳'):
                 # reset upload status
                 self.app.source.update_status(self.source_id, 'START_ANNOTATE')
                 sql = f"UPDATE image SET upload_status='10' WHERE source_id = {self.source_id}"
@@ -1061,13 +1067,18 @@ class Main(tk.Frame):
                     sql = f"UPDATE image SET upload_status='200' WHERE server_image_id IN ({ids_y})"
                     self.app.db.exec_sql(sql)
                     self.app.db.commit()
-                    self.app.source.update_status(self.source_id, 'MEDIA_UPLOADING')
+
+                    if len(n_y_id_list) == len(n_id_list):
+                        self.app.source.update_status(self.source_id, 'DONE_UPLOAD')
+                    else:
+                        self.app.source.update_status(self.source_id, 'MEDIA_UPLOADING')
 
                 if len(n_id_list):
                     ids_y = ','.join(n_id_list)
                     sql = f"UPDATE image SET upload_status='110' WHERE server_image_id IN ({ids_y})"
                     self.app.db.exec_sql(sql)
                     self.app.db.commit()
+                    self.app.source.update_status(self.source_id, 'MEDIA_UPLOADING')
 
             if len(has_storage_map['Y']) > 0:
                 ids = ','.join([str(x) for x in has_storage_map['Y']])
@@ -1075,11 +1086,16 @@ class Main(tk.Frame):
                 self.app.db.exec_sql(sql)
                 self.app.db.commit()
 
-            tk.messagebox.showinfo('info', f'已修復照片上傳狀態')
+            #tk.messagebox.showinfo('info', f'已修復照片上傳狀態')
+            info_str = '已修復照片上傳狀態'
+            if resp_json['is_server_updated']:
+                info_str = f'{info_str}，伺服器上傳狀態也已同步更新'
+            tk.messagebox.showinfo('info', info_str)
+
             self.app.on_folder_list()
             return True
 
-        tk.messagebox.showerror('error', f'修復API發生問題')
+        tk.messagebox.showerror('error', f'修復API失敗')
 
     def custom_to_page(self):
         self.refresh()
