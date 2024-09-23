@@ -24,20 +24,22 @@ class Autocomplete(ttk.Frame):
         self.sv = tk.StringVar()
         self.sv.set(value)
 
-
         self.entry = ttk.Entry(self, width=width, textvariable=self.sv, takefocus=1)
         self.sv.trace('w', self.handle_trace)
 
         self.listbox_frame = ttk.Frame(self, style='border.TFrame', padding=1)
+        scrollbar = tk.Scrollbar(self.listbox_frame)
+        scrollbar.pack(side='right', fill='y')
+
         style_font = master.state['style']['font']['body_text']
         font= tk.font.Font(family=style_font[0], size=style_font[1])
-        self.listbox = tk.Listbox(self.listbox_frame, width=width, selectmode=tk.SINGLE, highlightthickness=0, relief='flat', font=font)
+        self.listbox = tk.Listbox(self.listbox_frame, width=width, selectmode=tk.SINGLE, highlightthickness=0, relief='flat', font=font, yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.listbox.yview)
         self.listbox.bind('<<ListboxSelect>>', self._update_entry)
         self.listbox.bind_all('<Down>', lambda event: self.handle_listbox_arrow_key(event, 'down'))
         self.listbox.bind_all('<Up>', lambda event: self.handle_listbox_arrow_key(event, 'up'))
         self.listbox.bind_all('<Return>', self._update_entry)
         self.listbox.pack(fill='both', expand=True)
-        self.listbox.grid()
 
         self.entry.grid(sticky='ew')
         self.listbox_frame.grid(sticky='nsew')
@@ -68,6 +70,12 @@ class Autocomplete(ttk.Frame):
         self.listbox.delete(0, tk.END)
         for i in filtered:
             self.listbox.insert(tk.END, i)
+
+        # before add scrollbar to listbox, items less than 15 cannot be scrallable
+        #if self.listbox.size() < 16:
+        #    for i in range(self.listbox.size(), 16):
+        #        self.listbox.insert(tk.END, str(i)+'--')
+
         self.listbox.activate(0)
         self.listbox.select_set(0)
 
