@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 物種清單(新增鳥類)
 - 範例檔增加上物種清單
+- 下拉選單加scrollbar
+- 物種清單: 山羊 -> 野山羊, 柳鶯類 -> 柳鶯類(無法辨識)
 
 ## [v1.1.12]
 
