@@ -13,7 +13,9 @@ class ConfigureKeyboardShortcut(tk.Toplevel):
         self.title(f'Camera Trap Desktop - 設定鍵盤快捷鍵')
 
         choices = self.app.config.get('AnnotationFieldSpecies', 'choices')
+        bird_choices = self.app.config.get('AnnotationSpeciesExtra', 'birds')
         species_choices = choices.split(',')
+        all_choices = species_choices + bird_choices.split(',')
 
         self.data = {}
         for i in range(1, 11):
@@ -66,7 +68,7 @@ class ConfigureKeyboardShortcut(tk.Toplevel):
                 item_frame,
                 self.data[key]['var'],
                 # command=lambda *args, key=key: self.handle_option_change(args, key),
-                *species_choices
+                *all_choices
             )
             label.grid(row=0, column=0, sticky='nw', padx=(20, 10))
             menu.grid(row=0, column=1, sticky='ns', padx=10)
