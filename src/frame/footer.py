@@ -15,7 +15,7 @@ class Footer(tk.Frame):
     def layout(self):
         label = ttk.Label(
             self,
-            text='Copyright © 2023 Forestry and Nature Conservation Agency, MOA 行政院農業部林業及自然保育署 版權所有',
+            text='Copyright © 2023 Forestry and Nature Conservation Agency 農業部林業及自然保育署 版權所有',
             background=self.parent.app_primary_color,
             foreground='white',
         )
