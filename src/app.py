@@ -15,6 +15,7 @@ import socket
 
 from PIL import ImageTk
 import webbrowser
+from uuid import getnode
 
 from version import __version__
 from frame import (
@@ -375,6 +376,21 @@ class Application(tk.Tk):
 
             # update db
             self.db.set_state('user_id', user_id)
+
+            current_device_id = getnode()
+            if exist_device_id := self.db.get_state('device_id'):
+                if str(exist_device_id) != str(current_device_id):
+                    #tk.messagebox.showerror('err', '更換裝置，帳號無法沿用，請先登出')
+                    if tk.messagebox.askokcancel('注意', '更換裝置，帳號無法沿用，請先登出'):
+                        self.on_logout()
+                    else:
+                        #self.quit()
+                        # force leave app
+                        self.destroy()
+                        exit()
+            else:
+                self.db.set_state('device_id', current_device_id)
+
             if name:
                 self.db.set_state('user_name', name)
             if email:
@@ -384,14 +400,17 @@ class Application(tk.Tk):
 
     def on_logout(self):
         if uid := self.db.get_state('user_id'):
-            tk.messagebox.showinfo('info', '已登出')
+            tk.messagebox.showinfo('info', '已登出，請再重新啟動上傳程式')
 
         self.user_info = {'projects': []}
-        self.contents['main'].update_project_options([])
+        if 'main' in self.contents:
+            self.contents['main'].update_project_options([])
         self.db.set_state('user_id', '')
         self.db.set_state('user_name', '')
         self.db.set_state('user_email', '')
+        self.db.set_state('device_id', '')
         self.menubar.entryconfigure(1, label='login')
+        self.quit()
 
     def get_font(self, size_code='default'):
         SIZE_MAP = {
@@ -418,11 +437,12 @@ class Application(tk.Tk):
             logging.info('force quit app')
             return
 
-        if len(self.contents['folder_list'].import_deque) > 0:
+        if 'folder_list' in self.contents and len(self.contents['folder_list'].import_deque) > 0:
             tk.messagebox.showwarning('注意', f'尚有資料夾正在匯入中，請等候匯入完成再離開')
             return
 
-        self.contents['upload_progress'].terminate_upload_task()
+        if 'upload_progress' in self.contents:
+            self.contents['upload_progress'].terminate_upload_task()
         # don't save
         # if h:= self.app_height_resize_to:
         #     try:
