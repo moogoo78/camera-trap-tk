@@ -702,6 +702,11 @@ class Main(tk.Frame):
         #     self.upload_button['state'] = tk.NORMAL
         #     self.delete_button['state'] = tk.NORMAL
 
+        # if logged out disable upload/update button
+        uid = self.app.db.get_state('user_id')
+        if not uid:
+            self.upload_button['state'] = tk.DISABLED
+
         # data list
         data = self.data_helper.read_image_list(self.source_data['image_list'])
 
