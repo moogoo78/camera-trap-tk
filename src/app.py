@@ -46,7 +46,7 @@ from config import Config
 
 class Application(tk.Tk):
 
-    def __init__(self, config, *args, **kwargs):
+    def __init__(self, config, is_debug, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
         self.version = __version__
@@ -69,6 +69,7 @@ class Application(tk.Tk):
         self.app_font = 'Microsoft JhengHei UI' #'Yu Gothic'  #'Arial'
         self.secrets = {}
         self.contents = {}
+        self.is_debug = is_debug
 
         self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
@@ -381,13 +382,15 @@ class Application(tk.Tk):
             if exist_device_id := self.db.get_state('device_id'):
                 if str(exist_device_id) != str(current_device_id):
                     #tk.messagebox.showerror('err', '更換裝置，帳號無法沿用，請先登出')
-                    if tk.messagebox.askokcancel('注意', '更換裝置，帳號無法沿用，請先登出'):
-                        self.on_logout()
-                    else:
-                        #self.quit()
-                        # force leave app
-                        self.destroy()
-                        exit()
+                    if not self.is_debug:
+                        if tk.messagebox.askokcancel('注意', '更換裝置，帳號無法沿用，請先登出'):
+                            self.on_logout()
+                        else:
+                            #self.quit()
+                            # force leave app
+                            self.destroy()
+                            exit()
+
             else:
                 self.db.set_state('device_id', current_device_id)
 
@@ -465,11 +468,15 @@ parser.add_argument(
     '-i', '--ini',
     dest='ini_file',
     help='ini file path')
+parser.add_argument(
+    '--debug',
+    action='store_true',
+    help='debug mode')
 args = parser.parse_args()
 
 def main():
     conf = Config(args.ini_file) if args.ini_file else Config()
-    app = Application(conf)
+    app = Application(conf, args.debug)
     #app.async_loop = async_loop
     app.mainloop()
 
