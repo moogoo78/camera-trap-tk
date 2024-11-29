@@ -969,6 +969,21 @@ class Main(tk.Frame):
                 if len(remote_deleted_images) > 0:
                     DeletedImages(self, images=remote_deleted_images)
 
+                # start: if server have uploaded image and local don't, update local
+                for i in image_list:
+                    #if i[11] and i[11] not in
+                    if server_image_info := saved_image_ids.get(str(i[0])):
+                        if server_image_info[1] == i[14]:
+                            sql = f'UPDATE image SET server_image_id = {server_image_info[0]} WHERE image_id = {i[0]}';
+                            self.app.db.exec_sql(sql)
+
+                self.app.db.commit()
+
+                ## refresh image_list
+                updated_source_data = self.app.source.get_source(self.source_id)
+                image_list = updated_source_data['image_list']
+                # end
+
         now = int(time.time())
         self.app.source.update_status(source_id, source_status, now=now)
 
