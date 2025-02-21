@@ -370,6 +370,7 @@ class Main(tk.Frame):
             width=3,
             #validate='focusout',
             #validatecommand=self.on_seq_interval_changed
+            state=tk.DISABLED,
         )
         self.seq_min_entry.bind(
             "<FocusIn>", lambda event: self.on_seq_entry(event, 'seq_min'))
@@ -383,6 +384,7 @@ class Main(tk.Frame):
             width=3,
             #validate='focusout',
             #validatecommand=self.on_seq_interval_changed
+            state=tk.DISABLED,
         )
         self.seq_sec_entry.bind(
             "<FocusIn>", lambda event: self.on_seq_entry(event, 'seq_sec'))
@@ -587,7 +589,7 @@ class Main(tk.Frame):
 
         # clear image sequence checked
         # default checked to group sequence, 5mins
-        self.seq_min_val.set(5)
+        self.seq_min_val.set(1)
         self.seq_sec_val.set('')
         self.seq_checkbox_val.set('Y')
 
