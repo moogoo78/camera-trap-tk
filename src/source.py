@@ -415,10 +415,16 @@ class Source(object):
             results['error'] = err_msg
             return results
 
-        resp = self.app.server.check_folder(folder_path)
-        if resp['error'] == '' and resp['json'].get('is_exist') == True:
-            results['error'] = '伺服器上已經有同名的資料夾'
-            return results
+        # check folder exists
+        if to_check_folder := self.app.config.get('Mode', 'check_folder', fallback=False):
+            if to_check_folder not in ['False', '0', 0]:
+                resp = self.app.server.check_folder(folder_path.stem)
+                if err := resp.get('error'):
+                    results['error'] = err
+                    return results
+                elif resp['json']['is_exist'] == True:
+                    results['error'] = '伺服器上已經有同名的資料夾'
+                return results
 
         if exist := self.app.db.fetch_sql(f"SELECT * FROM source WHERE path='{folder_path}'"):
             results['error'] = '已經加過此資料夾'
