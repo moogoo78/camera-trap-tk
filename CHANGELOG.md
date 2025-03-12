@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.1.16]
+
+### 新增
+
+- 第一次上傳產生uuid, 用來正確辨識是那次上傳
+- 檢查local不正確的upload_status (finished, but no deployment_journal_id)
+
+## [v1.1.15]
+
+### 新增
+
+- 上傳資料夾前會先檢查伺服器是否已經上傳過，如果有，在local端更新server的image_id
+
+## [v1.1.14]
+
+### 新增
+
+- 物種下拉選單新增三種鳥: 環頸雉, 岩鷚, 冠羽畫眉
+- footer更新機關全銜
+- 換電腦使用，要讓帳號登出
+
+### 修改
+
+- 登出的狀態不能按"上傳"或"更新文字"
+- 快捷鍵調整成也可以選擇到鳥類清單中的項目
+
 ## [v1.1.13]
 
 ### 修改
