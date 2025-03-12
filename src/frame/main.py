@@ -112,13 +112,23 @@ class Main(tk.Frame):
         #self.grid_propagate(False)
         self.layout()
 
-        '''TODO_LAYOUT
-        self.app.frames['image_viewer'] = ImageViewer(self)
-        #self.app.frames['image_viewer'].grid(row=0, column=0, sticky='nsew')
-        self.app.frames['landing'] = Landing(self, width=400, bg=self.background_color)
-        self.app.frames['landing'].show()
-        #self.landing.grid(row=0, column=0, sticky='nsew')
-        '''
+        # check source status un-sync
+        rows = self.app.db.fetch_sql_all("SELECT source_id, deployment_journal_id, status, name, description FROM source")
+        not_sync = [x for x in rows if x[2] in ['b2c'] and not x[1]] # 狀態: 上傳成功但沒server: deployment_journal_id
+        if len(not_sync):
+            names = ', '.join([x[3] for x in not_sync])
+            if tk.messagebox.askokcancel('注意', f'目前有目錄狀態跟伺服器資料庫不一致: {names}。要修復本地端狀態嗎，按OK修復，或是按取消(不動作)。'):
+                for i in not_sync:
+                    logging.info(f'exec update source status: {i[0]}, {i[3]}')
+                    self.app.source.update_status(i[0], 'START_UPLOAD')
+
+                    # if descr := i[4]:
+                    #     d = descr.json.loads(descr)
+                    #     print(d.get('upload_uuid'))
+                    # 找回有上傳過的dj_id
+                    #resp = self.server.check_folder(i[3], i[0])
+                    #print(resp)
+                tk.messagebox.showinfo('info', f'目錄: {names} 已修復狀態，修復後還要執行續傳照片的動作。把照片檔案上傳完成')
 
         self.upload_status = 0 # 0: stop, 1: start, 2: pause
         #self.thread = threading.Thread(target=self.worker)
