@@ -10,6 +10,7 @@ import queue
 import csv
 from datetime import datetime
 import subprocess
+import uuid
 #from memory_profiler import profile
 
 from PIL import ImageTk, Image
@@ -904,12 +905,21 @@ class Main(tk.Frame):
         # ==============
         # check & notify
         # ==============
-
-        # check deployment has set
+        # check folder & deployment has set
+        upload_uuid = ''
         deployment_id = ''
         if descr := self.source_data['source'][7]:
             d = json.loads(descr)
             deployment_id = d.get('deployment_id', '')
+            upload_uuid = d.get('upload_uuid', '')
+
+            # create new upload-uuid
+            if upload_uuid == '':
+                upload_uuid = str(uuid.uuid1())
+                d.update({'upload_uuid': upload_uuid})
+                sql = "UPDATE source SET description='{}' WHERE source_id={}".format(json.dumps(d), self.source_id)
+                self.app.db.exec_sql(sql, True)
+
         if deployment_id == '':
             if self.app.config.get('Installation', 'is_testing'):
                 if x:= self.app.config.get('Mode', 'testing_deployment_id'):
@@ -999,6 +1009,7 @@ class Main(tk.Frame):
             'source_id': self.source_data['source'][0],
             'bucket_name': self.app.config.get('AWSConfig', 'bucket_name'),
             'deployment_journal_id': deployment_journal_id,
+            'upload_uuid': upload_uuid,
             'num_of_images': self.source_data['source'][4],
             'client_hostname': self.app.user_hostname,
             'client_version': self.app.version,
