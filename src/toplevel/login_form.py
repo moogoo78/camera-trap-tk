@@ -126,7 +126,8 @@ class LoginForm(tk.Toplevel):
 
         verify_code = ''.join(["{}".format(randint(0, 9)) for num in range(0, 4)])
         self.code = str(int(time.time())) + verify_code
-        webbrowser.open(f'https://orcid.org/oauth/authorize?client_id={client_id}&response_type=code&scope=/authenticate&redirect_uri={host}/callback/orcid/auth?next=/desktop_login?t={self.code}')
+        # webbrowser.open(f'https://orcid.org/oauth/authorize?client_id={client_id}&response_type=code&scope=/authenticate&redirect_uri={host}/callback/orcid/auth?next=/desktop_login?t={self.code}')
+        webbrowser.open(f'https://orcid.org/oauth/authorize?client_id={client_id}&response_type=code&scope=/authenticate&redirect_uri={host}/callback/orcid/auth/desktop_login?foo=bar&state={self.code}')
 
         self.verify_entry['state'] = tk.NORMAL
 
