@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.1.17]
+
+### 修改
+
+- orcid 登入失敗 (querystring不會被orcid redirect)
+
 ## [v1.1.16]
 
 ### 新增
