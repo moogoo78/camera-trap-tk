@@ -64,7 +64,7 @@ class Main(tk.Frame):
             'image_index': 0,
         }
         # self.thumb_basewidth = 550
-        self.thumb_height = 309 # fixed height
+        self.thumb_height = int(309 * self.app.ui_scale) # fixed height (scaled by ui_scale)
         annotate_status_list = (self.app.source.STATUS_DONE_IMPORT, self.app.source.STATUS_START_ANNOTATE)
 
         self.skip_media_display = self.app.config.get('Mode', 'skip_media_display', fallback='0')
@@ -174,7 +174,7 @@ class Main(tk.Frame):
         self.image_thumb_label.grid(row=0, column=0, sticky='ns')
 
 
-        self.ctrl_frame = tk.Frame(self.top_paned_frame, width=500, height=self.thumb_height, bg='#F2F2F2') # #00FF00
+        self.ctrl_frame = tk.Frame(self.top_paned_frame, width=int(500 * self.app.ui_scale), height=self.thumb_height, bg='#F2F2F2') # #00FF00
         self.ctrl_frame.grid(row=0, column=1, sticky='nw', padx=10)
         #self.ctrl_frame.grid_propagate(0)
         self.config_ctrl_frame()
@@ -536,8 +536,8 @@ class Main(tk.Frame):
             self.table_frame,
             data={},
             columns=self.data_helper.columns,
-            height= 1600-480, # for user to drag window height #self.app.app_height - 480, #760-480
-            width=1200,
+            height=int((1600-480) * self.app.ui_scale), # for user to drag window height #self.app.app_height - 480, #760-480
+            width=int(1200 * self.app.ui_scale),
             row_index_display='sn',
             cols_on_ctrl_button_1=['annotation_species'],
             cols_on_fill_handle=['annotation_species', 'annotation_sex', 'annotation_antler', 'annotation_remark', 'annotation_lifestage'],
@@ -548,8 +548,8 @@ class Main(tk.Frame):
             rows_delete_type='CLONED',
             remove_rows_key_ignore_pattern='-0',
             column_header_bg= '#5B7464',
-            cell_height=35,
-            bottom_padding=50,
+            cell_height=int(35 * self.app.ui_scale),
+            bottom_padding=int(50 * self.app.ui_scale),
             truncate={'columns': ['filename'], 'type': 'measure-all'}
         )
 

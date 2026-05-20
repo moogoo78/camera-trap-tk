@@ -23,10 +23,11 @@ class Panel(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
         '''
 
+        s = self.app.ui_scale
         self.canvas = tk.Canvas(
             self,
-            width=240,
-            height=self.app.app_height-50-25,
+            width=int(240 * s),
+            height=self.app.app_height - int(50 * s) - int(25 * s),
             bg='#CFCFCF',
             bd=0,
             highlightthickness=0,

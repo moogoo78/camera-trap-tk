@@ -59,8 +59,17 @@ class Application(tk.Tk):
         self.iconphoto(False, app_logo)
         #self.iconbitmap('trees.ico')
 
-        self.app_width = 1200
-        self.app_height = int(config.get('Layout', 'app_height'))
+        self.screen_ppi = self.winfo_fpixels('1i')
+        self.screen_width_px = self.winfo_screenwidth()
+        self.screen_height_px = self.winfo_screenheight()
+
+        # Scale design sizes (authored at 96 ppi) to the actual screen ppi,
+        # then clamp so the window fits on-screen with a small margin.
+        self.ui_scale = self.screen_ppi / 96.0
+        base_width = 1200
+        base_height = int(config.get('Layout', 'app_height'))
+        self.app_width = min(int(base_width * self.ui_scale), self.screen_width_px - 80)
+        self.app_height = min(int(base_height * self.ui_scale), self.screen_height_px - 120)
         self.app_width_resize_to = 0
         self.app_height_resize_to = 0
         self.app_primary_color = '#2A7F60'
@@ -73,10 +82,10 @@ class Application(tk.Tk):
 
         self.geometry(f'{self.app_width}x{self.app_height}+40+20')
         self.title(f'Camera Trap Desktop - v{self.version}')
-        self.maxsize(1200, 2000)
+        self.maxsize(self.screen_width_px, self.screen_height_px)
 
         self.protocol('WM_DELETE_WINDOW', self.quit)
-        self.bind('<Configure>', self.resize)
+        # self.bind('<Configure>', self.resize)
 
         self.is_help_open = False
         self.toplevels = {
@@ -122,6 +131,7 @@ class Application(tk.Tk):
         logging.getLogger('PIL.TiffImagePlugin').propagate = False
 
         #logging.info(f'starting camera-trap app, version: {self.version}')
+        logging.info(f'screen: {self.screen_width_px}x{self.screen_height_px} @ {self.screen_ppi:.1f} ppi, ui_scale={self.ui_scale:.2f}, window={self.app_width}x{self.app_height}')
 
         # == helpers ==
         self.db = Database(config.get('SQLite', 'dbfile'))
@@ -221,24 +231,24 @@ class Application(tk.Tk):
             self,
             background=self.app_primary_color,
             width=self.app_width,
-            height='50')
+            height=int(50 * self.ui_scale))
         self.appbar.grid(row=0, column=0, sticky='ew')
 
         self.contents['landing'] = Landing(self)
-        self.contents['landing'].grid(row=1, column=0, sticky='nw')
+        self.contents['landing'].grid(row=1, column=0, sticky='nsew')
 
         self.footer = Footer(
             self,
             background=self.app_primary_color,
             width=self.app_width,
-            height='25'
+            height=int(25 * self.ui_scale)
         )
         self.footer.grid(row=2, column=0, sticky='ew')
 
         self.contents['folder_list'] = FolderList(
             self,
             background='#4f5d75',
-            width=300)
+            width=int(300 * self.ui_scale))
 
         self.contents['main'] = Main(
             self,
@@ -249,7 +259,7 @@ class Application(tk.Tk):
 
         self.panel = Panel(
             self,
-            width=240)
+            width=int(240 * self.ui_scale))
         # self.panel.place(x=0, y=50, anchor='nw')
 
 
@@ -267,7 +277,7 @@ class Application(tk.Tk):
     def show_content(self, name):
         self.clear_contents(exclude=name)
         if not self.contents[name].winfo_viewable():
-            self.contents[name].grid(row=1, column=0, sticky='nw')
+            self.contents[name].grid(row=1, column=0, sticky='nsew')
 
         self.update_idletasks()
 
@@ -461,7 +471,6 @@ class Application(tk.Tk):
 
     def resize(self, event):
         self.app_height_resize_to = event.height
-
 
 parser = argparse.ArgumentParser(description='camera-trap-desktop')
 parser.add_argument(

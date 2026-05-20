@@ -40,7 +40,7 @@ class FolderList(tk.Frame):
         self.canvas = tk.Canvas(
             self,
             width=self.app.app_width,
-            height=self.app.app_height-50-25,
+            height=self.app.app_height - int(50 * self.app.ui_scale) - int(25 * self.app.ui_scale),
             bg='#F2F2F2',
             bd=0,
             highlightthickness=0,
@@ -324,8 +324,8 @@ class FolderList(tk.Frame):
 
             if r[6] == self.app.source.STATUS_START_IMPORT:
                 # for display importing progress bar
-                box = tk.Frame(self, width=180, background='#FFFFFF')
-                prog_bar = ttk.Progressbar(box, orient=tk.HORIZONTAL, length=180, value=0, mode='determinate', maximum=r[4])
+                box = tk.Frame(self, width=int(180 * self.app.ui_scale), background='#FFFFFF')
+                prog_bar = ttk.Progressbar(box, orient=tk.HORIZONTAL, length=int(180 * self.app.ui_scale), value=0, mode='determinate', maximum=r[4])
                 prog_bar.grid(row=0, column=0)
                 label = ttk.Label(box, text='', background='#FFFFFF')
                 label.grid(row=1, column=0)
@@ -333,7 +333,7 @@ class FolderList(tk.Frame):
                 self.canvas.create_window(
                     x+94,
                     gap-1,
-                    width=180,
+                    width=int(180 * self.app.ui_scale),
                     window=box,
                     anchor='nw',
                     tags=('item', 'prog_bar_win', status_cat, source_tag)
