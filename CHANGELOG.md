@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.1.18]
+
+### 修改
+
+- 視窗與內容依螢幕 PPI 縮放，並放寬視窗可調整的寬度
+- 修正 requirements.txt 編碼問題 (UTF-16 改為 UTF-8)
+
 ## [v1.1.17]
 
 ### 修改
